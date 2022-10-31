@@ -17,11 +17,24 @@ public class BookController {
 	@Autowired
 	private BookService bookService;
 	
+	/**
+	 * 查詢全部資料
+	 * @return
+	 */
 	@GetMapping("/findall")
 	public List<Book> findall(){
 		return bookService.findall();
 	}
 	
+	/**
+	 * 存入一筆資料
+	 * @param ISBN
+	 * @param title
+	 * @param author
+	 * @param year
+	 * @param publisher
+	 * @param cost
+	 */
 	@PostMapping("/saveBook")
 	public void saveBook(@RequestParam(value = "ISBN", required = true) int ISBN,
 			@RequestParam(value = "title", required = true) String title,
@@ -39,4 +52,5 @@ public class BookController {
 		bookService.save(book);
 		
 	}
+	
 }
