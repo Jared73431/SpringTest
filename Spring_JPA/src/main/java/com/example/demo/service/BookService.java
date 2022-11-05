@@ -13,7 +13,7 @@ public interface BookService {
 	
 	public List<Book> findall();
 	
-	public void Update(Book book);
+	public Book Update(Book book);
 	
 	public void delete(Integer id);
 }
