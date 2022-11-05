@@ -34,8 +34,17 @@ public class BookServiceImpl implements BookService{
 	}
 
 	@Override
-	public void Update(Book book) {
-		// TODO Auto-generated method stub
+	public Book Update(Book book) {
+		Book upbook = new Book();
+		if (bookRepo.existsById(book.getId())) {
+			book.setId(null);
+			bookRepo.save(book);
+			upbook = book;
+		} else {
+			upbook = bookRepo.saveAndFlush(book);
+		}
+		
+		return upbook;
 		
 	}
 
