@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: service-provider  #服务名称
+  datasource:
+    password: Jtest
+    url: jdbc:postgresql://localhost:5432/test
+    username: Jtest
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+server:
+  port: 8081  #服务端口
+eureka:
+  client:
+    serviceUrl: #注册中心注册地址
+      defaultZone: http://localhost:8761/eureka/
