@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Batch" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Batch" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Eureka" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Eureka" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Eureka_Client" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Eureka_Client" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Eureka_Provider" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Eureka_Provider" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Feign_Client" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Feign_Client" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Feign_Server" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Feign_Server" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Gateway_Client" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Gateway_Client" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Gateway_Server" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Gateway_Server" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_HelloWorld" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_HelloWorld" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_JPA" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_JPA" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Quartz" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Quartz" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Quartz-2" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Quartz-2" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Quartz-3" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Quartz-3" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_R2DBC" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_R2DBC" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Scheduleing" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Scheduleing" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Security" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Security" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Security2" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Security2" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Security3" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Security3" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
