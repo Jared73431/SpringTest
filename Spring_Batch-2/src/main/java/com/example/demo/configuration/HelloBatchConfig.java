@@ -22,7 +22,7 @@ public class HelloBatchConfig {
 
     @Bean
     public Step sampleStep(JobRepository jobRepository, DataSourceTransactionManager transactionManager) {
-        return new StepBuilder("helloStep3", jobRepository).tasklet((contribution, chunkContext) -> {
+        return new StepBuilder("helloStep8", jobRepository).tasklet((contribution, chunkContext) -> {
             System.out.println("Hello world2!");
             return RepeatStatus.FINISHED;
         }, transactionManager).build();
@@ -30,7 +30,7 @@ public class HelloBatchConfig {
 
     @Bean
     public Job sampleJob(JobRepository jobRepository, Step sampleStep) {
-        return new JobBuilder("HelloJob2", jobRepository).start(sampleStep).build();
+        return new JobBuilder("HelloJob8", jobRepository).start(sampleStep).build();
     }
 
 }
