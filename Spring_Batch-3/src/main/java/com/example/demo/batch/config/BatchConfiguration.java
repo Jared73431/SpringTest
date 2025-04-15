@@ -54,10 +54,10 @@ public class BatchConfiguration {
                 .build();
     }
 
-    @Bean(name = "importUserJob3")
+    @Bean(name = "importUserJob4")
     public Job importUserJob(JobRepository jobRepository, Step step1,
                              JobCompleteionNotificationListener listener, BatchProperties properties){
-        return new JobBuilder("importUserJob3", jobRepository)
+        return new JobBuilder("importUserJob4", jobRepository)
                 .listener(listener)
                 .start(step1)
                 .build();
@@ -69,7 +69,7 @@ public class BatchConfiguration {
                       FlatFileItemReader<Person> reader,
                       PersonItemProcessor processor,
                       JdbcBatchItemWriter<Person> writer){
-        return new StepBuilder("step13", jobRepository)
+        return new StepBuilder("step14", jobRepository)
                 .<Person, Person> chunk(3, transactionManager)
                 .reader(reader)
                 .processor(processor)
