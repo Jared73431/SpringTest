@@ -1,5 +1,8 @@
 package com.example.demo.batch.config;
 
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -9,6 +12,7 @@ import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.batch.BatchProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +24,9 @@ import com.example.demo.batch.dto.PersonDTO;
 import com.example.demo.batch.entity.Person;
 import com.example.demo.batch.listener.JobCompleteionNotificationListener;
 import com.example.demo.batch.processor.PersonItemProcessor;
+import com.example.demo.batch.reader.PersonItemReader;
 import com.example.demo.batch.repository.PersonRepository;
+import com.example.demo.batch.writer.PersonItemWriter;
 
 import jakarta.persistence.EntityManagerFactory;
 
@@ -29,6 +35,9 @@ import jakarta.persistence.EntityManagerFactory;
  */
 @Configuration
 public class BatchConfiguration {
+
+    @Autowired
+    private PersonItemReader personItemReader;
 
     /**
     事务管理器(處理資料庫連線資訊)
@@ -45,15 +54,21 @@ public class BatchConfiguration {
      * 读取器 (Reader)
      */
     @Bean
-    public FlatFileItemReader<PersonDTO> reader(){
-        return new FlatFileItemReaderBuilder<PersonDTO>()
-                .name("personItemReader")
-                .resource(new ClassPathResource("sample-data.csv"))//从sample-data.csv文件读取数据
-                .delimited()
-                .names("firstName", "lastName")//读取的数据被映射到Person对象，包含firstName和lastName字段
-                .targetType(PersonDTO.class)
-                .build();
+    public FlatFileItemReader<PersonDTO> reader() {
+        return personItemReader.createReader();
     }
+    //@Bean
+    //public FlatFileItemReader<PersonDTO> reader(){
+    //    return new FlatFileItemReaderBuilder<PersonDTO>()
+    //            .name("personItemReader")
+    //            .resource(new ClassPathResource("sample-data.csv"))//从sample-data.csv文件读取数据
+    //            .delimited()
+    //            .names(Arrays.stream(PersonDTO.class.getRecordComponents())
+    //                    .map(RecordComponent::getName)
+    //                    .toArray(String[]::new))//读取的数据被映射到Person对象，包含firstName和lastName字段
+    //            .targetType(PersonDTO.class)
+    //            .build();
+    //}
 
     /**
      * 处理器 (Processor)
@@ -71,11 +86,16 @@ public class BatchConfiguration {
      */
     @Bean
     public RepositoryItemWriter<Person> writer(PersonRepository repository) {
-        return new RepositoryItemWriterBuilder<Person>()
-                .repository(repository)
-                .methodName("save")
-                .build();
+        // 使用獨立的 PersonItemWriter 類
+        return new PersonItemWriter(repository).createWriter();
     }
+    //@Bean
+    //public RepositoryItemWriter<Person> writer(PersonRepository repository) {
+    //    return new RepositoryItemWriterBuilder<Person>()
+    //            .repository(repository)
+    //            .methodName("save")
+    //            .build();
+    //}
 
     /**
      * 作业定义 (Job)

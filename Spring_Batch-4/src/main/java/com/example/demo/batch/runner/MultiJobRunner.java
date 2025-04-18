@@ -21,6 +21,9 @@ public class MultiJobRunner implements CommandLineRunner {
     @Autowired
     private Job sampleJob;
 
+    @Autowired
+    private Job healthInsuranceJob;
+
     @Override
     public void run(String... args) throws Exception {
 
@@ -32,7 +35,12 @@ public class MultiJobRunner implements CommandLineRunner {
                 .addLong("time", System.currentTimeMillis() + 1000)
                 .toJobParameters();
 
+        JobParameters params3 = new JobParametersBuilder()
+                .addLong("time", System.currentTimeMillis() + 2000)
+                .toJobParameters();
+
         asyncJobLauncherService.launchJob(importUserJob4, params1);
         asyncJobLauncherService.launchJob(sampleJob, params2);
+        asyncJobLauncherService.launchJob(healthInsuranceJob, params3);
     }
 }
