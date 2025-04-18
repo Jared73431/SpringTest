@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  app:
+    build: .
+    container_name: spring-app
+    ports:
+      - "8015:8015"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    networks:
+      - database_net_postgres  # 使用已存在的网络
+
+networks:
+  database_net_postgres:
+    external: true  # 声明这是一个外部网络，不由此compose文件创建
