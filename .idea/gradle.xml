@@ -116,6 +116,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_JPA2" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_JPA2" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Quartz" />
         <option name="modules">
           <set>
@@ -176,6 +184,14 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/Spring_Security3" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Thymeleaf" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Thymeleaf" />
           </set>
         </option>
       </GradleProjectSettings>
