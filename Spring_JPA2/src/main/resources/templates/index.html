@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>圖片上傳與顯示</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+    h1 {
+        color: #333;
+    }
+    .message {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    form {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-gap: 15px;
+        margin-top: 20px;
+    }
+    .gallery-item {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        text-align: center;
+    }
+    .gallery-item img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 3px;
+    }
+    .actions {
+        margin-top: 10px;
+    }
+    button {
+        padding: 5px 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #c82333;
+    }
+  </style>
+</head>
+<body>
+<h1>圖片上傳與管理系統</h1>
+
+<div th:if="${message}" class="message" th:text="${message}"></div>
+
+<form method="POST" action="/upload" enctype="multipart/form-data">
+  <h2>上傳新圖片</h2>
+  <input type="file" name="file" accept="image/*" required />
+  <button type="submit">上傳</button>
+</form>
+
+<h2>圖片庫</h2>
+<div class="gallery">
+  <div th:each="image : ${images}" class="gallery-item">
+    <img th:src="@{'/images/' + ${image.id}}" th:alt="${image.name}" />
+    <div th:text="${image.name}"></div>
+    <div class="actions">
+      <a th:href="@{'/delete/' + ${image.id}}">
+        <button>刪除</button>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
