@@ -1,0 +1,9 @@
+spring:
+  application:
+    name : Spring_Thymeleaf
+thymeleaf:
+  cache: false
+  prefix: classpath:/templates/    # \u8A2D\u5B9A\u53BBtemplates\u8CC7\u6599\u593E\u627Ehtml\u6A94\u6848
+  suffix: .html
+  encoding: UTF-8
+  mode: HTML5
