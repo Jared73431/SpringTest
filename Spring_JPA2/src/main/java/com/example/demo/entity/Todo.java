@@ -7,15 +7,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
@@ -25,21 +17,21 @@ public class Todo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
+    private Integer id;
 
     @Column
-    String task;
+    private String task;
 
     @Column(insertable = false, columnDefinition = "int default 1")
-    Integer status = 1;
+    private Integer status = 1;
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
-    Date createTime = new Date();
+    private Date createTime = new Date();
 
     @LastModifiedDate
     @Column(nullable = false)
-    Date updateTime = new Date();
+    private Date updateTime = new Date();
 
     @JsonBackReference
     @ManyToOne(cascade = CascadeType.ALL)
