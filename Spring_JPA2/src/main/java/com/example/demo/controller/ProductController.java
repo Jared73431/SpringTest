@@ -21,94 +21,113 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.ProductDTO;
 import com.example.demo.entity.Product;
 import com.example.demo.repository.ProductRepository;
+import com.example.demo.service.ProductService;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
 
     @Autowired
-    private ProductRepository productRepository;
+    private ProductService productService;
 
-    // 获取所有商品
+    /**
+     * 獲取所有商品
+     * @return 所有商品列表
+     */
     @GetMapping
     public List<ProductDTO> getAllProducts() {
-        return productRepository.findAll().stream()
-                .map(ProductDTO::new)
-                .collect(Collectors.toList());
+        return productService.getAllProducts();
     }
 
-    // 根据ID获取商品
+    /**
+     * 根據ID獲取商品
+     * @param id 商品ID
+     * @return 商品資訊或404
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable String id) {
-        return productRepository.findById(id)
-                .map(product -> ResponseEntity.ok(new ProductDTO(product)))
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 创建商品
+    /**
+     * 創建新商品
+     * @param productDTO 商品資訊
+     * @return 創建的商品資訊和201狀態碼
+     */
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
-        // 检查ID是否已存在
-        if (productDTO.getId() != null && productRepository.existsById(productDTO.getId())) {
+        try {
+            ProductDTO createdProduct = productService.createProduct(productDTO);
+            return ResponseEntity.created(URI.create("/api/products/" + createdProduct.getId()))
+                    .body(createdProduct);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-
-        // 如果没有提供ID，生成一个
-        if (productDTO.getId() == null) {
-            productDTO.setId(UUID.randomUUID().toString());
-        }
-
-        Product product = productRepository.save(productDTO.toEntity());
-        return ResponseEntity.created(URI.create("/api/products/" + product.getId()))
-                .body(new ProductDTO(product));
     }
 
-    // 更新商品
+    /**
+     * 更新商品
+     * @param id 商品ID
+     * @param productDTO 更新的商品資訊
+     * @return 更新後的商品資訊或404
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable String id, @RequestBody ProductDTO productDTO) {
-        if (!productRepository.existsById(id)) {
+        try {
+            ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
-
-        productDTO.setId(id);
-        Product product = productRepository.save(productDTO.toEntity());
-        return ResponseEntity.ok(new ProductDTO(product));
     }
 
-    // 删除商品
+    /**
+     * 刪除商品
+     * @param id 商品ID
+     * @return 204狀態碼或404
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
-        if (!productRepository.existsById(id)) {
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
-
-        productRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 
-    // 根据类别查找商品
+    /**
+     * 根據類別查找商品
+     * @param category 商品類別
+     * @return 該類別的商品列表
+     */
     @GetMapping("/category/{category}")
     public List<ProductDTO> getProductsByCategory(@PathVariable String category) {
-        return productRepository.findByCategory(category).stream()
-                .map(ProductDTO::new)
-                .collect(Collectors.toList());
+        return productService.getProductsByCategory(category);
     }
 
-    // 查找价格区间内的商品
+    /**
+     * 查找價格區間內的商品
+     * @param minPrice 最低價格
+     * @param maxPrice 最高價格
+     * @return 符合價格區間的商品列表
+     */
     @GetMapping("/price-range")
     public List<ProductDTO> getProductsByPriceRange(
             @RequestParam BigDecimal minPrice,
             @RequestParam BigDecimal maxPrice) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice).stream()
-                .map(ProductDTO::new)
-                .collect(Collectors.toList());
+        return productService.getProductsByPriceRange(minPrice, maxPrice);
     }
 
-    // 查找库存低于阈值的商品
+    /**
+     * 查找庫存低於閾值的商品
+     * @param threshold 庫存閾值
+     * @return 低庫存商品列表
+     */
     @GetMapping("/low-stock")
     public List<ProductDTO> getLowStockProducts(@RequestParam Integer threshold) {
-        return productRepository.findByStockLessThan(threshold).stream()
-                .map(ProductDTO::new)
-                .collect(Collectors.toList());
+        return productService.getLowStockProducts(threshold);
     }
 }
