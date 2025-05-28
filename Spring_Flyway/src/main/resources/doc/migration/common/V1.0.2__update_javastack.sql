@@ -1,0 +1,1 @@
+UPDATE t_javastack SET title = CONCAT('flyway:', title);
