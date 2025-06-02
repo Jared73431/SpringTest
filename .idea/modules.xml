@@ -11,11 +11,13 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Eureka_Provider.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Eureka_Provider.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Feign_Client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Feign_Client.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Feign_Server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Feign_Server.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Flyway.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Flyway.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Gateway_Client.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Gateway_Client.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Gateway_Server.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Gateway_Server.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_JPA.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_JPA.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_JPA2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_JPA2.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Quartz-2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Quartz-2.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Quartz-3.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Quartz-3.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Quartz.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Quartz.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_R2DBC.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_R2DBC.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Scheduleing.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Scheduleing.main.iml" />
@@ -23,6 +25,8 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Security2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Security2.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Security3.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Security3.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Thymeleaf.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Thymeleaf.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket2.main.iml" />
     </modules>
   </component>
 </project>
