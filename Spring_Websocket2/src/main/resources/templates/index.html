@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket聊天室</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎯 聊天室</h1>
+    <form id="usernameForm">
+        <div class="form-group">
+            <label for="username">請輸入您的暱稱：</label>
+            <input type="text" id="username" placeholder="輸入暱稱..." maxlength="20" required>
+        </div>
+        <button type="submit">進入聊天室</button>
+        <div class="error" id="error">請輸入有效的暱稱</div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('usernameForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const errorDiv = document.getElementById('error');
+
+        if (username) {
+            localStorage.setItem('chatUsername', username);
+            window.location.href = '/chat';
+        } else {
+            errorDiv.style.display = 'block';
+        }
+    });
+
+    // 檢查是否已有用戶名
+    if (localStorage.getItem('chatUsername')) {
+        document.getElementById('username').value = localStorage.getItem('chatUsername');
+    }
+</script>
+</body>
+</html>
