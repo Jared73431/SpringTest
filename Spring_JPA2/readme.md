@@ -28,7 +28,7 @@ graph TB
     end
     
     subgraph "資料庫"
-        E[(MySQL/H2)]
+        E[(PostgreSQL)]
     end
     
     A --> B
