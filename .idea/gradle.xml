@@ -164,6 +164,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Redis" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Redis" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Scheduleing" />
         <option name="modules">
           <set>
@@ -216,6 +224,14 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/Spring_Websocket2" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Websocket3" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Websocket3" />
           </set>
         </option>
       </GradleProjectSettings>
