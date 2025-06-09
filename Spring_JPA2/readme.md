@@ -162,11 +162,9 @@ classDiagram
         -Date updateTime
         -User user
     }
-    
-    User ||--o{ Todo : "OneToMany"
-    
-    note for User : "@OneToMany(mappedBy='user')"
-    note for Todo : "@ManyToOne @JoinColumn(name='user_id')"
+
+    User "1" --> "*" Todo : OneToMany
+
 ```
 
 **關係說明：**
@@ -197,10 +195,8 @@ classDiagram
         +clearStudents()
     }
     
-    StudentPO }o--o{ CoursePO : "ManyToMany"
-    
-    note for StudentPO : "@ManyToMany(mappedBy='students')"
-    note for CoursePO : "@JoinTable(name='selected_course')"
+    StudentPO "*" --> "*" CoursePO : "ManyToMany"
+
 ```
 
 **關係說明：**
@@ -250,11 +246,10 @@ classDiagram
         -String productId
     }
     
-    Order ||--o{ OrderItem : "OrderItems"
-    Product ||--o{ OrderItem : "ProductItems"
+    Order  "1" --> "*" OrderItem : "OrderItems"
+    Product  "1" --> "*" OrderItem : "ProductItems"
     OrderItem --> OrderItemPK : "CompositeKey"
-    
-    note for OrderItem : "Composite Primary Key"
+
 ```
 
 **關係說明：**
