@@ -1,4 +1,28 @@
-# Spring JPA 關係練習專案
+## 🎯 學習檢查清單
+
+### 基礎概念
+- [ ] JPA 實體的基本註解 (@Entity, @Table, @Id, @Column)
+- [ ] 主鍵生成策略 (@GeneratedValue)
+- [ ] Lombok 註解的使用 (@Data, @Getter, @Setter)
+
+### 關係對應
+- [ ] 一對多關係 (@OneToMany, @ManyToOne)
+- [ ] 多對多關係 (@ManyToMany, @JoinTable)
+- [ ] 複合主鍵 (@EmbeddedId, @Embeddable)
+- [ ] 級聯操作 (CascadeType)
+- [ ] 延遲載入 (FetchType.LAZY)
+
+### 進階功能
+- [ ] 檔案上傳到資料庫 (@Lob)
+- [ ] 自動時間戳記 (@CreatedDate, @LastModifiedDate)
+- [ ] 列舉類型 (@Enumerated)
+- [ ] JSON 序列化控制 (@JsonManagedReference, @JsonBackReference)
+
+### 實務應用
+- [ ] 雙向關係維護方法
+- [ ] 避免循環引用的策略
+- [ ] PostgreSQL 特有功能的使用
+- [ ] Thymeleaf 模板整合
 
 ## 📋 專案簡介
 
@@ -262,10 +286,13 @@ classDiagram
 
 ## 🛠️ 技術棧
 
-- **框架**: Spring Boot 3.x
+- **框架**: Spring Boot 3.4.5
 - **ORM**: Spring Data JPA / Hibernate
 - **資料庫**: PostgreSQL
-- **工具**: Lombok
+- **建構工具**: Gradle 8.x
+- **Java 版本**: OpenJDK 17
+- **模板引擎**: Thymeleaf
+- **開發工具**: Spring Boot DevTools, Lombok
 - **檔案處理**: Spring MultipartFile
 
 ## 📁 專案結構
@@ -291,24 +318,43 @@ src/main/java/com/example/demo/
 ## 🚀 快速開始
 
 ### 1. 環境要求
-- Java 17+
-- Maven 3.6+
-- PostgreSQL ()
+- Java 17 (OpenJDK)
+- Gradle 8.x
+- PostgreSQL 12+
 
 ### 2. 資料庫設定
 ```properties
 # application.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/test
+spring.datasource.url=jdbc:postgresql://localhost:5432/jpa_practice
 spring.datasource.username=your_username
 spring.datasource.password=your_password
+spring.datasource.driver-class-name=org.postgresql.Driver
 
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# Thymeleaf 設定
+spring.thymeleaf.cache=false
 ```
 
-### 3. 執行專案
+### 3. PostgreSQL 資料庫建立
+```sql
+-- 建立資料庫
+CREATE DATABASE jpa_practice;
+
+-- 建立用戶 (可選)
+CREATE USER jpa_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE jpa_practice TO jpa_user;
+```
+
+### 4. 執行專案
 ```bash
-mvn spring-boot:run
+# 使用 Gradle Wrapper
+./gradlew bootRun
+
+# 或者
+gradle bootRun
 ```
 
 ## 📚 學習重點
@@ -331,6 +377,77 @@ mvn spring-boot:run
 - JSON 序列化的循環引用處理
 - 複合主鍵的實作方式
 
-## 🤝 貢獻
+## 🧪 測試資料
 
-歡迎提交 Issue 和 Pull Request 來改善這個學習專案！
+可以使用以下 SQL 腳本建立測試資料：
+
+```sql
+-- 用戶和待辦事項
+INSERT INTO tbl_user (name, gender, password) VALUES ('Alice', 1, 'password123');
+INSERT INTO todo (task, user_id) VALUES ('完成專案文件', 1);
+
+-- 學生和課程
+INSERT INTO student (name) VALUES ('張三'), ('李四');
+INSERT INTO course (name, point) VALUES ('Java程式設計', 3), ('資料庫系統', 4);
+
+-- 產品和訂單
+INSERT INTO product (product_id, product_name, price, stock, description, category) VALUES 
+('PROD001', '筆記型電腦', 25000.00, 10, '高效能筆記型電腦', '電腦設備');
+
+-- 新增選課關係
+INSERT INTO selected_course (student, course) VALUES (1, 1), (1, 2), (2, 1);
+```
+
+## 📁 Gradle 專案結構
+
+```
+project-root/
+├── build.gradle                 # 專案建構檔案
+├── gradle.properties            # Gradle 設定
+├── src/
+│   ├── main/
+│   │   ├── java/com/example/demo/
+│   │   │   ├── entity/          # 實體類別
+│   │   │   ├── repository/      # 資料存取層
+│   │   │   ├── service/         # 業務邏輯層
+│   │   │   ├── controller/      # 控制器層
+│   │   │   └── DemoApplication.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── static/          # 靜態資源
+│   │       └── templates/       # Thymeleaf 模板
+│   └── test/
+└── gradle/wrapper/              # Gradle Wrapper
+```
+
+## 🔧 開發工具設定
+
+### IDE 設定
+- **推薦**: IntelliJ IDEA 或 VS Code
+- **Lombok**: 需要安裝 Lombok 插件並啟用 annotation processing
+- **資料庫工具**: pgAdmin 或 DBeaver (PostgreSQL 管理)
+
+### 開發模式
+```properties
+# application-dev.properties (開發環境)
+spring.profiles.active=dev
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# DevTools 設定
+spring.devtools.restart.enabled=true
+spring.devtools.livereload.enabled=true
+```
+
+### 生產環境設定
+```properties
+# application-prod.properties (生產環境)
+spring.profiles.active=prod
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+
+# 連線池設定
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+```
