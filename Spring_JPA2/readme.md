@@ -270,8 +270,6 @@ classDiagram
         +Image()
         +Image(String name, String contentType, byte[] data)
     }
-    
-    note for Image : "File Upload Entity with @Lob"
 ```
 
 **功能說明：**
