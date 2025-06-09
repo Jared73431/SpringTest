@@ -52,7 +52,7 @@ graph TB
     end
     
     subgraph "資料庫"
-        E[(PostgreSQL)]
+        E[(MySQL/H2)]
     end
     
     A --> B
@@ -132,12 +132,12 @@ erDiagram
         date uploadDate
     }
     
-    USER ||--o{ TODO : "一對多"
-    STUDENT }o--o{ COURSE : "多對多"
+    USER ||--o{ TODO : "OneToMany"
+    STUDENT }o--o{ COURSE : "ManyToMany"
     STUDENT ||--o{ SELECTED_COURSE : ""
     COURSE ||--o{ SELECTED_COURSE : ""
-    ORDER ||--o{ ORDER_ITEM : "一對多"
-    PRODUCT ||--o{ ORDER_ITEM : "一對多"
+    ORDER ||--o{ ORDER_ITEM : "OneToMany"
+    PRODUCT ||--o{ ORDER_ITEM : "OneToMany"
 ```
 
 ## 🔗 實體關係詳解
@@ -163,7 +163,7 @@ classDiagram
         -User user
     }
     
-    User ||--o{ Todo : "一個用戶可以有多個待辦事項"
+    User ||--o{ Todo : "OneToMany"
     
     note for User : "@OneToMany(mappedBy='user')"
     note for Todo : "@ManyToOne @JoinColumn(name='user_id')"
@@ -197,7 +197,7 @@ classDiagram
         +clearStudents()
     }
     
-    StudentPO }o--o{ CoursePO : "學生選課關係"
+    StudentPO }o--o{ CoursePO : "ManyToMany"
     
     note for StudentPO : "@ManyToMany(mappedBy='students')"
     note for CoursePO : "@JoinTable(name='selected_course')"
@@ -250,11 +250,11 @@ classDiagram
         -String productId
     }
     
-    Order ||--o{ OrderItem : "訂單明細"
-    Product ||--o{ OrderItem : "產品明細"
-    OrderItem --> OrderItemPK : "複合主鍵"
+    Order ||--o{ OrderItem : "OrderItems"
+    Product ||--o{ OrderItem : "ProductItems"
+    OrderItem --> OrderItemPK : "CompositeKey"
     
-    note for OrderItem : "使用複合主鍵處理多對多關係"
+    note for OrderItem : "Composite Primary Key"
 ```
 
 **關係說明：**
@@ -276,7 +276,7 @@ classDiagram
         +Image(String name, String contentType, byte[] data)
     }
     
-    note for Image : "用於練習檔案上傳到資料庫"
+    note for Image : "File Upload Entity with @Lob"
 ```
 
 **功能說明：**
