@@ -68,6 +68,7 @@ Flyway 使用特定的文件命名约定来管理数据库迁移，每个前缀�
 - **自定义映射**：使用 RowMapper 处理查询结果
 
 ## ⚠️ Flyway Undo 功能已废弃
+Flyway Undo 是 Fl​​way 的商業功能，社群版中不提供此功能。
 
 ### 什么是 Undo 功能？
 
