@@ -1,99 +1,99 @@
-# Flyway 数据库迁移项目练习
+# Flyway 資料庫遷移專案練習
 
-## 项目简介
+## 項目簡介
 
-这是一个基于 Spring Boot 和 Flyway 的数据库迁移练习项目，演示了如何使用 Flyway 进行数据库版本管理和自动化迁移。
+這是一個基於 Spring Boot 和 Flyway 的資料庫遷移練習專案，演示了如何使用 Flyway 進行資料庫版本管理和自動化遷移。
 
-## 技术栈
+## 技術棧
 
 - **Java 17**
 - **Spring Boot 3.5.0**
-- **Flyway Core** - 数据库迁移工具
-- **PostgreSQL** - 数据库
-- **Lombok** - 简化 Java 代码
+- **Flyway Core** - 資料庫遷移工具
+- **PostgreSQL** - 資料庫
+- **Lombok** - 簡化 Java 代碼
 
-## Flyway 迁移文件命名规则
+## Flyway 遷移檔命名規則
 
-Flyway 使用特定的文件命名约定来管理数据库迁移，每个前缀都有其特殊含义：
+Flyway 使用特定的檔命名約定來管理資料庫遷移，每個首碼都有其特殊含義：
 
-### V - 版本化迁移 (Versioned Migrations)
+### V - 版本化遷移 (Versioned Migrations)
 
-**格式：** `V<版本号>__<描述>.sql` 或 `V<版本号>__<描述>.java`
+**格式：** `V<版本號>__<描述>.sql` 或 `V<版本號>__<描述>.java`
 
-**特点：**
-- 只执行一次
-- 按版本号顺序执行
-- 一旦应用就不能修改
-- 用于结构性变更和初始数据
+**特點：**
+- 只執行一次
+- 按版本號循序執行
+- 一旦應用就不能修改
+- 用於結構性變更和初始資料
 
-**项目中的示例：**
-- `V1.0.0__create_javastack.sql` - 创建 t_javastack 表
-- `V1.0.1__insert_javastack.sql` - 插入初始测试数据
-- `V1.0.2__update_javastack.sql` - 更新标题字段
+**項目中的示例：**
+- `V1.0.0__create_javastack.sql` - 創建 t_javastack 表
+- `V1.0.1__insert_javastack.sql` - 插入初始測試資料
+- `V1.0.2__update_javastack.sql` - 更新標題欄位
 - `V1.0.3__alter_javastack.sql` - 添加新列
-- `V1.0.4__update_javastack.sql` - 更新新增字段
-- `V1_0_5__ComplexMigration.java` - 复杂 Java 迁移
+- `V1.0.4__update_javastack.sql` - 更新新增欄位
+- `V1_0_5__ComplexMigration.java` - 複雜 Java 遷移
 
-### R - 可重复迁移 (Repeatable Migrations)
+### R - 可重複遷移 (Repeatable Migrations)
 
 **格式：** `R__<描述>.sql`
 
-**特点：**
-- 每次检测到文件变更时都会重新执行
-- 在所有版本化迁移之后执行
-- 适用于视图、存储过程、函数等可重复应用的对象
+**特點：**
+- 每次檢測到檔變更時都會重新執行
+- 在所有版本化遷移之後執行
+- 適用於視圖、存儲過程、函數等可重複應用的物件
 
-**项目中的示例：**
-- `R__update_javastack.sql` - 可重复的数据更新操作
+**項目中的示例：**
+- `R__update_javastack.sql` - 可重複的資料更新操作
 
-## 迁移执行顺序
+## 遷移執行順序
 
-根据文件名，迁移的执行顺序为：
+根據檔案名，遷移的執行順序為：
 
-1. `V1.0.0__create_javastack.sql` - 创建基础表结构
-2. `V1.0.1__insert_javastack.sql` - 插入测试数据
-3. `V1.0.2__update_javastack.sql` - 更新现有数据
-4. `V1.0.3__alter_javastack.sql` - 修改表结构（添加列）
+1. `V1.0.0__create_javastack.sql` - 創建基礎資料表結構
+2. `V1.0.1__insert_javastack.sql` - 插入測試資料
+3. `V1.0.2__update_javastack.sql` - 更新現有資料
+4. `V1.0.3__alter_javastack.sql` - 修改表結構（添加列）
 5. `V1.0.4__update_javastack.sql` - 更新新增的列
-6. `V1_0_5__ComplexMigration.java` - 执行复杂的业务逻辑迁移
-7. `R__update_javastack.sql` - 可重复执行的更新（如有变更）
+6. `V1_0_5__ComplexMigration.java` - 執行複雜的業務邏輯遷移
+7. `R__update_javastack.sql` - 可重複執行的更新（如有變更）
 
-## Java 迁移示例解析
+## Java 遷移示例解析
 
-`V1_0_5__ComplexMigration.java` 展示了复杂的 Java 迁移实现：
+`V1_0_5__ComplexMigration.java` 展示了複雜的 Java 遷移實現：
 
-- **数据查询与处理**：查询现有数据并根据业务逻辑进行条件更新
-- **批量处理**：逐条处理记录并应用不同的业务规则
-- **迁移验证**：执行后验证迁移结果的正确性
-- **自定义映射**：使用 RowMapper 处理查询结果
+- **資料查詢與處理**：查詢現有資料並根據業務邏輯進行條件更新
+- **批量處理**：逐條處理記錄並應用不同的業務規則
+- **遷移驗證**：執行後驗證遷移結果的正確性
+- **自訂映射**：使用 RowMapper 處理查詢結果
 
-## ⚠️ Flyway Undo 功能已废弃
-Flyway Undo 是 Fl​​way 的商業功能，社群版中不提供此功能。
+## ⚠️ Flyway Undo 功能已廢棄
+Flyway Undo 是 Flway 的商業功能，社群版中不提供此功能。
 
-### 什么是 Undo 功能？
+### 什麼是 Undo 功能？
 
-在早期版本的 Flyway 中，存在 Undo 功能，允许回滚已应用的迁移：
+在早期版本的 Flyway 中，存在 Undo 功能，允許回滾已應用的遷移：
 
-- **U前缀文件**：如 `U1.0.1__undo_something.sql`
-- **回滚机制**：可以撤销特定版本的迁移
+- **U首碼檔**：如 `U1.0.1__undo_something.sql`
+- **回滾機制**：可以撤銷特定版本的遷移
 
-### 为什么被废弃？
+### 為什麼被廢棄？
 
-1. **复杂性**：数据库回滚操作极其复杂，容易导致数据丢失
-2. **风险性**：不当的回滚可能造成不可逆的数据损坏
-3. **维护成本**：需要为每个迁移编写对应的回滚脚本
-4. **实际需求**：在生产环境中，回滚数据库变更是极其罕见的操作
+1. **複雜性**：資料庫回滾操作極其複雜，容易導致資料丟失
+2. **風險性**：不當的回滾可能造成不可逆的資料損壞
+3. **維護成本**：需要為每個遷移編寫對應的回滾腳本
+4. **實際需求**：在生產環境中，回滾資料庫變更是極其罕見的操作
 
 ### 替代方案
 
-现代数据库迁移推荐使用以下策略：
+現代資料庫遷移推薦使用以下策略：
 
-1. **向前迁移**：通过新的迁移来修复问题，而不是回滚
-2. **数据库备份**：在重要变更前创建完整备份
-3. **蓝绿部署**：使用部署策略来降低风险
-4. **渐进式迁移**：将大的变更分解为小的、可测试的步骤
+1. **向前遷移**：通過新的遷移來修復問題，而不是回滾
+2. **資料庫備份**：在重要變更前創建完整備份
+3. **藍綠部署**：使用部署策略來降低風險
+4. **漸進式遷移**：將大的變更分解為小的、可測試的步驟
 
-## 配置说明
+## 配置說明
 
 在 `application.properties` 中的完整 Flyway 配置：
 
@@ -113,63 +113,64 @@ spring.flyway.validate-on-migrate=true
 spring.flyway.enabled=true
 ```
 
-### 配置参数详解
+### 配置參數詳解
 
-| 配置项 | 值 | 说明 |
+| 配置項 | 值 | 說明 |
 |--------|----|----- |
-| `spring.flyway.url` | `jdbc:postgresql://localhost:5432/Flyway` | 数据库连接URL，指向名为"Flyway"的PostgreSQL数据库 |
-| `spring.flyway.user` | `Flyway` | 数据库用户名 |
-| `spring.flyway.password` | `123456` | 数据库密码 |
-| `spring.flyway.locations` | `classpath:doc/migration/common,classpath:db/migration` | 迁移文件位置，支持多个路径 |
-| `spring.flyway.table` | `flyway_schema_history` | Flyway元数据表名，记录迁移历史 |
-| `spring.flyway.baseline-on-migrate` | `true` | 对于已有数据库，首次运行时创建基线 |
-| `spring.flyway.baseline-version` | `1.0` | 基线版本号 |
-| `spring.flyway.out-of-order` | `true` | 允许乱序执行迁移（谨慎使用） |
-| `spring.flyway.validate-on-migrate` | `true` | 迁移前验证已应用的迁移 |
-| `spring.flyway.enabled` | `true` | 启用Flyway自动迁移 |
+| `spring.flyway.url` | `jdbc:postgresql://localhost:5432/Flyway` | 資料庫連接URL，指向名為"Flyway"的PostgreSQL資料庫 |
+| `spring.flyway.user` | `Flyway` | 資料庫用戶名 |
+| `spring.flyway.password` | `123456` | 資料庫密碼 |
+| `spring.flyway.locations` | `classpath:doc/migration/common,classpath:db/migration` | 遷移檔位置，支援多個路徑 |
+| `spring.flyway.table` | `flyway_schema_history` | Flyway中繼資料表名，記錄遷移歷史 |
+| `spring.flyway.baseline-on-migrate` | `true` | 對於已有資料庫，首次運行時創建基線 |
+| `spring.flyway.baseline-version` | `1.0` | 基線版本號 |
+| `spring.flyway.out-of-order` | `true` | 允許亂序執行遷移（謹慎使用） |
+| `spring.flyway.validate-on-migrate` | `true` | 遷移前驗證已應用的遷移 |
+| `spring.flyway.enabled` | `true` | 啟用Flyway自動遷移 |
 
-### 重要配置说明
+### 重要配置說明
 
-**多路径迁移文件：**
+**多路徑遷移檔：**
 ```
 spring.flyway.locations=classpath:doc/migration/common,classpath:db/migration
 ```
-- `doc/migration/common` - 通用迁移文件
-- `db/migration` - 项目特定迁移文件
+- `doc/migration/common` - 通用遷移檔
+- `db/migration` - 專案特定遷移檔
 
-**乱序执行 (out-of-order)：**
-- 设置为 `true` 允许版本号较小的迁移在较大版本之后执行
-- 适用于并行开发场景，但生产环境需谨慎使用
-- 可能导致不同环境间的迁移执行顺序不一致
+**亂序執行 (out-of-order)：**
+- 設置為 `true` 允許版本號較小的遷移在較大版本之後執行
+- 適用于並行開發場景，但生產環境需謹慎使用
+- 可能導致不同環境間的遷移執行順序不一致
 
-**基线迁移 (baseline-on-migrate)：**
-- 适用于已存在数据的数据库
-- 首次运行时会在指定版本创建基线，跳过之前的迁移
-- 对于全新数据库建议设置为 `false`
+**基線遷移 (baseline-on-migrate)：**
+- 適用於已存在資料的資料庫
+- 首次運行時會在指定版本創建基線，跳過之前的遷移
+- 對於全新資料庫建議設置為 `false`
 
-## 运行项目
+## 運行項目
 
-1. 确保 PostgreSQL 数据库运行中
-2. 配置数据库连接信息
-3. 运行 Spring Boot 应用
-4. Flyway 将自动执行所有待处理的迁移
+1. 確保 PostgreSQL 資料庫運行中
+2. 配置資料庫連接資訊
+3. 運行 Spring Boot 應用
+4. Flyway 將自動執行所有待處理的遷移
 
-## 最佳实践
+## 最佳實踐
 
-1. **命名规范**：使用清晰、描述性的文件名
-2. **版本管理**：按时间顺序递增版本号
-3. **测试优先**：在测试环境中验证所有迁移
-4. **备份策略**：生产环境变更前必须备份
-5. **向前兼容**：设计迁移时考虑向前兼容性
-6. **文档记录**：为复杂迁移添加详细注释
+1. **命名規範**：使用清晰、描述性的檔案名
+2. **版本管理**：按時間順序遞增版本號
+3. **測試優先**：在測試環境中驗證所有遷移
+4. **備份策略**：生產環境變更前必須備份
+5. **向前相容**：設計遷移時考慮向前相容性
+6. **文檔記錄**：為複雜遷移添加詳細注釋
 
-## 注意事项
+## 注意事項
 
-- 已应用的版本化迁移文件不应修改
-- 可重复迁移会在每次应用启动时检查变更
-- Java 迁移适用于复杂的数据处理逻辑
-- 在生产环境中应谨慎使用数据修改操作
+- 已應用的版本化遷移檔不應修改
+- 可重複遷移會在每次應用啟動時檢查變更
+- Java 遷移適用於複雜的資料處理邏輯
+- 在生產環境中應謹慎使用資料修改操作
 
 ---
 
-此项目展示了 Flyway 的核心功能和最佳实践，为数据库版本管理提供了完整的参考实现。
+此專案展示了 Flyway 的核心功能和最佳實踐，為資料庫版本管理提供了完整的參考實現。
+
