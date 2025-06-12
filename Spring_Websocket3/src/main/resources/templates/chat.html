@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 聊天室</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SockJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <!-- STOMP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    
+    <style>
+        .chat-container {
+            height: 600px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.own {
+            text-align: right;
+        }
+        
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .message-info {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .message.own .message-info {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .system-message {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            background-color: #e9ecef;
+            padding: 8px;
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+        
+        .private-message {
+            border-left: 4px solid #28a745;
+            background-color: #d4edda;
+        }
+        
+        .admin-message {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .online-users {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .user-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #28a745;
+            margin-right: 8px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .room-tabs {
+            background-color: white;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .room-tab {
+            cursor: pointer;
+            padding: 10px 15px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .room-tab.active {
+            border-bottom-color: #667eea;
+            background-color: #f8f9fa;
+        }
+        
+        .room-tab:hover {
+            background-color: #e9ecef;
+        }
+        
+        .typing-indicator {
+            font-style: italic;
+            color: #6c757d;
+            min-height: 20px;
+            padding: 5px 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 連接狀態提示 -->
+    <div id="connectionStatus" class="connection-status">
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> 未連接
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- 左側：聊天室列表和在線用戶 -->
+            <div class="col-md-3">
+                <!-- 用戶信息 -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-user"></i> 用戶信息</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用戶名</label>
+                            <input type="text" class="form-control" id="username" 
+                                   th:value="${username != null ? username : ''}" 
+                                   placeholder="請輸入用戶名">
+                        </div>
+                        <button class="btn btn-primary w-100" id="connectBtn" onclick="connect()">
+                            <i class="fas fa-plug"></i> 連接
+                        </button>
+                        <button class="btn btn-danger w-100" id="disconnectBtn" onclick="disconnect()" style="display: none;">
+                            <i class="fas fa-times"></i> 斷開連接
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 聊天室列表 -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-comments"></i> 聊天室</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action room-item active" 
+                               data-room="public" onclick="switchRoom('public')">
+                                <i class="fas fa-globe"></i> 公共聊天室
+                                <span class="badge bg-primary rounded-pill float-end" id="publicCount">0</span>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action room-item" 
+                               data-room="tech" onclick="switchRoom('tech')">
+                                <i class="fas fa-code"></i> 技術討論
+                                <span class="badge bg-primary rounded-pill float-end" id="techCount">0</span>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action room-item" 
+                               data-room="game" onclick="switchRoom('game')">
+                                <i class="fas fa-gamepad"></i> 遊戲聊天
+                                <span class="badge bg-primary rounded-pill float-end" id="gameCount">0</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 在線用戶 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-users"></i> 在線用戶 (<span id="onlineCount">0</span>)</h6>
+                    </div>
+                    <div class="card-body online-users" id="onlineUsers">
+                        <!-- 動態加載在線用戶 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：聊天區域 -->
+            <div class="col-md-9">
+                <div class="chat-container">
+                    <!-- 聊天標題 -->
+                    <div class="chat-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments"></i> 
+                            <span id="currentRoomName">公共聊天室</span>
+                            <small class="float-end">
+                                <span class="user-status"></span>
+                                <span id="roomUserCount">0</span> 人在線
+                            </small>
+                        </h5>
+                    </div>
+
+                    <!-- 消息區域 -->
+                    <div class="chat-messages" id="messageArea">
+                        <!-- 動態加載消息 -->
+                    </div>
+
+                    <!-- 正在輸入提示 -->
+                    <div class="typing-indicator" id="typingIndicator"></div>
+
+                    <!-- 輸入區域 -->
+                    <div class="chat-input">
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="text" class="form-control" id="messageInput" 
+                                       placeholder="輸入消息..." maxlength="500" 
+                                       onkeypress="handleKeyPress(event)">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" disabled>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary dropdown-toggle" type="button" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="showPrivateMessageModal()">
+                                            <i class="fas fa-lock"></i> 私人消息
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="clearMessages()">
+                                            <i class="fas fa-trash"></i> 清空消息
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="showSettings()">
+                                            <i class="fas fa-cog"></i> 設置
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 私人消息模態框 -->
+    <div class="modal fade" id="privateMessageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-lock"></i> 發送私人消息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="privateRecipient" class="form-label">接收者</label>
+                        <select class="form-select" id="privateRecipient">
+                            <option value="">選擇用戶...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="privateContent" class="form-label">消息內容</label>
+                        <textarea class="form-control" id="privateContent" rows="3" 
+                                  placeholder="輸入私人消息..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="sendPrivateMessage()">發送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 全局變量
+        let stompClient = null;
+        let currentRoom = 'public';
+        let username = '';
+        let connected = false;
+        let typingTimer = null;
+        let roomSubscriptions = {}; // 存儲房間訂閱
+
+        // 頁面載入完成後執行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 如果 Thymeleaf 提供了用戶名，自動填入
+            const usernameInput = document.getElementById('username');
+            if (usernameInput.value) {
+                username = usernameInput.value;
+            }
+
+            // 設置消息輸入框事件
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('input', function() {
+                if (connected && this.value.trim()) {
+                    sendTypingIndicator();
+                }
+            });
+        });
+
+        // 連接 WebSocket
+        function connect() {
+            const usernameInput = document.getElementById('username').value.trim();
+            if (!usernameInput) {
+                alert('請輸入用戶名');
+                return;
+            }
+
+            username = usernameInput;
+
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+
+            // 設置調試信息
+            stompClient.debug = function(str) {
+                console.log('STOMP: ' + str);
+            };
+
+            stompClient.connect({}, function(frame) {
+                console.log('連接成功: ' + frame);
+                connected = true;
+                updateConnectionStatus(true);
+
+                // 訂閱當前房間
+                subscribeToRoom(currentRoom);
+
+                // 訂閱私人消息
+                stompClient.subscribe('/user/queue/private', function(message) {
+                    const privateMsg = JSON.parse(message.body);
+                    showPrivateMessage(privateMsg);
+                });
+
+                // 訂閱系統通知
+                stompClient.subscribe('/topic/notifications', function(message) {
+                    const notification = JSON.parse(message.body);
+                    showNotification(notification);
+                });
+
+                // 訂閱用戶列表更新
+                stompClient.subscribe('/user/queue/users', function(message) {
+                    const users = JSON.parse(message.body);
+                    updateOnlineUsers(users);
+                });
+
+                // 發送加入消息
+                joinRoom(currentRoom);
+
+            }, function(error) {
+                console.error('連接失敗: ' + error);
+                updateConnectionStatus(false);
+                showError('連接失敗，請檢查網絡連接');
+            });
+        }
+
+        // 加入房間
+        function joinRoom(roomId) {
+            if (!connected || !stompClient) return;
+
+            const joinMessage = {
+                sender: username,
+                content: username + ' 加入了聊天室',
+                type: 'JOIN',
+                roomId: roomId
+            };
+
+            // 發送加入消息
+            stompClient.send('/app/chat/' + roomId, {}, JSON.stringify(joinMessage));
+            console.log('發送加入消息到房間: ' + roomId);
+        }
+
+        // 離開房間
+        function leaveRoom(roomId) {
+            if (!connected || !stompClient) return;
+
+            const leaveMessage = {
+                sender: username,
+                content: username + ' 離開了聊天室',
+                type: 'LEAVE',
+                roomId: roomId
+            };
+
+            stompClient.send('/app/chat/' + roomId, {}, JSON.stringify(leaveMessage));
+        }
+
+        // 斷開連接
+        function disconnect() {
+            if (stompClient !== null && connected) {
+                // 發送離開消息
+                leaveRoom(currentRoom);
+
+                setTimeout(() => {
+                    stompClient.disconnect();
+                    connected = false;
+                    updateConnectionStatus(false);
+                    console.log('已斷開連接');
+                }, 100);
+            }
+        }
+
+        // 訂閱聊天室
+        function subscribeToRoom(roomId) {
+            if (!stompClient || !connected) return;
+
+            // 如果已經訂閱了這個房間，先取消訂閱
+            if (roomSubscriptions[roomId]) {
+                roomSubscriptions[roomId].unsubscribe();
+            }
+
+            // 訂閱房間消息
+            roomSubscriptions[roomId] = stompClient.subscribe('/topic/room/' + roomId, function(message) {
+                const chatMessage = JSON.parse(message.body);
+                console.log('收到房間消息:', chatMessage);
+                if (roomId === currentRoom) {
+                    showMessage(chatMessage);
+                }
+            });
+
+            // 訂閱房間用戶列表
+            stompClient.subscribe('/topic/room/' + roomId + '/users', function(message) {
+                const users = JSON.parse(message.body);
+                console.log('收到用戶列表更新:', users);
+                if (roomId === currentRoom) {
+                    updateOnlineUsers(users);
+                }
+                updateRoomCount(roomId, users.length);
+            });
+
+            console.log('訂閱房間: ' + roomId);
+        }
+
+        // 切換聊天室
+        function switchRoom(roomId) {
+            if (roomId === currentRoom) return;
+
+            console.log('切換房間從 ' + currentRoom + ' 到 ' + roomId);
+
+            // 發送離開當前房間消息
+            if (connected && currentRoom) {
+                leaveRoom(currentRoom);
+            }
+
+            // 更新 UI
+            document.querySelectorAll('.room-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-room="${roomId}"]`).classList.add('active');
+
+            // 清空消息區域
+            document.getElementById('messageArea').innerHTML = '';
+
+            // 訂閱新房間
+            subscribeToRoom(roomId);
+
+            // 更新當前房間
+            currentRoom = roomId;
+            document.getElementById('currentRoomName').textContent = getRoomName(roomId);
+
+            // 發送加入新房間消息
+            if (connected) {
+                joinRoom(currentRoom);
+            }
+        }
+
+        // 發送消息
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+
+            if (content && stompClient && connected) {
+                const chatMessage = {
+                    sender: username,
+                    content: content,
+                    roomId: currentRoom,
+                    type: 'CHAT'
+                };
+
+                console.log('發送消息:', chatMessage);
+                stompClient.send('/app/chat/' + currentRoom, {}, JSON.stringify(chatMessage));
+                messageInput.value = '';
+            }
+        }
+
+        // 處理按鍵事件
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 發送私人消息
+        function sendPrivateMessage() {
+            const recipient = document.getElementById('privateRecipient').value;
+            const content = document.getElementById('privateContent').value.trim();
+
+            if (!recipient || !content) {
+                alert('請選擇接收者並輸入消息內容');
+                return;
+            }
+
+            const privateMessage = {
+                sender: username,
+                recipient: recipient,
+                content: content
+            };
+
+            stompClient.send('/app/chat/private', {}, JSON.stringify(privateMessage));
+
+            // 清空表單並關閉模態框
+            document.getElementById('privateRecipient').value = '';
+            document.getElementById('privateContent').value = '';
+            bootstrap.Modal.getInstance(document.getElementById('privateMessageModal')).hide();
+        }
+
+        // 顯示消息
+        function showMessage(message) {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+
+            if (message.type === 'JOIN' || message.type === 'LEAVE') {
+                messageDiv.className = 'system-message';
+                messageDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message.content}`;
+            } else if (message.type === 'CHAT') {
+                messageDiv.className = 'message' + (message.sender === username ? ' own' : '');
+
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'message-bubble';
+                bubbleDiv.innerHTML = `
+                    <div><strong>${escapeHtml(message.sender)}</strong></div>
+                    <div>${escapeHtml(message.content)}</div>
+                `;
+
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'message-info';
+                infoDiv.textContent = formatTime(message.timestamp);
+
+                messageDiv.appendChild(bubbleDiv);
+                messageDiv.appendChild(infoDiv);
+            }
+
+            messageArea.appendChild(messageDiv);
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        // 顯示私人消息
+        function showPrivateMessage(message) {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message private-message';
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div><i class="fas fa-lock"></i> <strong>私人消息 從 ${escapeHtml(message.sender)}</strong></div>
+                    <div>${escapeHtml(message.content)}</div>
+                    <div class="message-info">${formatTime(message.timestamp)}</div>
+                </div>
+            `;
+
+            messageArea.appendChild(messageDiv);
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        // 顯示通知
+        function showNotification(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'toast position-fixed top-0 end-0 m-3';
+            toast.innerHTML = `
+                <div class="toast-header">
+                    <i class="fas fa-bell text-primary me-2"></i>
+                    <strong class="me-auto">通知</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${escapeHtml(notification.message || notification.content)}
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+            const toastInstance = new bootstrap.Toast(toast);
+            toastInstance.show();
+
+            // 3秒後自動移除
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // 顯示錯誤
+        function showError(errorMsg) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x';
+            alert.style.zIndex = '9999';
+            alert.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i> ${errorMsg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alert);
+
+            // 5秒後自動移除
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // 更新在線用戶列表
+        function updateOnlineUsers(users) {
+            const onlineUsersDiv = document.getElementById('onlineUsers');
+            const onlineCountSpan = document.getElementById('onlineCount');
+            const roomUserCountSpan = document.getElementById('roomUserCount');
+
+            // 更新用戶數量
+            const userCount = Array.isArray(users) ? users.length : 0;
+            onlineCountSpan.textContent = userCount;
+            roomUserCountSpan.textContent = userCount;
+
+            // 更新用戶列表
+            if (Array.isArray(users) && users.length > 0) {
+                onlineUsersDiv.innerHTML = users.map(user => `
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="user-status"></span>
+                        <span>${escapeHtml(user)}</span>
+                        ${user === username ? '<small class="text-muted ms-auto">(你)</small>' : ''}
+                    </div>
+                `).join('');
+            } else {
+                onlineUsersDiv.innerHTML = '<div class="text-muted">暫無在線用戶</div>';
+            }
+        }
+
+        // 更新房間人數
+        function updateRoomCount(roomId, count) {
+            const countElement = document.getElementById(roomId + 'Count');
+            if (countElement) {
+                countElement.textContent = count || 0;
+            }
+        }
+
+        // 更新連接狀態
+        function updateConnectionStatus(isConnected) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (isConnected) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success" role="alert">
+                        <i class="fas fa-check-circle"></i> 已連接
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'block';
+                sendBtn.disabled = false;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> 未連接
+                    </div>
+                `;
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+                sendBtn.disabled = true;
+
+                // 重置用戶列表
+                updateOnlineUsers([]);
+            }
+        }
+
+        // 輔助函數
+        function getRoomName(roomId) {
+            const names = {
+                'public': '公共聊天室',
+                'tech': '技術討論',
+                'game': '遊戲聊天'
+            };
+            return names[roomId] || roomId;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('zh-TW', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function clearMessages() {
+            document.getElementById('messageArea').innerHTML = '';
+        }
+
+        function showPrivateMessageModal() {
+            // 更新私人消息接收者列表
+            // 這裡可以從服務器獲取在線用戶列表
+            const modal = new bootstrap.Modal(document.getElementById('privateMessageModal'));
+            modal.show();
+        }
+
+        function showSettings() {
+            alert('設置功能待實現...');
+        }
+
+        function sendTypingIndicator() {
+            // 實現正在輸入指示器
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                // 發送停止輸入指示
+            }, 1000);
+        }
+
+        // 頁面關閉前斷開連接
+        window.addEventListener('beforeunload', function() {
+            if (connected) {
+                disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
