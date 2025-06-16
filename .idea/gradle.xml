@@ -235,6 +235,14 @@
           </set>
         </option>
       </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Websocket4" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Websocket4" />
+          </set>
+        </option>
+      </GradleProjectSettings>
     </option>
   </component>
 </project>
