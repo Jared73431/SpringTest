@@ -1,0 +1,64 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Flyway
+    username: Flyway
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      
+  thymeleaf:
+    cache: false
+
+  jackson:
+    # 禁用將日期寫為時間戳
+    serialization:
+      write-dates-as-timestamps: false
+    # 反序列化時忽略未知屬性
+    deserialization:
+      fail-on-unknown-properties: false
+    # 啟用 Java 8 時間支持
+    modules:
+      - com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+    
+# 文件上傳配置
+file:
+  upload:
+    dir: D:/uploads
+    max-size: 10485760  # 10MB
+    allowed-types: 
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+      - application/pdf
+      - text/plain
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      
+# 聊天室配置
+chat:
+  room:
+    max-users: 100
+    message-history-limit: 1000
+    
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.demo: DEBUG
+    org.springframework.web.socket: DEBUG

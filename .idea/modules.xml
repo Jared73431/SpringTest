@@ -28,6 +28,8 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Thymeleaf.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Thymeleaf.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket2.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket2.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket3.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket3.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spring_Websocket4.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Spring_Websocket4.main.iml" />
     </modules>
   </component>
 </project>
