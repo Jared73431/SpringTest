@@ -44,6 +44,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Batch-6" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Batch-6" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Eureka" />
         <option name="modules">
           <set>
