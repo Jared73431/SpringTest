@@ -1,0 +1,47 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.0'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot Starters
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// OKHttp 核心庫
+	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+	// OKHttp LoggingInterceptor
+	implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+
+	// Gson - 用於JSON序列化和反序列化
+	implementation 'com.google.code.gson:gson:2.10.1'
+
+	// Spring Boot 測試
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+}
+
+// 測試配置
+test {
+	useJUnitPlatform()
+}
+
+// 編譯選項
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += ['-parameters']
+}
