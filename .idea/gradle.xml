@@ -148,6 +148,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Okhttp" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Okhttp" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Quartz" />
         <option name="modules">
           <set>
