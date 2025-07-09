@@ -132,6 +132,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_HttpClient" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_HttpClient" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_JPA" />
         <option name="modules">
           <set>
@@ -188,6 +196,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_R2DBC2" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_R2DBC2" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Redis" />
         <option name="modules">
           <set>
@@ -232,6 +248,14 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/Spring_Thymeleaf" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Webflux" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Webflux" />
           </set>
         </option>
       </GradleProjectSettings>
