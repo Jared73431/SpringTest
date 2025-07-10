@@ -196,14 +196,6 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_R2DBC2" />
-        <option name="modules">
-          <set>
-            <option value="$PROJECT_DIR$/Spring_R2DBC2" />
-          </set>
-        </option>
-      </GradleProjectSettings>
-      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Redis" />
         <option name="modules">
           <set>

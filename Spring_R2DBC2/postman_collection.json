@@ -1,0 +1,404 @@
+{
+  "info": {
+    "name": "Car Management API",
+    "description": "Spring Boot R2DBC 汽車管理 API 測試集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "汽車管理",
+      "description": "基本的汽車 CRUD 操作",
+      "item": [
+        {
+          "name": "取得所有汽車",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "根據ID取得汽車",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "建立新汽車",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2023,\n  \"color\": \"White\",\n  \"price\": 30000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "更新汽車資訊",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry Hybrid\",\n  \"year\": 2023,\n  \"color\": \"Blue\",\n  \"price\": 32000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "刪除汽車",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "搜尋功能",
+      "description": "各種搜尋和查詢功能",
+      "item": [
+        {
+          "name": "根據品牌搜尋",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/search?make=Toyota",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "search"],
+              "query": [
+                {
+                  "key": "make",
+                  "value": "Toyota"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "根據型號搜尋",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/search?model=Camry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "search"],
+              "query": [
+                {
+                  "key": "model",
+                  "value": "Camry"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "根據年份搜尋",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/search?year=2022",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "search"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2022"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "根據價格範圍搜尋",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/search?minPrice=20000&maxPrice=40000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "search"],
+              "query": [
+                {
+                  "key": "minPrice",
+                  "value": "20000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "40000"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "根據年份範圍搜尋",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/search?yearFrom=2020&yearTo=2023",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "search"],
+              "query": [
+                {
+                  "key": "yearFrom",
+                  "value": "2020"
+                },
+                {
+                  "key": "yearTo",
+                  "value": "2023"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "計算品牌汽車數量",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/count?make=Toyota",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "count"],
+              "query": [
+                {
+                  "key": "make",
+                  "value": "Toyota"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "測試案例",
+      "description": "各種測試案例，包括錯誤處理",
+      "item": [
+        {
+          "name": "建立汽車 - 驗證錯誤",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"\",\n  \"model\": \"\",\n  \"year\": 1800,\n  \"color\": \"Red\",\n  \"price\": -1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "取得不存在的汽車",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "更新不存在的汽車",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Camry\",\n  \"year\": 2023,\n  \"color\": \"Blue\",\n  \"price\": 32000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "刪除不存在的汽車",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cars/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars", "999"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "批次測試數據",
+      "description": "用於測試的批次數據建立",
+      "item": [
+        {
+          "name": "建立 Honda Civic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Honda\",\n  \"model\": \"Civic\",\n  \"year\": 2021,\n  \"color\": \"Blue\",\n  \"price\": 22000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "建立 BMW X3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"BMW\",\n  \"model\": \"X3\",\n  \"year\": 2023,\n  \"color\": \"Black\",\n  \"price\": 45000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "建立 Mercedes C-Class",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Mercedes\",\n  \"model\": \"C-Class\",\n  \"year\": 2022,\n  \"color\": \"Silver\",\n  \"price\": 42000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "建立 Audi A4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Audi\",\n  \"model\": \"A4\",\n  \"year\": 2021,\n  \"color\": \"Red\",\n  \"price\": 38000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cars"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
