@@ -244,6 +244,14 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Swagger" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/Spring_Swagger" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/Spring_Thymeleaf" />
         <option name="modules">
           <set>
