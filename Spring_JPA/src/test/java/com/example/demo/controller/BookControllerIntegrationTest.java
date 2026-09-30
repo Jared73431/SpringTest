@@ -125,16 +125,17 @@ class BookControllerIntegrationTest extends PostgresContainerTestBase {
 		assertThat(bookRepo.findById(saved.getId()).orElseThrow().getTitle()).isEqualTo("Java");
 	}
 
-	// [Potential Bug] 目前「更新」不存在的 id 也會新增一筆，預計修正
+	// [Potential Bug] Hibernate 5（Boot 2.7）會默默新增一筆；
+	// Hibernate 6.6（Boot 3.5+）對不存在的 id 執行 merge 會拋出 StaleObjectStateException，因此回 500。
+	// 預計修正為 404
 	@Test
-	void updateBook_shouldInsertNewRow_whenIdNotExists() {
-		ResponseEntity<Book> response = restTemplate.postForEntity(
+	void updateBook_shouldReturnInternalServerError_whenIdNotExists() {
+		ResponseEntity<String> response = restTemplate.postForEntity(
 				"/updateBook?ID=999999&ISBN=11111&title=Ghost&author=X&year=2000&publisher=P&cost=1", null,
-				Book.class);
+				String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody().getId()).isNotEqualTo(999999);
-		assertThat(bookRepo.count()).isEqualTo(1);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(bookRepo.count()).isZero();
 	}
 
 	@Test
