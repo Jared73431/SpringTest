@@ -24,10 +24,12 @@ class HelloControllerTest {
 				.andExpect(content().string("Hello World"));
 	}
 
+	// Spring Boot 2.7 會把 /hello/ 視為 /hello（回 200）；
+	// Spring Framework 6（Boot 3+）預設不再比對結尾斜線，改回 404
 	@Test
-	void hello_shouldReturnOk_whenPathHasTrailingSlash() throws Exception {
+	void hello_shouldReturnNotFound_whenPathHasTrailingSlash() throws Exception {
 		mockMvc.perform(get("/hello/"))
-				.andExpect(status().isOk());
+				.andExpect(status().isNotFound());
 	}
 
 	@Test
