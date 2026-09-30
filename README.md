@@ -48,7 +48,7 @@
 
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
-| [Spring_HelloWorld](Spring_HelloWorld) 📘 | 入門 | 最小 REST Controller | — |
+| [Spring_HelloWorld](Spring_HelloWorld) 📘 | 入門 | 最小 REST Controller（`GET /api/hello`）、`@WebMvcTest` 測試 ✅ 已現代化 | — |
 | [Spring_Thymeleaf](Spring_Thymeleaf) | 模板引擎 | Thymeleaf 頁面渲染 | — |
 | [Spring_Swagger](Spring_Swagger) 📘 | API 文件 | springdoc-openapi、統一回應格式、全域例外處理 | 🐘 |
 | [Spring_Webflux](Spring_Webflux) | Reactive Streams | Mono / Flux 各種操作子示範 | — |
@@ -96,11 +96,12 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 ## 技術版本
 
-各模組建立的時間不同，目前版本並不一致（會在現代化過程中逐步統一）：
+各模組建立的時間不同，目前版本並不一致。現代化的目標版本為 **Spring Boot 4.1 + Java 21**，已完成的模組標示 ✅：
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| 2.7.x | 11 / 17 | Eureka、Feign_Client、Feign_Server、JPA、HelloWorld、Security3 |
+| **4.1.x** | **21** | HelloWorld ✅ |
+| 2.7.x | 11 / 17 | Eureka、Feign_Client、Feign_Server、JPA、Security3 |
 | 3.0.x | 17 | Eureka_Client、Eureka_Provider、Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
@@ -114,7 +115,8 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 ### 1. 環境需求
 
-- JDK 17（Spring Boot 2.7 的模組也可以用 JDK 11）
+- JDK 21（已現代化的模組，標示 ✅）
+- JDK 17（其餘模組；Spring Boot 2.7 的模組也可以用 JDK 11）
 - PostgreSQL（標示 🐘 的模組）
 - Redis（標示 🟥 的模組）
 
