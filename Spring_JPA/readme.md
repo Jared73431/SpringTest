@@ -56,7 +56,7 @@ src/main/java/com/example/demo/
 ```
 
 - 預設 port：`8081`
-- 資料庫帳密由環境變數 `DB_USERNAME` / `DB_PASSWORD` 提供（預設 `postgres` / `postgres`）
+- 資料庫連線方式請見下方「[資料庫連線設定](#資料庫連線設定)」
 
 ### Docker
 
@@ -67,6 +67,142 @@ docker compose up --build
 
 - 使用 `docker` profile，port `8015`
 - 需要事先存在名為 `database_net_postgres` 的 Docker network，且 PostgreSQL 容器在該網路中的名稱為 `postgres`
+
+## 資料庫連線設定
+
+### 需要準備的資訊
+
+| 項目 | 本機執行（預設） | Docker（`docker` profile） | 說明 |
+|---|---|---|---|
+| Host | `localhost` | `postgres` | 資料庫所在的主機；Docker 內使用容器名稱 |
+| Port | `5432` | `5432` | PostgreSQL 預設 port |
+| Database | `test` | `test` | 資料庫名稱，**需事先建立** |
+| Username | `postgres` | `postgres` | 可用環境變數 `DB_USERNAME` 覆寫 |
+| Password | `postgres` | `postgres` | 可用環境變數 `DB_PASSWORD` 覆寫 |
+
+資料表（`book`）與 Sequence（`book_id_seq`）不需要手動建立，應用程式啟動時由 Hibernate 自動建立（見下方 `ddl-auto`）。
+
+### JDBC URL 的組成
+
+```text
+jdbc:postgresql://localhost:5432/test
+└──┬─┘└───┬────┘  └───┬───┘└┬─┘└┬─┘
+  協定   資料庫種類     Host   Port Database
+```
+
+JDBC Driver 會依照 URL 中的 `postgresql` 自動選擇，不需要另外設定 `driver-class-name`。
+
+### 快速準備一個 PostgreSQL
+
+若本機沒有 PostgreSQL，可以用 Docker 啟動（`POSTGRES_DB=test` 會自動建立資料庫）：
+
+```bash
+docker run -d --name postgres -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=test \
+  postgres:15-alpine
+```
+
+若已有 PostgreSQL，只需建立資料庫：
+
+```sql
+CREATE DATABASE test;
+```
+
+### 如何修改連線資訊
+
+帳號密碼透過環境變數提供，設定檔中只保留預設值：
+
+```properties
+# 有環境變數 DB_USERNAME 就用它的值，沒有就用冒號後面的預設值 postgres
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
+```
+
+> 注意：`.properties` 的註解必須獨立一行、以 `#` 開頭；寫在設定值後面的 `#` 會被當成值的一部分。
+
+| 想修改的項目 | 做法 |
+|---|---|
+| 帳號 / 密碼 | 設定環境變數 `DB_USERNAME`、`DB_PASSWORD` |
+| Host / Port / 資料庫名稱 | 設定環境變數 `SPRING_DATASOURCE_URL`（Spring Boot 會自動對應到 `spring.datasource.url`） |
+
+```bash
+# Git Bash / macOS / Linux
+DB_USERNAME=myuser DB_PASSWORD=mypass ./gradlew bootRun
+
+# PowerShell
+$env:DB_USERNAME="myuser"; $env:DB_PASSWORD="mypass"; ./gradlew bootRun
+```
+
+> IntelliJ IDEA：Run → Edit Configurations → Environment variables，填入 `DB_USERNAME=myuser;DB_PASSWORD=mypass`
+
+設定值的優先順序（上面的會覆蓋下面的）：
+
+```text
+命令列參數（--spring.datasource.url=...）
+  ↓
+環境變數（SPRING_DATASOURCE_URL、DB_PASSWORD ...）
+  ↓
+application-{profile}.properties（例如 application-docker.properties）
+  ↓
+application.properties
+```
+
+### 設定參數說明
+
+#### `application.properties`（本機執行）
+
+| 參數 | 目前值 | 說明 |
+|---|---|---|
+| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/test` | 資料庫連線位置 |
+| `spring.datasource.username` | `${DB_USERNAME:postgres}` | 資料庫帳號 |
+| `spring.datasource.password` | `${DB_PASSWORD:postgres}` | 資料庫密碼 |
+| `spring.jpa.hibernate.ddl-auto` | `update` | 啟動時如何處理資料表結構（見下表） |
+| `spring.jpa.show-sql` | `true` | 在 Console 印出 Hibernate 執行的 SQL，方便學習與除錯；正式環境建議關閉 |
+| `server.port` | `8081` | 應用程式的 HTTP port |
+| `spring.mvc.problemdetails.enabled` | `true` | 所有錯誤回應（400、404、405…）統一使用 RFC 9457 ProblemDetail 格式 |
+
+`spring.jpa.hibernate.ddl-auto` 的選項：
+
+| 值 | 啟動時的行為 | 適用情境 |
+|---|---|---|
+| `none` | 不做任何事 | 正式環境（Schema 由 Flyway 等工具管理） |
+| `validate` | 檢查 Entity 與資料表是否一致，不一致就啟動失敗 | 正式環境的保護 |
+| `update` | 新增缺少的資料表與欄位；**不會刪除欄位、也不會修改欄位型別** | 開發、練習（本專案使用） |
+| `create` | ⚠️ 刪除資料表後重建，**資料會消失** | 每次都要乾淨資料的開發 |
+| `create-drop` | ⚠️ 同 `create`，且關閉時再刪除 | 測試 |
+
+#### `application-docker.properties`（`docker` profile）
+
+只在設定 `SPRING_PROFILES_ACTIVE=docker` 時載入，並覆蓋 `application.properties` 中相同的參數：
+
+| 參數 | 值 | 與本機的差異 |
+|---|---|---|
+| `spring.datasource.url` | `jdbc:postgresql://postgres:5432/test` | Host 改為 Docker 網路中的容器名稱 `postgres` |
+| `server.port` | `8015` | 配合 `docker-compose.yml` 的 port 對應 |
+
+其餘參數與 `application.properties` 相同。
+
+### 不需要設定的項目
+
+以下由 Spring Boot / Hibernate 自動處理：
+
+| 項目 | 說明 |
+|---|---|
+| JDBC Driver（`driver-class-name`） | 依 URL 自動判斷 |
+| Hibernate Dialect（`hibernate.dialect`） | Hibernate 6 起自動偵測，手動設定反而會出現警告 |
+| 連線池 | 預設使用 HikariCP，最多 10 條連線 |
+
+### 測試時的資料庫
+
+執行 `./gradlew test` 時**不會**使用上述設定。測試透過 Testcontainers 啟動臨時的 PostgreSQL 容器，並自動覆蓋連線資訊（見 `PostgresContainerTestBase`），因此不會影響本機資料庫。
+
+### 常見連線錯誤
+
+| 錯誤訊息 | 原因 | 解決方式 |
+|---|---|---|
+| `Connection to localhost:5432 refused` | PostgreSQL 沒有啟動，或 port 不對 | 確認資料庫已啟動、port 正確 |
+| `password authentication failed for user "..."` | 帳號或密碼錯誤 | 檢查 `DB_USERNAME` / `DB_PASSWORD` |
+| `database "test" does not exist` | 資料庫尚未建立 | 執行 `CREATE DATABASE test;` |
 
 ## API
 
