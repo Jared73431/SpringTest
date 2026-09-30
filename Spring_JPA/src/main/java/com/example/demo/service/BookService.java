@@ -7,13 +7,13 @@ import com.example.demo.entity.Book;
 
 public interface BookService {
 
-	public void save(Book book);
-	
-	public Book findById(Integer id);
-	
-	public List<Book> findall();
-	
-	public Book Update(Book book);
-	
-	public void delete(Integer id);
+	Book create(Book book);
+
+	Book findById(Integer id);
+
+	List<Book> findAll();
+
+	Book update(Integer id, Book book);
+
+	void delete(Integer id);
 }

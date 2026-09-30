@@ -11,18 +11,18 @@ import com.example.demo.repository.BookRepo;
 import com.example.demo.service.BookService;
 
 @Service
-public class BookServiceImpl implements BookService{
+public class BookServiceImpl implements BookService {
 
 	private final BookRepo bookRepo;
 
 	public BookServiceImpl(BookRepo bookRepo) {
 		this.bookRepo = bookRepo;
 	}
-	
+
 	@Override
-	public void save(Book book) {
-		bookRepo.save(book);
-		
+	public Book create(Book book) {
+		book.setId(null);
+		return bookRepo.save(book);
 	}
 
 	@Override
@@ -31,25 +31,28 @@ public class BookServiceImpl implements BookService{
 	}
 
 	@Override
-	public List<Book> findall() {
-		
+	public List<Book> findAll() {
 		return bookRepo.findAll();
 	}
 
 	@Override
 	@Transactional
-	public Book Update(Book book) {
-		if (!bookRepo.existsById(book.getId())) {
-			throw new BookNotFoundException(book.getId());
+	public Book update(Integer id, Book book) {
+		if (!bookRepo.existsById(id)) {
+			throw new BookNotFoundException(id);
 		}
 		// id 已存在，save 會更新原本那一筆
+		book.setId(id);
 		return bookRepo.save(book);
 	}
 
 	@Override
+	@Transactional
 	public void delete(Integer id) {
-		// TODO Auto-generated method stub
-		
+		if (!bookRepo.existsById(id)) {
+			throw new BookNotFoundException(id);
+		}
+		bookRepo.deleteById(id);
 	}
 
 }
