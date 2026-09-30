@@ -190,4 +190,6 @@ Spring_Xxx/
 - [ ] 補上核心邏輯的單元測試 / 整合測試
 - [ ] 統一升級至 Java 21 / Spring Boot 3.x
 - [ ] 舊寫法現代化（Constructor Injection、統一例外處理、Logging 等）
+- [ ] 統一各模組 REST API 的 URL 設計規則
+- [ ] 提供 Postman Collection，可直接匯入測試各模組 API
 - [ ] 練習改為 Gradle 多模組專案（附 IDE 操作步驟）
