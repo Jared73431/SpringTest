@@ -2,9 +2,9 @@ spring:
   application:
     name: service-provider  #服务名称
   datasource:
-    password: ***REMOVED***
+    password: ${DB_PASSWORD:postgres}
     url: jdbc:postgresql://localhost:5432/test
-    username: ***REMOVED***
+    username: ${DB_USERNAME:postgres}
   jpa:
     hibernate:
       ddl-auto: update

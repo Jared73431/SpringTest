@@ -136,13 +136,13 @@ server.port=8080
 
 # R2DBC 設定
 spring.r2dbc.url=r2dbc:postgresql://localhost:5432/test2
-spring.r2dbc.username=postgres
-spring.r2dbc.password=postgres
+spring.r2dbc.username=${DB_USERNAME:postgres}
+spring.r2dbc.password=${DB_PASSWORD:postgres}
 
 # Flyway 設定
 spring.flyway.url=jdbc:postgresql://localhost:5432/test2
-spring.flyway.user=postgres
-spring.flyway.password=postgres
+spring.flyway.user=${DB_USERNAME:postgres}
+spring.flyway.password=${DB_PASSWORD:postgres}
 spring.flyway.schemas=public
 spring.flyway.baseline-on-migrate=true
 

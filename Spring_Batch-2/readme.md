@@ -19,8 +19,8 @@ spring.application.name=Spring_Batch-2
 
 ## 資料來源配置
 spring.datasource.url=jdbc:postgresql://localhost:5432/test
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
 
 # Hibernate 配置
 spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.PostgreSQLDialect

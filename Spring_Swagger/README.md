@@ -67,8 +67,8 @@ cd spring-swagger-demo
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/test
-    username: postgres
-    password: postgres
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
 ```
 
 ### 3. 構建項目
@@ -196,8 +196,8 @@ src/
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/test    # 數據庫連接地址
-    username: postgres                            # 數據庫用戶名
-    password: postgres                            # 數據庫密碼
+    username: ${DB_USERNAME:postgres}                            # 數據庫用戶名
+    password: ${DB_PASSWORD:postgres}                            # 數據庫密碼
     driver-class-name: org.postgresql.Driver      # 數據庫驅動
     hikari:                                       # HikariCP 連線池配置
       maximum-pool-size: 20                      # 最大連線數

@@ -102,8 +102,8 @@ Flyway Undo 是 Flway 的商業功能，社群版中不提供此功能。
 ## FLYWAY配置
 ## ==============================================================
 spring.flyway.url=jdbc:postgresql://localhost:5432/Flyway
-spring.flyway.user=Flyway
-spring.flyway.password=***REMOVED***
+spring.flyway.user=${DB_USERNAME:postgres}
+spring.flyway.password=${DB_PASSWORD:postgres}
 spring.flyway.locations=classpath:doc/migration/common,classpath:db/migration
 spring.flyway.table=flyway_schema_history
 spring.flyway.baseline-on-migrate=true
@@ -118,8 +118,8 @@ spring.flyway.enabled=true
 | 配置項 | 值 | 說明 |
 |--------|----|----- |
 | `spring.flyway.url` | `jdbc:postgresql://localhost:5432/Flyway` | 資料庫連接URL，指向名為"Flyway"的PostgreSQL資料庫 |
-| `spring.flyway.user` | `Flyway` | 資料庫用戶名 |
-| `spring.flyway.password` | `***REMOVED***` | 資料庫密碼 |
+| `spring.flyway.user` | `${DB_USERNAME:postgres}` | 資料庫用戶名，可用環境變數 `DB_USERNAME` 覆寫 |
+| `spring.flyway.password` | `${DB_PASSWORD:postgres}` | 資料庫密碼，可用環境變數 `DB_PASSWORD` 覆寫 |
 | `spring.flyway.locations` | `classpath:doc/migration/common,classpath:db/migration` | 遷移檔位置，支援多個路徑 |
 | `spring.flyway.table` | `flyway_schema_history` | Flyway中繼資料表名，記錄遷移歷史 |
 | `spring.flyway.baseline-on-migrate` | `true` | 對於已有資料庫，首次運行時創建基線 |

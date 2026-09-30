@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
@@ -22,6 +23,9 @@ public class QuartzConfig {
 
     @Autowired
     private MyJobFactory myJobFactory;
+
+    @Autowired
+    private Environment environment;
 
     @Bean
     public SchedulerFactoryBean schedulerFactoryBean() {
@@ -48,8 +52,10 @@ public class QuartzConfig {
         propertiesFactoryBean.setLocation(new ClassPathResource("/application.properties"));
         propertiesFactoryBean.afterPropertiesSet();
 
-        return propertiesFactoryBean.getObject();
-
+        // PropertiesFactoryBean 只讀原始檔案，不會解析 ${...}，交給 Spring Environment 解析（例如 ${DB_PASSWORD:postgres}）
+        Properties properties = propertiesFactoryBean.getObject();
+        properties.replaceAll((key, value) -> environment.resolvePlaceholders((String) value));
+        return properties;
     }
 
     /**

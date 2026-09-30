@@ -6,8 +6,8 @@ spring:
     name:Spring_Swagger
   datasource:
     url: jdbc:postgresql://localhost:5432/test
-    username: postgres
-    password: postgres
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     # HikariCP \u9023\u7DDA\u6C60\u512A\u5316
     hikari:
