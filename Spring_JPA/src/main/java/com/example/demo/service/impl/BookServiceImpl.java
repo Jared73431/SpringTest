@@ -3,8 +3,10 @@ package com.example.demo.service.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.entity.Book;
+import com.example.demo.exception.BookNotFoundException;
 import com.example.demo.repository.BookRepo;
 import com.example.demo.service.BookService;
 
@@ -25,8 +27,7 @@ public class BookServiceImpl implements BookService{
 
 	@Override
 	public Book findById(Integer id) {
-		
-		return bookRepo.findById(id).orElseThrow();
+		return bookRepo.findById(id).orElseThrow(() -> new BookNotFoundException(id));
 	}
 
 	@Override
@@ -36,18 +37,13 @@ public class BookServiceImpl implements BookService{
 	}
 
 	@Override
+	@Transactional
 	public Book Update(Book book) {
-		Book upbook = new Book();
-		if (bookRepo.existsById(book.getId())) {
-			book.setId(null);
-			bookRepo.save(book);
-			upbook = book;
-		} else {
-			upbook = bookRepo.saveAndFlush(book);
+		if (!bookRepo.existsById(book.getId())) {
+			throw new BookNotFoundException(book.getId());
 		}
-		
-		return upbook;
-		
+		// id 已存在，save 會更新原本那一筆
+		return bookRepo.save(book);
 	}
 
 	@Override
