@@ -21,7 +21,7 @@
 
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
-| [Spring_JPA](Spring_JPA) | JPA 入門 | Controller → Service → Repository 基本 CRUD、Docker Compose 部署 | 🐘 |
+| [Spring_JPA](Spring_JPA) 📘 | JPA 入門 | REST CRUD（`/api/books`）、DTO（Record）、ProblemDetail、Testcontainers 整合測試、Docker ✅ 已現代化 | 🐘 |
 | [Spring_JPA2](Spring_JPA2) 📘 | JPA 進階 | 一對多 / 多對多關聯、複合主鍵、JPQL、DTO 轉換、圖片存取 | 🐘 |
 | [Spring_R2DBC](Spring_R2DBC) | R2DBC 入門 | 響應式資料庫存取 | 🐘 |
 | [Spring_R2DBC2](Spring_R2DBC2) 📘 | R2DBC + WebFlux | 響應式 CRUD、Validation、全域例外處理、Flyway、Docker Compose | 🐘 |
@@ -100,8 +100,8 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅ |
-| 2.7.x | 11 / 17 | Eureka、Feign_Client、Feign_Server、JPA、Security3 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅ |
+| 2.7.x | 11 / 17 | Eureka、Feign_Client、Feign_Server、Security3 |
 | 3.0.x | 17 | Eureka_Client、Eureka_Provider、Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
