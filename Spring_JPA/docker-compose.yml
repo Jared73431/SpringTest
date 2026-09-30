@@ -1,17 +1,56 @@
+# ============================================================
+# 單獨執行版（預設）：資料庫與應用程式一起啟動，不依賴任何外部網路
+#
+#   啟動：docker compose up --build
+#   停止：docker compose down          （加上 -v 會一併刪除資料庫資料）
+#
+# 若要連線到另一份 compose 已啟動的資料庫（外部網路），
+# 請改用 docker-compose.external-db.yml
+# ============================================================
 services:
+
+  # PostgreSQL 資料庫
+  postgres:
+    image: postgres:15-alpine
+    container_name: spring-jpa-postgres
+    environment:
+      # 第一次啟動時自動建立資料庫 test
+      - POSTGRES_DB=test
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機已有的 PostgreSQL 衝突；
+    # 應用程式透過 compose 內部網路，以服務名稱 "postgres" 連線
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # 檢查資料庫是否已可接受連線，供 app 的 depends_on 判斷
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Spring Boot 應用程式
   app:
+    # 使用同資料夾的 Dockerfile 建立 image（multi-stage，不需先在本機 build）
     build: .
-    container_name: spring-app
+    container_name: spring-jpa-app
+    depends_on:
+      postgres:
+        # 等資料庫 healthy 後才啟動，避免應用程式啟動時連不上資料庫
+        condition: service_healthy
     ports:
+      # 主機 port : 容器 port
       - "8015:8015"
     environment:
+      # 啟用 docker profile（application-docker.properties）：資料庫 host 改為 postgres、port 改為 8015
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-postgres}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-postgres}
-    networks:
-      - database_net_postgres  # 使用已存在的网络
+      # 帳密沿用 application.properties 的 ${DB_USERNAME} / ${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
 
-networks:
-  database_net_postgres:
-    external: true  # 声明这是一个外部网络，不由此compose文件创建
+# 沒有宣告 networks：compose 會自動建立本專案專用的網路，
+# 同一份 compose 內的服務可以直接用服務名稱（postgres、app）互相連線
+
+volumes:
+  # 具名 volume：容器刪除後資料仍保留，直到執行 docker compose down -v
+  postgres-data:

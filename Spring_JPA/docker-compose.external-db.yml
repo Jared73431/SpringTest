@@ -1,0 +1,33 @@
+# ============================================================
+# 外部資料庫版：連線到「另一份 compose」已經啟動的 PostgreSQL
+# （2025-04 練習 Docker 網路時的原始做法，說明見 readme.md）
+#
+#   前置條件：外部網路 database_net_postgres 已存在，
+#             且其中有名為 postgres 的 PostgreSQL 容器，並已建立資料庫 test
+#   啟動：docker compose -f docker-compose.external-db.yml up --build
+#   停止：docker compose -f docker-compose.external-db.yml down
+#         （只會移除本檔案的 app 容器，不影響外部的資料庫與網路）
+# ============================================================
+services:
+
+  # Spring Boot 應用程式
+  app:
+    build: .
+    container_name: spring-app
+    ports:
+      # 主機 port : 容器 port
+      - "8015:8015"
+    environment:
+      # 啟用 docker profile（application-docker.properties）：資料庫 host 改為 postgres、port 改為 8015
+      - SPRING_PROFILES_ACTIVE=docker
+      # 帳密沿用 application.properties 的 ${DB_USERNAME} / ${DB_PASSWORD}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+    networks:
+      - database_net_postgres
+
+networks:
+  database_net_postgres:
+    # 外部網路：由資料庫的 compose 建立（資料夾 database + 網路 net_postgres），
+    # 本檔案只負責加入，不會建立也不會刪除它
+    external: true

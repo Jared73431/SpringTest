@@ -60,13 +60,16 @@ src/main/java/com/example/demo/
 
 ### Docker
 
+只需要安裝 Docker，不需要 JDK 或 PostgreSQL：
+
 ```bash
-./gradlew bootJar
-docker compose up --build
+docker compose up --build          # 啟動資料庫 + 應用程式
+curl http://localhost:8015/api/books
+docker compose down                # 停止（加上 -v 會刪除資料庫資料）
 ```
 
 - 使用 `docker` profile，port `8015`
-- 需要事先啟動資料庫的 compose（建立 `database_net_postgres` 網路與 `postgres` 容器），完整步驟見「[Docker 容器化練習](#docker-容器化練習)」
+- 若要連線到另一份 compose 已啟動的資料庫，請使用 `docker-compose.external-db.yml`，說明見「[Docker 容器化練習](#docker-容器化練習)」
 
 ## 資料庫連線設定
 
@@ -173,14 +176,14 @@ application.properties
 
 #### `application-docker.properties`（`docker` profile）
 
-只在設定 `SPRING_PROFILES_ACTIVE=docker` 時載入，並覆蓋 `application.properties` 中相同的參數：
+只在設定 `SPRING_PROFILES_ACTIVE=docker` 時載入，**疊加**在 `application.properties` 之上，因此檔案中只寫與本機不同的兩項：
 
 | 參數 | 值 | 與本機的差異 |
 |---|---|---|
-| `spring.datasource.url` | `jdbc:postgresql://postgres:5432/test` | Host 改為 Docker 網路中的容器名稱 `postgres` |
-| `server.port` | `8015` | 配合 `docker-compose.yml` 的 port 對應 |
+| `spring.datasource.url` | `jdbc:postgresql://postgres:5432/test` | Host 改為 Docker 網路中的服務 / 容器名稱 `postgres` |
+| `server.port` | `8015` | 配合 compose 的 port 對應，且不受本機 port 設定影響 |
 
-其餘參數與 `application.properties` 相同。
+其餘參數（帳密、`ddl-auto`、`show-sql`…）直接沿用 `application.properties`，帳密由 compose 傳入的 `DB_USERNAME` / `DB_PASSWORD` 提供。
 
 ### 不需要設定的項目
 
@@ -284,7 +287,7 @@ curl -X DELETE http://localhost:8081/api/books/1
 步驟 0  資料庫 compose（放在 repo 外的 database 資料夾）
         啟動 postgres 容器，並建立網路 database_net_postgres
           │
-步驟 1  本模組的 docker-compose.yml
+步驟 1  本模組的 compose（現保留為 docker-compose.external-db.yml）
         build: . → 用 Dockerfile 在本機建立 image
         加入外部網路 database_net_postgres，用名稱 "postgres" 連線資料庫
           │
@@ -299,41 +302,56 @@ curl -X DELETE http://localhost:8081/api/books/1
 
 步驟 1 到步驟 3 的差別，是從「在本機 build、在本機執行」變成「從 Registry 取得 image 執行」，這是走向 Kubernetes 的關鍵。
 
-### 三個檔案的職責
+### 各檔案的職責
 
 | 檔案 | 職責 | 使用時機 |
 |---|---|---|
-| `Dockerfile` | **打包什麼**：把程式與執行環境包成 image | `docker build` |
-| `docker-compose.yml` | **怎麼執行**：port、環境變數、網路 | `docker compose up` |
+| `Dockerfile` | **打包什麼**：在容器內 build，並把程式與執行環境包成 image | `docker build` / `docker compose up --build` |
+| `.dockerignore` | 哪些檔案**不送進** build（本機的 `build/`、`.gradle/`、IDE 設定） | `docker build` |
+| `docker-compose.yml` | **怎麼執行（預設）**：資料庫 + 應用程式一起啟動，不依賴外部網路 | `docker compose up` |
+| `docker-compose.external-db.yml` | **怎麼執行（外部資料庫）**：只啟動應用程式，加入另一份 compose 的網路（2025-04 的原始練習） | `docker compose -f ... up` |
 | `application-docker.properties` | **容器裡的程式設定**：資料庫 host、port | 程式啟動時（`docker` profile） |
 
-#### `Dockerfile`
+#### `Dockerfile`（multi-stage build）
 
-```dockerfile
-# 基礎環境：只含 Java 21 執行環境（JRE），比 JDK 小
-FROM eclipse-temurin:21-jre
-# 容器內的工作目錄
-WORKDIR /app
-# 將本機 build 好的 jar 放入 image（需先執行 ./gradlew bootJar）
-COPY build/libs/*.jar app.jar
-# 說明程式使用 8015（僅為文件用途，實際對外開放由 compose 的 ports 決定）
-EXPOSE 8015
-# 容器啟動時執行的指令
-ENTRYPOINT ["java", "-jar", "app.jar"]
+```text
+第一階段 build（eclipse-temurin:21-jdk）
+  複製 gradlew、build.gradle、src → ./gradlew bootJar
+        │  只把產出的 jar 交給下一階段
+        ▼
+第二階段 執行（eclipse-temurin:21-jre）
+  建立非 root 使用者 spring → 複製 jar → java -jar app.jar
 ```
+
+| 寫法 | 目的 |
+|---|---|
+| 兩個 `FROM`（multi-stage） | 在容器內 build，本機不需要 JDK、也不需要先執行 `bootJar`；最終 image 只含 JRE 與 jar |
+| `RUN --mount=type=cache,target=/root/.gradle` | Gradle 下載的依賴快取在 BuildKit，重新 build 時不必再下載；快取不會進到 image |
+| `-x test` | 測試需要 Docker（Testcontainers），不在 image build 時執行 |
+| `useradd` + `USER spring` | 以非 root 使用者執行，降低容器被入侵時的風險 |
+| `EXPOSE 8015` | 僅為文件用途，實際對外開放由 compose 的 `ports` 決定 |
 
 Dockerfile 不知道資料庫在哪、也不決定對外 port。同一個 image 可以在本機、其他電腦或 Kubernetes 上執行，這就是容器化的核心。
 
-#### `docker-compose.yml`
+#### `docker-compose.yml`（預設：單獨執行）
 
 | 設定 | 作用 |
 |---|---|
-| `build: .` | 用同資料夾的 Dockerfile 建立 image |
-| `container_name: spring-app` | 容器名稱 |
-| `ports: "8015:8015"` | `主機 port:容器 port`，主機連 `localhost:8015` 會轉進容器 |
-| `SPRING_PROFILES_ACTIVE=docker` | 啟用 `docker` profile，載入 `application-docker.properties` |
-| `SPRING_DATASOURCE_*` | 資料庫連線資訊（環境變數優先於設定檔） |
-| `networks` + `external: true` | 加入**另一份 compose 已建立**的網路，本 compose 不自行建立 |
+| `services.postgres` | PostgreSQL 容器，`POSTGRES_DB=test` 第一次啟動時自動建立資料庫 |
+| 資料庫不設 `ports` | 刻意不對主機開放 5432，避免與本機已有的 PostgreSQL 衝突；app 透過內部網路連線 |
+| `healthcheck`（`pg_isready`） | 判斷資料庫是否已可連線 |
+| `depends_on: condition: service_healthy` | 資料庫 healthy 後才啟動 app，避免啟動時連不上 |
+| `volumes: postgres-data` | 具名 volume，容器刪除後資料仍保留，直到 `docker compose down -v` |
+| 沒有宣告 `networks` | compose 自動建立專案專用網路，服務之間可直接用服務名稱（`postgres`）連線 |
+
+#### `docker-compose.external-db.yml`（外部資料庫）
+
+| 設定 | 作用 |
+|---|---|
+| 只有 `services.app` | 資料庫由另一份 compose 負責 |
+| `networks` + `external: true` | 加入**已存在**的 `database_net_postgres` 網路，本檔案不會建立或刪除它 |
+
+兩份 compose 的 app 都只傳入 `SPRING_PROFILES_ACTIVE` 與 `DB_USERNAME` / `DB_PASSWORD`；資料庫位址統一由 `application-docker.properties` 決定，不重複設定。
 
 #### `application-docker.properties`
 
@@ -343,7 +361,7 @@ Dockerfile 不知道資料庫在哪、也不決定對外 port。同一個 image 
 
 **1. 容器之間用「名稱」連線**
 
-同一個 Docker 網路中，容器名稱就是它的網址（Docker 內建 DNS）。`jdbc:postgresql://postgres:5432/test` 中的 `postgres` 指的是名為 `postgres` 的容器。
+同一個 Docker 網路中，服務 / 容器名稱就是它的網址（Docker 內建 DNS）。`jdbc:postgresql://postgres:5432/test` 中的 `postgres` 指的是名為 `postgres` 的服務。
 
 > 在容器裡，`localhost` 指的是**容器自己**，不是主機，所以容器內不能用 `localhost` 連資料庫。
 
@@ -357,11 +375,26 @@ Compose 會自動在網路名稱前加上**專案名稱**（預設為 compose �
 
 因此其他 compose 引用它時，必須寫完整名稱並標示 `external: true`。
 
-**3. 為什麼拆成兩份 compose**
+**3. 兩種 compose 的取捨**
 
-資料庫是長期運作、多個專案共用的基礎設施；應用程式則會反覆重新部署。拆開後，重建應用程式容器不會影響資料庫，這也與 Kubernetes 的設計觀念一致。
+| | 單獨執行（預設） | 外部資料庫 |
+|---|---|---|
+| 資料庫 | 與 app 一起啟動、一起停止 | 長期運作，多個專案共用 |
+| 優點 | clone 後一個指令就能跑，適合示範 | 重建 app 不影響資料庫，與 Kubernetes 的觀念一致 |
+| 前置條件 | 只需 Docker | 需先啟動資料庫 compose |
 
-### 重現步驟
+### 兩種執行方式
+
+#### 方式一：單獨執行（預設）
+
+```bash
+cd Spring_JPA
+docker compose up --build
+curl http://localhost:8015/api/books
+docker compose down            # 加上 -v 會一併刪除資料庫資料
+```
+
+#### 方式二：連線到外部資料庫（原始練習）
 
 **1. 建立資料庫 compose**
 
@@ -401,9 +434,10 @@ docker exec -it postgres psql -U postgres -c "CREATE DATABASE test;"
 
 ```bash
 cd Spring_JPA
-./gradlew bootJar
-docker compose up --build
+docker compose -f docker-compose.external-db.yml up --build
 ```
+
+> 若資料庫密碼不是 `postgres`，請先設定環境變數 `DB_PASSWORD`（compose 會自動讀取同資料夾的 `.env` 檔）。
 
 **3. 確認**
 
@@ -422,21 +456,94 @@ docker network inspect database_net_postgres   # 可看到 postgres 與 spring-a
 | `ports: 8015:8015` | **Service**（NodePort / LoadBalancer）或 **Ingress** |
 | `environment` | **ConfigMap**（一般設定）+ **Secret**（密碼） |
 | `docker` profile | 同樣使用 `SPRING_PROFILES_ACTIVE`（例如新增 `k8s` profile） |
-| Docker 網路 + 容器名稱 | **Service DNS**（例如 `postgres`），不需自行建立網路 |
+| Docker 網路 + 服務名稱 | **Service DNS**（例如 `postgres`），不需自行建立網路 |
 | `restart: always` | Deployment 自動重啟 Pod、維持副本數 |
 | volume | **PersistentVolumeClaim** |
-| healthcheck | **liveness / readiness probe**（通常搭配 Actuator） |
+| healthcheck / `depends_on` | **liveness / readiness probe**（通常搭配 Actuator） |
 
-### 目前的限制
+### 優化紀錄（2026-09）
 
-| 項目 | 說明 |
+| 項目 | 優化前 | 優化後 |
+|---|---|---|
+| build 方式 | 需先在本機執行 `bootJar`，再複製 jar | multi-stage，在容器內 build |
+| 複製 jar | `COPY build/libs/*.jar` 同時符合 `-plain.jar`，因檔名排序剛好正確 | `build.gradle` 停用 plain jar，只產生一個可執行 jar |
+| 基礎 image | `openjdk:11-jdk-slim`（已停止維護） | `eclipse-temurin:21-jre`，image 從 461MB 降為 371MB |
+| 執行身分 | root | 非 root 使用者 `spring` |
+| 資料庫 | 必須先啟動外部 compose | 預設 compose 內建資料庫；外部資料庫版改為獨立檔案保留 |
+| 設定重複 | compose 與 profile 都設定資料庫 URL | 只由 `application-docker.properties` 決定 |
+| `gradlew` | 沒有執行權限、Windows 上 clone 可能變成 CRLF | 設定執行權限，並以 `.gitattributes` 固定為 LF |
+
+## 上雲時的主流做法
+
+上雲後「要做的事」不變（打包成 image、定義怎麼執行、提供設定），但這三份檔案不一定要手寫，很多已由工具產生或被其他方式取代。
+
+| 本模組的檔案 | 上雲後的主流做法 |
 |---|---|
-| 需要先手動 build | Dockerfile 複製的是本機的 jar，忘記執行 `bootJar` 會包到舊版 |
-| 依賴外部 compose | 本模組的 compose 沒有定義資料庫，必須先完成「重現步驟 1」 |
-| `COPY build/libs/*.jar` | `./gradlew build` 會同時產生 `-plain.jar`，目前因檔名排序剛好留下正確的 jar，並非刻意設計 |
-| 設定重複 | compose 的 `SPRING_DATASOURCE_URL` 與 `docker` profile 的值相同，保留其中一處即可 |
+| `Dockerfile` | 可由工具產生 image，或維持手寫 multi-stage |
+| `docker-compose.yml` | 雲端上不使用，改為 Kubernetes YAML 或雲端平台的設定；compose 保留在本機開發 |
+| `application-docker.properties` | 傾向完全使用環境變數，密碼放在 Secret / 雲端金鑰服務 |
 
-> 常見的改進方式是 **multi-stage build**（在 image 內用 JDK build、再只把 jar 複製到 JRE image），或使用 Spring Boot 內建的 `./gradlew bootBuildImage`（不需 Dockerfile）。
+### 1. 產生 image 的工具（不寫 Dockerfile）
+
+| 工具 | 做法 | 特點 |
+|---|---|---|
+| `./gradlew bootBuildImage` | Spring Boot 內建，使用 Cloud Native Buildpacks（Paketo） | 一個指令產生最佳化的 image |
+| Jib（Google） | Gradle / Maven plugin | 不需要 Docker 即可 build，並直接推到 Registry，CI 上常用 |
+| `docker init` | Docker 官方指令 | 偵測專案後產生 Dockerfile、compose.yaml、.dockerignore 作為起點，通常仍需調整 |
+| 雲端平台從原始碼部署 | 例如 Google Cloud Run（`gcloud run deploy --source .`）、AWS App Runner | 平台自動偵測並 build，完全不需要 Dockerfile |
+
+需要完整控制（基礎 image、安全更新、大小）時，許多團隊仍會手寫 multi-stage Dockerfile。
+
+### 2. 執行設定：Kubernetes YAML
+
+雲端上不執行 compose，而是使用 Kubernetes 的 Deployment、Service、ConfigMap、Secret、Ingress，或 Cloud Run、Azure Container Apps、AWS ECS 等託管平台。
+
+| 工具 | 用途 |
+|---|---|
+| Kompose | 將 docker-compose.yml 轉換成 Kubernetes YAML，適合產生第一版 |
+| `kubectl create deployment ... --dry-run=client -o yaml` | 產生 YAML 骨架 |
+| Helm | 以範本管理 YAML，一份範本套用 dev / staging / prod，業界最常見 |
+| Kustomize | 基礎 YAML + 各環境差異，kubectl 已內建 |
+
+本機開發時，Spring Boot 3.1 起的 **Docker Compose 整合**（`spring-boot-docker-compose`）可以在 `bootRun` 時自動啟動 compose 中的資料庫並設定連線。
+
+### 3. 設定：12-Factor App
+
+同一個 image 在每個環境都相同，設定由環境注入：
+
+| 設定類型 | 放在哪裡 |
+|---|---|
+| 一般設定（URL、功能開關） | 環境變數、Kubernetes ConfigMap |
+| 密碼、金鑰 | Kubernetes Secret，或 AWS Secrets Manager、Azure Key Vault、HashiCorp Vault |
+| profile | 仍會使用，但通常只分 `dev` / `prod` 等大類 |
+
+Spring Boot 能自動偵測是否在 Kubernetes 上執行，並自動啟用 liveness / readiness 健康檢查；也能以 `spring.config.import=configtree:` 讀取掛載成檔案的 Secret。
+
+### 4. 常見的完整流程
+
+```text
+git push
+  ↓
+CI（GitHub Actions）── 測試 → Jib / bootBuildImage 產生 image → 推到 Registry
+  ↓
+CD（Argo CD 等 GitOps 工具）── 偵測 Helm / Kustomize 設定變更 → 自動部署到 Kubernetes
+  ↓
+Kubernetes ── ConfigMap / Secret 注入設定，Service DNS 連線資料庫
+```
+
+整個過程不需要手動執行 `docker build`。
+
+> 工具可以產生這些檔案，但產出的內容出問題時仍需看得懂才能修改；手寫這三份檔案，正是理解它們的基礎。
+
+### 後續練習方向
+
+| 階段 | 練習內容 |
+|---|---|
+| 1 | 改用 `bootBuildImage` 或 Jib，與手寫 Dockerfile 比較 |
+| 2 | 使用 Spring Boot Docker Compose 整合簡化本機開發 |
+| 3 | 手寫一次 Kubernetes YAML（Deployment、Service、ConfigMap、Secret），在本機以 kind 或 Docker Desktop 的 Kubernetes 執行，再與 Kompose 產生的結果比較 |
+| 4 | GitHub Actions：push 後自動測試並產生 image |
+| 5 | 改以 Helm / Kustomize 管理，部署到雲端 |
 
 ## 已知限制（刻意保留）
 
@@ -459,6 +566,7 @@ docker network inspect database_net_postgres   # 可看到 postgres 與 spring-a
 | 6 | 修正更新 Bug、查無資料回 404（`@RestControllerAdvice` + ProblemDetail） |
 | 7 | 重新設計為 REST API（`/api/books`、DTO、新增 DELETE） |
 | 8 | 修正 Docker 設定（`eclipse-temurin:21-jre`、啟用 `docker` profile） |
+| 9 | Docker 優化：multi-stage build、非 root 執行、compose 可單獨執行（保留外部資料庫版）、補上 `.gitattributes` 與 `gradlew` 執行權限 |
 
 ### 行為變更
 
