@@ -1,5 +1,8 @@
 package com.example.demo.tests;
 
+import org.springframework.context.annotation.Import;
+import com.example.demo.TestcontainersConfiguration;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 public class OrderServiceIntegrationTest {
 
     @Autowired

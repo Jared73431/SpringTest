@@ -1,5 +1,8 @@
 package com.example.demo.tests;
 
+import org.springframework.context.annotation.Import;
+import com.example.demo.TestcontainersConfiguration;
+
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +25,7 @@ import jakarta.persistence.PersistenceContext;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 class ApplicationTests {
 
     @Autowired

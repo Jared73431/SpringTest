@@ -19,6 +19,9 @@ configurations {
 	}
 }
 
+// Boot 3.4 預設的 Testcontainers 版本較舊，不支援 Docker Engine 29，指定為 1.21.4
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
 	mavenCentral()
 }
@@ -33,6 +36,8 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
