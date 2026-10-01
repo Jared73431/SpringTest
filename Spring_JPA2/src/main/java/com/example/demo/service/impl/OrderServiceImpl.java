@@ -142,16 +142,16 @@ public class OrderServiceImpl implements OrderService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new InvalidRequestException("商品不存在: " + productId));
 
-        // 檢查庫存
-        // [Potential Bug] 若訂單已包含該商品，可用庫存其實是「目前庫存 + 原數量」，
-        // 但這裡只比較目前庫存，可能誤判庫存不足；修改前需先確認預期行為並補測試
-        if (product.getStock() < quantity) {
-            throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
-        }
-
         // 檢查訂單是否已包含該商品
         OrderItemPK pk = new OrderItemPK(orderId, productId);
         Optional<OrderItem> existingItem = orderItemRepository.findById(pk);
+
+        // 檢查庫存：若訂單已包含該商品，原數量會先補回，因此可用庫存是「目前庫存 + 原數量」
+        // （修正前只比較目前庫存，例如庫存 5 件全買後想改成 3 件，會被誤判為庫存不足）
+        int availableStock = product.getStock() + existingItem.map(OrderItem::getQuantity).orElse(0);
+        if (availableStock < quantity) {
+            throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
+        }
 
         if (existingItem.isPresent()) {
             // 更新已有訂單項的數量：新數量「取代」原數量（不是累加），所以庫存要先補回再扣

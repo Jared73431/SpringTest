@@ -300,6 +300,35 @@ class OrderApiTest {
 		assertThat(stockOf(productId)).isEqualTo(9);
 	}
 
+	// 修正前：已在訂單中的商品改數量時，只用「目前庫存」檢查（忽略會先補回的原數量），
+	// 庫存 5 件全買後想改成 3 件會被誤判為庫存不足（409）
+	@Test
+	void addOrderItem_shouldReplaceQuantity_whenItemExistsAndRestoredStockIsEnough() {
+		String productId = createProduct(5);
+		String orderId = createOrder(productId, 5).getBody().getId();
+
+		ResponseEntity<OrderDTO> response = restTemplate.postForEntity("/api/orders/{id}/items",
+				Map.of("productId", productId, "quantity", 3), OrderDTO.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody().getItems()).singleElement()
+				.satisfies(item -> assertThat(item.getQuantity()).isEqualTo(3));
+		assertThat(response.getBody().getTotalAmount()).isEqualByComparingTo("300.00");
+		assertThat(stockOf(productId)).isEqualTo(2);
+	}
+
+	@Test
+	void addOrderItem_shouldReturnConflictAndKeepStock_whenNewQuantityExceedsRestoredStock() {
+		String productId = createProduct(5);
+		String orderId = createOrder(productId, 5).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/items",
+				Map.of("productId", productId, "quantity", 6), String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(stockOf(productId)).isZero();
+	}
+
 	// 修正前：同時下單時「讀取 → 扣庫存 → 寫回」會互相覆蓋（lost update），庫存比實際售出多
 	// 修正後：Product 使用 @Version 樂觀鎖，衝突的請求回 409，庫存永遠等於「初始庫存 − 成功售出數量」
 	@Test

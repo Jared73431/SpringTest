@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.example.demo.entity.CoursePO;
 import com.example.demo.entity.StudentPO;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -29,7 +30,12 @@ public class CourseDTO {
     @PositiveOrZero(message = "學分不可為負數")
     private int point;
     // 預設只回傳學生 ID（輕量）；需要學生詳細資料時才使用 fromEntityWithStudents 填入 students
+    // READ_ONLY：只出現在回應中，建立 / 修改課程時即使帶入也會被忽略；
+    // 選課請使用 POST /api/courses/{id}/students/{studentId} 或 /students/batch
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Set<Long> studentIds;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Set<StudentDTO> students = new HashSet<>();
 
     // From entity to DTO with student IDs only

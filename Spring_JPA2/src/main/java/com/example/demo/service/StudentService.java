@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -130,23 +132,26 @@ public class StudentService {
     /**
      * 批次為學生加選課程。
      * 學生不存在 → ResourceNotFoundException（404）；Body 中有任一課程 ID 不存在 → InvalidRequestException（400），整批都不加選。
-     * [Potential Bug] courseIds 是 List，若包含重複 ID，findAllById 回傳的筆數會少於 courseIds.size()，
-     * 導致誤判為「課程不存在」且錯誤訊息列出空清單；CourseService 的批次方法使用 Set，沒有這個問題。
+     * 重複的課程 ID 視為同一門課。
      */
     @Transactional
     public StudentDTO addCoursesToStudent(Long studentId, List<Long> courseIds) {
         StudentPO student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
+        // 重複的課程 ID 視為同一門課：先去除重複再查詢與比對數量
+        // （修正前直接用 List 比對，重複 ID 會被誤判為「課程不存在: []」）
+        Set<Long> uniqueCourseIds = new LinkedHashSet<>(courseIds);
+
         // 根據課程ID列表查找所有課程
-        List<CoursePO> courses = courseRepository.findAllById(courseIds);
+        List<CoursePO> courses = courseRepository.findAllById(uniqueCourseIds);
 
         // 檢查是否所有課程都存在
-        if (courses.size() != courseIds.size()) {
+        if (courses.size() != uniqueCourseIds.size()) {
             List<Long> foundCourseIds = courses.stream()
                     .map(CoursePO::getId)
                     .collect(Collectors.toList());
-            List<Long> notFoundCourseIds = courseIds.stream()
+            List<Long> notFoundCourseIds = uniqueCourseIds.stream()
                     .filter(id -> !foundCourseIds.contains(id))
                     .collect(Collectors.toList());
             throw new InvalidRequestException("課程不存在: " + notFoundCourseIds);
@@ -168,15 +173,19 @@ public class StudentService {
         StudentPO student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
+        // 重複的課程 ID 視為同一門課：先去除重複再查詢與比對數量
+        // （修正前直接用 List 比對，重複 ID 會被誤判為「課程不存在: []」）
+        Set<Long> uniqueCourseIds = new LinkedHashSet<>(courseIds);
+
         // 根據課程ID列表查找所有課程
-        List<CoursePO> courses = courseRepository.findAllById(courseIds);
+        List<CoursePO> courses = courseRepository.findAllById(uniqueCourseIds);
 
         // 檢查是否所有課程都存在
-        if (courses.size() != courseIds.size()) {
+        if (courses.size() != uniqueCourseIds.size()) {
             List<Long> foundCourseIds = courses.stream()
                     .map(CoursePO::getId)
                     .collect(Collectors.toList());
-            List<Long> notFoundCourseIds = courseIds.stream()
+            List<Long> notFoundCourseIds = uniqueCourseIds.stream()
                     .filter(id -> !foundCourseIds.contains(id))
                     .collect(Collectors.toList());
             throw new InvalidRequestException("課程不存在: " + notFoundCourseIds);

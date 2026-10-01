@@ -348,7 +348,7 @@ curl -X POST http://localhost:8015/api/orders \
 
 | Method | Path | 說明 |
 |---|---|---|
-| `GET` / `POST` | `/api/courses` | 查詢全部 / 新增 |
+| `GET` / `POST` | `/api/courses` | 查詢全部 / 新增（`studentIds` / `students` 只出現在回應中，新增時帶入會被忽略） |
 | `GET` / `PUT` / `DELETE` | `/api/courses/{id}` | 查詢（含學生）/ 修改 / 刪除 |
 | `POST` / `DELETE` | `/api/courses/{id}/students/{studentId}` | 加入 / 移除一位學生 |
 | `POST` / `DELETE` | `/api/courses/{id}/students/batch` | 批次加入 / 移除學生（Body 為學生 ID 陣列） |
@@ -442,6 +442,8 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 | 下單數量為 0 或負數 | 可下單，負數反而增加庫存 | `400` |
 | 訂單狀態轉換 | 任意轉換（DELIVERED 可改回 PENDING） | 依狀態機，不允許時 `409` |
 | 同時下單 | 庫存更新互相覆蓋（測試重現：售出 40 件，庫存卻只少 6） | `@Version` 樂觀鎖，衝突時 `409` |
+| 修改已在訂單中的商品數量 | 只用目前庫存檢查，庫存 5 件全買後改成 3 件被誤判為庫存不足（`409`） | 以「目前庫存 + 原數量」檢查 |
+| 學生批次選課 / 退選帶重複 ID | `400`「課程不存在: []」 | 重複 ID 視為同一門課 |
 | 庫存不足、訂單非 PENDING 時修改 | `400`（無 body） | `409` + ProblemDetail |
 | 缺少必填欄位 | 商品 `500`、課程 / 學生直接建立（名稱為 null） | `400` + 欄位錯誤 |
 | 查不到 Todo / User | `200` + `null` | `404` |

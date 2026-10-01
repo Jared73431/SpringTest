@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,6 +53,14 @@ class CourseStudentApiTest {
 				.getBody().getId();
 	}
 
+	// CourseDTO.studentIds 為 READ_ONLY（只在回應中輸出），用戶端反序列化成 CourseDTO 時會被忽略，
+	// 因此直接讀取回應 JSON；JSON 數字轉成 Map 時可能是 Integer，統一轉成 Long 比對
+	private List<Long> studentIdsOf(ResponseEntity<Map> response) {
+		return ((List<?>) response.getBody().get("studentIds")).stream()
+				.map(id -> ((Number) id).longValue())
+				.toList();
+	}
+
 	private Long createStudent(String name) {
 		return restTemplate.postForEntity("/api/students", Map.of("name", name), StudentDTO.class)
 				.getBody().getId();
@@ -65,11 +74,11 @@ class CourseStudentApiTest {
 		Long amy = createStudent("Amy");
 		Long ben = createStudent("Ben");
 
-		ResponseEntity<CourseDTO> response = restTemplate.postForEntity("/api/courses/{id}/students/batch",
-				List.of(amy, ben), CourseDTO.class, courseId);
+		ResponseEntity<Map> response = restTemplate.postForEntity("/api/courses/{id}/students/batch",
+				List.of(amy, ben), Map.class, courseId);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody().getStudentIds()).containsExactlyInAnyOrder(amy, ben);
+		assertThat(studentIdsOf(response)).containsExactlyInAnyOrder(amy, ben);
 		StudentDTO student = restTemplate.getForObject("/api/students/{id}", StudentDTO.class, amy);
 		assertThat(student.getCourseIds()).containsExactly(courseId);
 	}
@@ -136,5 +145,44 @@ class CourseStudentApiTest {
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 		assertThat(studentRepository.count()).isZero();
+	}
+
+	// 修正前：courseIds 有重複時，查到的課程數少於 ID 數，被誤判為「課程不存在: []」（400）
+	@Test
+	void addCoursesToStudent_shouldTreatDuplicateIdsAsOne_whenSameCourseGivenTwice() {
+		Long courseId = createCourse("Java");
+		Long amy = createStudent("Amy");
+
+		ResponseEntity<StudentDTO> response = restTemplate.postForEntity("/api/students/{id}/courses/batch",
+				List.of(courseId, courseId), StudentDTO.class, amy);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody().getCourseIds()).containsExactly(courseId);
+	}
+
+	@Test
+	void removeCoursesFromStudent_shouldTreatDuplicateIdsAsOne_whenSameCourseGivenTwice() {
+		Long courseId = createCourse("Java");
+		Long amy = createStudent("Amy");
+		restTemplate.postForEntity("/api/students/{id}/courses/{cid}", null, StudentDTO.class, amy, courseId);
+
+		ResponseEntity<StudentDTO> response = restTemplate.exchange("/api/students/{id}/courses/batch",
+				HttpMethod.DELETE, new HttpEntity<>(List.of(courseId, courseId)), StudentDTO.class, amy);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody().getCourseIds()).isEmpty();
+	}
+
+	// studentIds / students 只出現在回應中；建立課程時帶入會被忽略，選課請用 /api/courses/{id}/students/...
+	@Test
+	void createCourse_shouldIgnoreStudentIds_whenGivenInRequest() {
+		Long amy = createStudent("Amy");
+
+		ResponseEntity<Map> response = restTemplate.postForEntity("/api/courses",
+				Map.of("name", "Java", "point", 3, "studentIds", List.of(amy)), Map.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(studentIdsOf(response)).isEmpty();
+		assertThat(restTemplate.getForObject("/api/students/{id}", StudentDTO.class, amy).getCourseIds()).isEmpty();
 	}
 }
