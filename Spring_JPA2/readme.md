@@ -34,80 +34,94 @@ GlobalExceptionHandler（@RestControllerAdvice）統一將錯誤轉為 RFC 9457 
 
 ## 實體關係圖
 
+本模組的資料表分成彼此獨立的四組，依業務領域分開繪製（使用實際的資料表與欄位名稱）。
+
+> 圖例：`||` 恰好一筆、`o{` 零或多筆。PK = 主鍵、FK = 外鍵。
+
+### 使用者與待辦事項（一對多）
+
 ```mermaid
 erDiagram
-    USER {
-        int id PK
-        string name
-        int gender
-        string password
+    tbl_user ||--o{ todo : "擁有"
+    tbl_user {
+        integer id PK
+        varchar name
+        integer gender
+        varchar password
     }
-
-    TODO {
-        int id PK
-        string task
-        int status
-        date createTime
-        date updateTime
-        int user_id FK
+    todo {
+        integer id PK
+        varchar task
+        integer status
+        timestamp create_time
+        timestamp update_time
+        integer user_id FK
     }
+```
 
-    STUDENT {
-        long student_id PK
-        string name
+### 學生與課程（多對多，透過中介表 `selected_course`）
+
+```mermaid
+erDiagram
+    student ||--o{ selected_course : "選修"
+    course ||--o{ selected_course : "被選修"
+    student {
+        bigint student_id PK
+        varchar name
     }
-
-    COURSE {
-        long course_id PK
-        string name
-        int point
+    course {
+        bigint course_id PK
+        varchar name
+        integer point
     }
-
-    SELECTED_COURSE {
-        long student FK
-        long course FK
+    selected_course {
+        bigint student PK, FK
+        bigint course PK, FK
     }
+```
 
-    ORDERS {
-        string order_id PK
-        string customer_id
-        date order_date
-        string status
-        decimal total_amount
-        string shipping_address
+### 訂單與商品（多對多，透過 `order_item` 記錄數量與單價）
+
+```mermaid
+erDiagram
+    orders ||--o{ order_item : "包含"
+    product ||--o{ order_item : "被訂購"
+    orders {
+        varchar order_id PK
+        varchar customer_id
+        timestamp order_date
+        varchar status
+        numeric total_amount
+        varchar shipping_address
     }
-
-    PRODUCT {
-        string product_id PK
-        string product_name
-        decimal price
-        int stock
-        string description
-        string category
-        long version
+    order_item {
+        varchar order_id PK, FK
+        varchar product_id PK, FK
+        integer quantity
+        numeric unit_price
     }
-
-    ORDER_ITEM {
-        string order_id PK,FK
-        string product_id PK,FK
-        int quantity
-        decimal unit_price
+    product {
+        varchar product_id PK
+        varchar product_name
+        numeric price
+        integer stock
+        varchar description
+        varchar category
+        bigint version "樂觀鎖"
     }
+```
 
-    IMAGES {
-        long id PK
-        string name
-        string content_type
-        bytea data
-        date upload_date
+### 圖片（獨立資料表）
+
+```mermaid
+erDiagram
+    images {
+        bigint id PK
+        varchar name
+        varchar content_type
+        bytea data "圖片內容"
+        timestamp upload_date
     }
-
-    USER ||--o{ TODO : "OneToMany"
-    STUDENT }o--o{ COURSE : "ManyToMany"
-    STUDENT ||--o{ SELECTED_COURSE : ""
-    COURSE ||--o{ SELECTED_COURSE : ""
-    ORDERS ||--o{ ORDER_ITEM : "OneToMany"
-    PRODUCT ||--o{ ORDER_ITEM : "OneToMany"
 ```
 
 ## 實體關係詳解
