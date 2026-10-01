@@ -2,9 +2,8 @@ package com.example.demo.entity;
 
 import java.util.Date;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -14,12 +13,10 @@ import lombok.Setter;
 
 /**
  * 待辦事項 Entity，與 {@link User} 為多對一（每個 Todo 屬於一位使用者）。
- * 建立 / 修改時間由 Spring Data JPA Auditing 自動填入，需搭配 JpaAuditingConfig 的 @EnableJpaAuditing。
+ * 建立 / 修改時間由 Hibernate 的 @CreationTimestamp / @UpdateTimestamp 自動填入，不需要額外設定。
  */
 @Entity
 @Table
-// 註冊 AuditingEntityListener：在 persist / update 前自動填入 @CreatedDate、@LastModifiedDate 欄位
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public class Todo {
@@ -37,11 +34,13 @@ public class Todo {
     private Integer status = 1;
 
     // updatable = false：建立時間只在 INSERT 時寫入，之後 UPDATE 不會覆蓋
-    @CreatedDate
+    // @CreationTimestamp：INSERT 前由 Hibernate 填入目前時間
+    @CreationTimestamp
     @Column(updatable = false, nullable = false)
     private Date createTime;
 
-    @LastModifiedDate
+    // @UpdateTimestamp：INSERT 與每次 UPDATE 前由 Hibernate 填入目前時間
+    @UpdateTimestamp
     @Column(nullable = false)
     private Date updateTime;
 

@@ -16,11 +16,11 @@ import com.example.demo.repository.TodoRepository;
 import com.example.demo.repository.UserRepository;
 
 /**
- * Todo 的 @CreatedDate / @LastModifiedDate（Spring Data JPA Auditing）。
+ * Todo 的 @CreationTimestamp / @UpdateTimestamp（Hibernate 自動時間戳記）。
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-class TodoAuditingTest {
+class TodoTimestampTest {
 
 	@Autowired
 	private TodoRepository todoRepository;

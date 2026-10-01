@@ -66,7 +66,7 @@ erDiagram
 
 - `Todo.user` 是 `@ManyToOne`，外鍵 `user_id` 由它維護；`User.todos` 是 `@OneToMany(mappedBy = "user")`
 - `@JsonManagedReference` / `@JsonBackReference` 避免 JSON 序列化時無限循環
-- `create_time` / `update_time` 由 Spring Data JPA Auditing（`@CreatedDate` / `@LastModifiedDate`）自動設定
+- `create_time` / `update_time` 由 Hibernate 的 `@CreationTimestamp` / `@UpdateTimestamp` 自動設定
 
 ### 2. 學生與課程（多對多）
 
@@ -180,7 +180,6 @@ erDiagram
 
 ```text
 src/main/java/com/example/demo/
-├── config/JpaAuditingConfig.java     # 啟用 JPA Auditing
 ├── controller/                       # REST API 與圖片上傳頁
 ├── dto/                              # Response / Request DTO
 ├── request/                          # 訂單、使用者、待辦事項的 Request
@@ -329,7 +328,7 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 | `api.UserTodoApiTest` | 使用者 / 待辦事項 API |
 | `api.ImageApiTest` | 圖片 API、上傳頁、`images.data` 為 `bytea` |
 | `tests.ProductOptimisticLockTest` | `@Version` 樂觀鎖衝突 |
-| `tests.TodoAuditingTest` | JPA Auditing 自動更新時間 |
+| `tests.TodoTimestampTest` | 建立 / 修改時間自動填入 |
 | `tests.OrderRepositoryTest`、`tests.OrderServiceIntegrationTest`、`tests.ApplicationTests` | 原有的 Repository / Service / 多對多測試 |
 
 ## 已知限制（刻意保留）
@@ -352,7 +351,7 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 | 4 | Spring Boot 3.5.16 → 4.1.1（Hibernate 7、Jackson 3）、Gradle → 9.8.0、Testcontainers 1.x → 2.x、移除已棄用的 `@Temporal` |
 | 5 | Constructor Injection、Entity 移除 `@Data`、移除 Todo 的錯誤 cascade、移除多餘的 data-jdbc 與無效的 thymeleaf 設定、`CurseController` 更名、註解改為繁體中文 |
 | 6 | 統一錯誤處理：`@RestControllerAdvice` + ProblemDetail（404 / 400 / 409） |
-| 7 | 修正訂單商業邏輯（狀態機、數量驗證、重複取消）、`@Version` 樂觀鎖、啟用 JPA Auditing |
+| 7 | 修正訂單商業邏輯（狀態機、數量驗證、重複取消）、`@Version` 樂觀鎖、修正建立 / 修改時間未自動填入 |
 | 8 | Bean Validation 輸入驗證，400 回應列出欄位錯誤 |
 | 9 | User / Todo / Image API 套用 URL 規則、圖片清單不含內容、頁面刪除改 POST、圖片改存 `bytea` |
 | 10 | 更新 README |
@@ -384,7 +383,7 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 - **既有資料表新增 NOT NULL 欄位要有預設值**：`@Column(columnDefinition = "bigint default 0")` 讓 `ddl-auto=update` 新增 `version` 欄位時，舊資料自動補 0。
 - **狀態機集中規則**：把「哪些狀態可以轉到哪裡」放在 `OrderStatus.canTransitionTo`（switch expression），Service 不必在每個方法各自判斷。
 - **404 / 400 / 409 的區分**：URL 的資源不存在是 404；Request Body 參照的資料不存在是 400；請求正確但與目前狀態衝突是 409。
-- **`@CreatedDate` 需要啟用 Auditing**：只加註解不會生效，還需要 `@EnableJpaAuditing` 與 `@EntityListeners(AuditingEntityListener.class)`。
+- **`@CreatedDate` 需要啟用 Auditing**：只加註解不會生效，還需要 `@EnableJpaAuditing` 與 `@EntityListeners(AuditingEntityListener.class)`，而且漏掉時不會報錯。只需要記錄時間時，改用 Hibernate 的 `@CreationTimestamp` / `@UpdateTimestamp` 不需要任何設定；需要 `@CreatedBy` 記錄使用者時才用 Spring Data Auditing。
 - **`@Lob` 在 PostgreSQL 是 `oid`**：圖片會存在 `pg_largeobject`，刪除資料列也不會刪除；一般 `byte[]` 對應 `bytea` 較單純。`ddl-auto=update` 不會轉換既有欄位型別，需要手動 SQL。
 - **HQL 函式不一定支援所有型別**：`octet_length()` 在 HQL 只接受字串，計算 `bytea` 大小改用原生 SQL + 介面投影；PostgreSQL 會把沒有引號的別名轉成小寫，別名需加雙引號。
 - **Jackson 3**：日期改為 `Z` 結尾、類別屬性依字母排序（record 仍依宣告順序）。
@@ -401,7 +400,7 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 
 ### 進階功能
 - 樂觀鎖：`@Version`
-- 自動時間戳記：JPA Auditing（`@CreatedDate`、`@LastModifiedDate`）
+- 自動時間戳記：Hibernate `@CreationTimestamp`、`@UpdateTimestamp`
 - 列舉：`@Enumerated(EnumType.STRING)` + 狀態機
 - 二進位資料：`byte[]` ↔ `bytea`
 - 查詢：衍生查詢、JPQL、原生 SQL + 介面投影
