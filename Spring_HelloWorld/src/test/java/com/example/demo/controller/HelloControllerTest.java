@@ -10,9 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+/**
+ * HelloController 的 API 行為測試。
+ * {@code @WebMvcTest} 只載入 Web 層（Controller、MVC 設定），不啟動完整應用程式，速度快且專注於 Controller。
+ */
 @WebMvcTest(HelloController.class)
 class HelloControllerTest {
 
+	// MockMvc 模擬 HTTP 請求，不需要真的啟動 Server
 	@Autowired
 	private MockMvc mockMvc;
 

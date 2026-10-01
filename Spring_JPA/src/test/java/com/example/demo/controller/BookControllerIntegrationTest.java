@@ -21,6 +21,11 @@ import com.example.demo.dto.BookResponse;
 import com.example.demo.entity.Book;
 import com.example.demo.repository.BookRepo;
 
+/**
+ * 書籍 API 的整合測試：以隨機 port 啟動完整應用程式，透過真實 HTTP（TestRestTemplate）呼叫 API，
+ * 資料庫為 Testcontainers 啟動的臨時 PostgreSQL（見 PostgresContainerTestBase）。
+ * 每個測試前清空資料表，測試之間互不影響。
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
 class BookControllerIntegrationTest extends PostgresContainerTestBase {

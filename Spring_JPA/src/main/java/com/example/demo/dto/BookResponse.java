@@ -14,6 +14,7 @@ public record BookResponse(
 		String publisher,
 		double cost) {
 
+	/** 由 Entity 建立回應物件（靜態工廠方法），轉換邏輯集中在 DTO，Controller 只需呼叫 from() */
 	public static BookResponse from(Book book) {
 		return new BookResponse(book.getId(), book.getISBN(), book.getTitle(), book.getAuthor(), book.getYear(),
 				book.getPublisher(), book.getCost());

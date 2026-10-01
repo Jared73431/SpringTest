@@ -20,6 +20,12 @@ import com.example.demo.service.BookService;
 
 import jakarta.validation.Valid;
 
+/**
+ * 書籍 REST API（/api/books）。
+ * Controller 只負責 HTTP 與 DTO 轉換（BookRequest → Entity → BookResponse），商業邏輯在 BookService。
+ * 不寫 try/catch：Service 拋出的 BookNotFoundException 由 GlobalExceptionHandler 統一轉成 404 ProblemDetail；
+ * {@code @Valid} 驗證失敗由 Spring 回 400。
+ */
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
@@ -31,7 +37,7 @@ public class BookController {
 	}
 
 	/**
-	 * 查詢全部資料
+	 * GET /api/books：查詢全部資料
 	 */
 	@GetMapping
 	public List<BookResponse> findAll() {
@@ -39,7 +45,7 @@ public class BookController {
 	}
 
 	/**
-	 * 查詢一筆資料，不存在時回 404
+	 * GET /api/books/{id}：查詢一筆資料，不存在時回 404
 	 */
 	@GetMapping("/{id}")
 	public BookResponse findById(@PathVariable Integer id) {
@@ -47,7 +53,7 @@ public class BookController {
 	}
 
 	/**
-	 * 新增一筆資料，回 201 並在 Location header 帶上新資料的網址
+	 * POST /api/books：新增一筆資料，回 201 並在 Location header 帶上新資料的網址；欄位驗證失敗回 400
 	 */
 	@PostMapping
 	public ResponseEntity<BookResponse> create(@Valid @RequestBody BookRequest request) {
@@ -56,7 +62,7 @@ public class BookController {
 	}
 
 	/**
-	 * 修改一筆資料，不存在時回 404
+	 * PUT /api/books/{id}：修改一筆資料，不存在時回 404；欄位驗證失敗回 400
 	 */
 	@PutMapping("/{id}")
 	public BookResponse update(@PathVariable Integer id, @Valid @RequestBody BookRequest request) {
@@ -64,7 +70,7 @@ public class BookController {
 	}
 
 	/**
-	 * 刪除一筆資料，成功回 204，不存在時回 404
+	 * DELETE /api/books/{id}：刪除一筆資料，成功回 204，不存在時回 404
 	 */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Integer id) {
