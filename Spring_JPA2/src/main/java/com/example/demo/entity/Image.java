@@ -3,7 +3,6 @@ package com.example.demo.entity;
 import java.util.Date;
 
 import jakarta.persistence.*;
-import jakarta.persistence.TemporalType;
 import lombok.Data;
 
 @Entity
@@ -23,7 +22,6 @@ public class Image {
     @Column(length = 1000000)  // 設定適當的長度以儲存圖片
     private byte[] data;
 
-    @Temporal(TemporalType.TIMESTAMP)
     private Date uploadDate;
 
     // 預設建構子

@@ -21,7 +21,6 @@ public class Order {
     private String customerId;
 
     @Column(name = "order_date", nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 
     @Column(name = "status", nullable = false, length = 20)
