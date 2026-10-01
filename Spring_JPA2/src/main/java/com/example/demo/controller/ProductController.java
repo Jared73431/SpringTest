@@ -21,6 +21,8 @@ import com.example.demo.dto.ProductDTO;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.ProductService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -58,7 +60,7 @@ public class ProductController {
      * @return 建立的商品資訊和201狀態碼
      */
     @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
+    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductDTO productDTO) {
         ProductDTO createdProduct = productService.createProduct(productDTO);
         return ResponseEntity.created(URI.create("/api/products/" + createdProduct.getId()))
                 .body(createdProduct);
@@ -71,7 +73,7 @@ public class ProductController {
      * @return 更新後的商品資訊或404
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(@PathVariable String id, @RequestBody ProductDTO productDTO) {
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable String id, @Valid @RequestBody ProductDTO productDTO) {
         ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
         return ResponseEntity.ok(updatedProduct);
     }

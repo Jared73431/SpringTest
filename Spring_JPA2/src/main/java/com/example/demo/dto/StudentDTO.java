@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import com.example.demo.entity.StudentPO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,6 +19,9 @@ import lombok.NoArgsConstructor;
 public class StudentDTO {
 
     private long id;
+
+    @NotBlank(message = "學生姓名不可為空")
+    @Size(max = 255, message = "學生姓名最多 255 字")
     private String name;
     private Set<Long> courseIds = new HashSet<>();
 

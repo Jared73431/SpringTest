@@ -138,13 +138,23 @@ class OtherApiTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
-	// [Potential Bug] 沒有輸入驗證，不帶 name 也能建立課程
+	// 修正前：沒有輸入驗證，不帶 name 也能建立課程
 	@Test
-	void createCourse_shouldReturnCreatedWithNullName_whenNameMissing() {
-		ResponseEntity<CourseDTO> response = restTemplate.postForEntity("/api/courses", Map.of(), CourseDTO.class);
+	void createCourse_shouldReturnBadRequest_whenNameMissing() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/courses", Map.of(), String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-		assertThat(response.getBody().getName()).isNull();
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("\"name\"");
+		assertThat(courseRepository.count()).isZero();
+	}
+
+	@Test
+	void createStudent_shouldReturnBadRequest_whenNameBlank() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/students", Map.of("name", " "),
+				String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(studentRepository.count()).isZero();
 	}
 
 	// ===== User / Todo（一對多） =====

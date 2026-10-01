@@ -7,12 +7,21 @@ import java.util.stream.Collectors;
 import com.example.demo.entity.CoursePO;
 import com.example.demo.entity.StudentPO;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+
 import lombok.Data;
 
 @Data
 public class CourseDTO {
     private long id;
+
+    @NotBlank(message = "課程名稱不可為空")
+    @Size(max = 255, message = "課程名稱最多 255 字")
     private String name;
+
+    @PositiveOrZero(message = "學分不可為負數")
     private int point;
     private Set<Long> studentIds;
     private Set<StudentDTO> students = new HashSet<>();

@@ -353,12 +353,47 @@ class OrderApiTest {
 		assertThat(response.getHeaders().getLocation()).hasPath("/api/products/" + response.getBody().getId());
 	}
 
-	// [Potential Bug] 沒有輸入驗證，缺少必填欄位時由資料庫限制擋下，回 500
+	// 修正前：沒有輸入驗證，缺少必填欄位時由資料庫限制擋下，回 500
 	@Test
-	void createProduct_shouldReturnInternalServerError_whenRequiredFieldMissing() {
+	void createProduct_shouldReturnBadRequestWithFieldErrors_whenRequiredFieldMissing() {
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/products", Map.of(), String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+		assertThat(response.getBody()).contains("\"errors\"").contains("\"name\"").contains("\"price\"")
+				.contains("\"stock\"");
+		assertThat(productRepository.count()).isZero();
+	}
+
+	@Test
+	void createProduct_shouldReturnBadRequest_whenPriceIsNegative() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/products",
+				Map.of("name", "Pen", "price", -1, "stock", 5), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("\"price\"");
+	}
+
+	@Test
+	void createOrder_shouldReturnBadRequest_whenNoProductGiven() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders",
+				Map.of("customerId", "C1", "shippingAddress", "Taipei", "productQuantities", Map.of()), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("\"productQuantities\"");
+		assertThat(orderRepository.count()).isZero();
+	}
+
+	@Test
+	void addOrderItem_shouldReturnBadRequest_whenQuantityMissing() {
+		String productId = createProduct(10);
+		String orderId = createOrder(productId, 1).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/items",
+				Map.of("productId", productId), String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).contains("\"quantity\"");
 	}
 
 	@Test

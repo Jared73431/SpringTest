@@ -21,6 +21,8 @@ import com.example.demo.request.AddOrderItemRequest;
 import com.example.demo.request.CreateOrderRequest;
 import com.example.demo.service.OrderService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -48,7 +50,7 @@ public class OrderController {
 
     // 建立訂單
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(@RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         Order order = orderService.createOrder(
                 request.getCustomerId(),
                 request.getShippingAddress(),
@@ -78,7 +80,7 @@ public class OrderController {
     @PostMapping("/{id}/items")
     public ResponseEntity<OrderDTO> addOrderItem(
             @PathVariable String id,
-            @RequestBody AddOrderItemRequest request) {
+            @Valid @RequestBody AddOrderItemRequest request) {
         Order order = orderService.addOrderItem(id, request.getProductId(), request.getQuantity());
         return ResponseEntity.ok(new OrderDTO(order));
     }
