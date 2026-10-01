@@ -32,13 +32,13 @@ PostgreSQL            資料表由 Hibernate 自動建立（ddl-auto=update）
 GlobalExceptionHandler（@RestControllerAdvice）統一將錯誤轉為 RFC 9457 ProblemDetail
 ```
 
-## 實體關係圖
+## 資料模型
 
-本模組的資料表分成彼此獨立的四組，依業務領域分開繪製（使用實際的資料表與欄位名稱）。
+本模組的資料表分成彼此獨立的四組。每組先以 ER 圖呈現資料表結構（實際的資料表 / 欄位名稱與 PostgreSQL 型別），再說明對應的 JPA Entity 寫法。
 
 > 圖例：`||` 恰好一筆、`o{` 零或多筆。PK = 主鍵、FK = 外鍵。
 
-### 使用者與待辦事項（一對多）
+### 1. 使用者與待辦事項（一對多）
 
 ```mermaid
 erDiagram
@@ -59,7 +59,16 @@ erDiagram
     }
 ```
 
-### 學生與課程（多對多，透過中介表 `selected_course`）
+| 資料表 | Entity |
+|---|---|
+| `tbl_user` | `User` |
+| `todo` | `Todo` |
+
+- `Todo.user` 是 `@ManyToOne`，外鍵 `user_id` 由它維護；`User.todos` 是 `@OneToMany(mappedBy = "user")`
+- `@JsonManagedReference` / `@JsonBackReference` 避免 JSON 序列化時無限循環
+- `create_time` / `update_time` 由 Spring Data JPA Auditing（`@CreatedDate` / `@LastModifiedDate`）自動設定
+
+### 2. 學生與課程（多對多）
 
 ```mermaid
 erDiagram
@@ -80,7 +89,17 @@ erDiagram
     }
 ```
 
-### 訂單與商品（多對多，透過 `order_item` 記錄數量與單價）
+| 資料表 | Entity |
+|---|---|
+| `student` | `StudentPO` |
+| `course` | `CoursePO` |
+| `selected_course` | 沒有 Entity，由 `@ManyToMany` + `@JoinTable` 自動維護 |
+
+- 一個學生可以選修多門課程，一門課程可以有多個學生
+- `CoursePO.students` 是擁有方（`@JoinTable`），`StudentPO.courses` 是 `mappedBy` 的另一方
+- 雙向關係維護方法（`addStudent` / `removeStudent` / `clearStudents`、`addCourse` / `removeCourse` / `clearCourses`）同時更新兩邊的集合，確保一致
+
+### 3. 訂單與商品（帶額外欄位的多對多 + 複合主鍵）
 
 ```mermaid
 erDiagram
@@ -111,130 +130,16 @@ erDiagram
     }
 ```
 
-### 圖片（獨立資料表）
+| 資料表 | Entity |
+|---|---|
+| `orders` | `Order`（`order` 是 SQL 保留字） |
+| `order_item` | `OrderItem`，主鍵為 `OrderItemPK` |
+| `product` | `Product` |
 
-```mermaid
-erDiagram
-    images {
-        bigint id PK
-        varchar name
-        varchar content_type
-        bytea data "圖片內容"
-        timestamp upload_date
-    }
-```
-
-## 實體關係詳解
-
-### 1. User ↔ Todo（一對多）
-
-```mermaid
-classDiagram
-    class User {
-        -Integer id
-        -String name
-        -Integer gender
-        -String password
-        -Set~Todo~ todos
-    }
-
-    class Todo {
-        -Integer id
-        -String task
-        -Integer status
-        -Date createTime
-        -Date updateTime
-        -User user
-    }
-
-    User "1" --> "*" Todo : OneToMany
-```
-
-- 一個使用者可以擁有多個待辦事項，使用 `@OneToMany(mappedBy = "user")` / `@ManyToOne`
-- `@JsonManagedReference` / `@JsonBackReference` 避免 JSON 序列化時無限循環
-- `createTime` / `updateTime` 由 Spring Data JPA Auditing（`@CreatedDate` / `@LastModifiedDate`）自動設定
-
-### 2. Student ↔ Course（多對多）
-
-```mermaid
-classDiagram
-    class StudentPO {
-        -long id
-        -String name
-        -Set~CoursePO~ courses
-        +addCourse(CoursePO course)
-        +removeCourse(CoursePO course)
-        +clearCourses()
-    }
-
-    class CoursePO {
-        -long id
-        -String name
-        -int point
-        -Set~StudentPO~ students
-        +addStudent(StudentPO student)
-        +removeStudent(StudentPO student)
-        +clearStudents()
-    }
-
-    StudentPO "*" --> "*" CoursePO : "ManyToMany"
-```
-
-- 一個學生可以選修多門課程，一門課程可以有多個學生
-- 中介表 `selected_course` 由 `CoursePO`（擁有方）的 `@JoinTable` 維護
-- 雙向關係維護方法（`addStudent` / `removeStudent` …）確保兩邊的集合一致
-
-### 3. Order ↔ Product（帶額外欄位的多對多 + 複合主鍵）
-
-```mermaid
-classDiagram
-    class Order {
-        -String id
-        -String customerId
-        -Date orderDate
-        -OrderStatus status
-        -BigDecimal totalAmount
-        -String shippingAddress
-        -List~OrderItem~ items
-        +addItem(OrderItem item)
-        +removeItem(OrderItem item)
-        +recalculateTotalAmount()
-    }
-
-    class Product {
-        -String id
-        -String name
-        -BigDecimal price
-        -Integer stock
-        -String description
-        -String category
-        -Long version
-        +reduceStock(int quantity)
-    }
-
-    class OrderItem {
-        -OrderItemPK id
-        -Order order
-        -Product product
-        -Integer quantity
-        -BigDecimal unitPrice
-        +getSubtotal() BigDecimal
-    }
-
-    class OrderItemPK {
-        -String orderId
-        -String productId
-    }
-
-    Order "1" --> "*" OrderItem : "items"
-    Product "1" --> "*" OrderItem : "orderItems"
-    OrderItem --> OrderItemPK : "@EmbeddedId"
-```
-
-- 訂單與商品是多對多，但需要額外資訊（數量、單價），因此以 `OrderItem` 作為中介實體
-- `OrderItem` 使用複合主鍵 `@EmbeddedId`，並以 `@MapsId` 對應到 Order 與 Product
-- 訂單總金額由 `recalculateTotalAmount()` 自動計算
-- `Product.version` 為 `@Version` 樂觀鎖，避免同時下單時庫存更新互相覆蓋
+- 訂單與商品是多對多，但需要額外資訊（數量、單價），因此以 `OrderItem` 作為中介實體，而不是 `@ManyToMany`
+- `OrderItem` 使用複合主鍵 `@EmbeddedId`（`OrderItemPK`），並以 `@MapsId` 對應到 Order 與 Product
+- `Order.addItem` / `removeItem` 同時維護兩邊的關聯，並由 `recalculateTotalAmount()` 重新計算總金額
+- `Product.reduceStock` 集中檢查庫存；`Product.version` 為 `@Version` 樂觀鎖，避免同時下單時庫存更新互相覆蓋
 
 #### 訂單狀態機
 
@@ -250,18 +155,22 @@ PENDING ──▶ PROCESSING ──▶ SHIPPED ──▶ DELIVERED
 - 只有 PENDING、PROCESSING 可以取消；取消必須透過 `POST /api/orders/{id}/cancel`，才會補回庫存
 - DELIVERED、CANCELLED 為最終狀態
 
-### 4. Image（圖片上傳）
+### 4. 圖片（獨立資料表）
 
 ```mermaid
-classDiagram
-    class Image {
-        -Long id
-        -String name
-        -String contentType
-        -byte[] data
-        -Date uploadDate
+erDiagram
+    images {
+        bigint id PK
+        varchar name
+        varchar content_type
+        bytea data "圖片內容"
+        timestamp upload_date
     }
 ```
+
+| 資料表 | Entity |
+|---|---|
+| `images` | `Image` |
 
 - 圖片內容直接存在資料庫的 `bytea` 欄位
 - 不使用 `@Lob`：Hibernate 在 PostgreSQL 會把 `@Lob byte[]` 存成 `oid`（Large Object），讀取必須在交易中，刪除資料列時也不會自動刪除 Large Object
