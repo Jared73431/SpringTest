@@ -2,7 +2,6 @@ package com.example.demo.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,8 +22,11 @@ import jakarta.persistence.EntityNotFoundException;
 @RequestMapping("/api/students")
 public class StudentController {
 
-    @Autowired
-    StudentService studentService;
+    private final StudentService studentService;
+
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
+    }
 
     @GetMapping
     public ResponseEntity<List<StudentDTO>> getAllStudents() {
@@ -65,7 +67,7 @@ public class StudentController {
     }
 
     /**
-     * 批量為學生添加課程
+     * 批次為學生新增課程
      * POST /api/students/{studentId}/courses/batch
      */
     @PostMapping("/{studentId}/courses/batch")
@@ -87,7 +89,7 @@ public class StudentController {
     }
 
     /**
-     * 批量從學生中移除課程
+     * 批次從學生中移除課程
      * DELETE /api/students/{studentId}/courses/batch
      */
     @DeleteMapping("/{studentId}/courses/batch")
@@ -123,7 +125,7 @@ public class StudentController {
     }
 
     /**
-     * 為學生添加單一課程
+     * 為學生新增單一課程
      * POST /api/students/{studentId}/courses/{courseId}
      */
     @PostMapping("/{studentId}/courses/{courseId}")

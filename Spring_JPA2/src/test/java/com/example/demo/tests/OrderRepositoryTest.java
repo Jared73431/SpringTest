@@ -42,29 +42,29 @@ public class OrderRepositoryTest {
 
     @BeforeEach
     public void setUp() {
-        // 创建测试商品
-        testProduct1 = new Product("P001", "测试商品1", new BigDecimal("99.99"), 100);
-        testProduct2 = new Product("P002", "测试商品2", new BigDecimal("199.99"), 50);
-        testProduct1.setCategory("电子产品");
+        // 建立測試商品
+        testProduct1 = new Product("P001", "測試商品1", new BigDecimal("99.99"), 100);
+        testProduct2 = new Product("P002", "測試商品2", new BigDecimal("199.99"), 50);
+        testProduct1.setCategory("電子產品");
         testProduct2.setCategory("家居用品");
 
         productRepository.save(testProduct1);
         productRepository.save(testProduct2);
 
-        // 创建测试订单
+        // 建立測試訂單
         testOrder = new Order("O001", "C001");
-        testOrder.setShippingAddress("测试地址1号");
+        testOrder.setShippingAddress("測試地址1號");
         testOrder.setStatus(Order.OrderStatus.PENDING);
         orderRepository.save(testOrder);
 
-        // 添加订单项
+        // 新增訂單項
         OrderItem item1 = new OrderItem(testOrder, testProduct1, 2);
         OrderItem item2 = new OrderItem(testOrder, testProduct2, 1);
 
         testOrder.addItem(item1);
         testOrder.addItem(item2);
 
-        // 保存订单和订单项
+        // 保存訂單和訂單項
         orderRepository.save(testOrder);
     }
 
@@ -104,7 +104,7 @@ public class OrderRepositoryTest {
         Order order = orderRepository.findById("O001").orElse(null);
         assertNotNull(order);
 
-        // 验证总金额计算: 2 * 99.99 + 1 * 199.99 = 399.97
+        // 驗證總金額計算: 2 * 99.99 + 1 * 199.99 = 399.97
         assertEquals(0, new BigDecimal("399.97").compareTo(order.getTotalAmount()));
     }
 }

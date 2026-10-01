@@ -10,7 +10,7 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
-@ToString(exclude = "courses")  // 排除courses字段
+@ToString(exclude = "courses")  // 排除courses欄位
 @EqualsAndHashCode(exclude = "courses")
 @Table(name = "student")
 public class StudentPO {
@@ -31,11 +31,11 @@ public class StudentPO {
     @ManyToMany(
             mappedBy = "students",
             fetch = FetchType.LAZY,
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}  // 添加级联操作
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}  // 新增級聯操作
     )
-    private Set<CoursePO> courses = new HashSet<>();  // 初始化为可变集合
+    private Set<CoursePO> courses = new HashSet<>();  // 初始化為可變集合
 
-    // 添加关系维护方法
+    // 新增關係維護方法
     public void addCourse(CoursePO course) {
         if (course != null) {
             courses.add(course);

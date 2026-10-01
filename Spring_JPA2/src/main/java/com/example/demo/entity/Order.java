@@ -6,11 +6,13 @@ import java.util.Date;
 import java.util.List;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Data
-@Table(name = "orders") // 使用"orders"而不是"order"，因为"order"是SQL关键字
+@Getter
+@Setter
+@Table(name = "orders") // 使用"orders"而不是"order"，因為"order"是SQL關鍵字
 public class Order {
 
     @Id
@@ -36,12 +38,12 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
-    // 订单状态枚举
+    // 訂單狀態列舉
     public enum OrderStatus {
         PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
     }
 
-    // 构造函数
+    // 建構子
     public Order() {
         this.orderDate = new Date();
         this.status = OrderStatus.PENDING;
@@ -53,25 +55,25 @@ public class Order {
         this.customerId = customerId;
     }
 
-    // 便捷方法：添加订单项
+    // 便利方法：新增訂單項
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
 
-        // 重新计算订单总金额
+        // 重新計算訂單總金額
         recalculateTotalAmount();
     }
 
-    // 便捷方法：移除订单项
+    // 便利方法：移除訂單項
     public void removeItem(OrderItem item) {
         items.remove(item);
         item.setOrder(null);
 
-        // 重新计算订单总金额
+        // 重新計算訂單總金額
         recalculateTotalAmount();
     }
 
-    // 便捷方法：计算订单总金额
+    // 便利方法：計算訂單總金額
     public void recalculateTotalAmount() {
         this.totalAmount = items.stream()
                 .map(OrderItem::getSubtotal)

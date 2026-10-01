@@ -7,24 +7,24 @@ import com.example.demo.entity.Order;
 
 public interface OrderService {
 
-    // 创建订单
+    // 建立訂單
     Order createOrder(String customerId, String shippingAddress, Map<String, Integer> productQuantities);
 
-    // 取消订单
+    // 取消訂單
     Order cancelOrder(String orderId);
 
-    // 更新订单状态
+    // 更新訂單狀態
     Order updateOrderStatus(String orderId, Order.OrderStatus status);
 
-    // 添加订单项
+    // 新增訂單項
     Order addOrderItem(String orderId, String productId, int quantity);
 
-    // 移除订单项
+    // 移除訂單項
     Order removeOrderItem(String orderId, String productId);
 
-    // 查找订单
+    // 查找訂單
     Order findOrder(String orderId);
 
-    // 查找客户所有订单
+    // 查找客戶所有訂單
     List<Order> findCustomerOrders(String customerId);
 }

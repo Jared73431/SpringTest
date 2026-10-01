@@ -4,7 +4,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,10 +25,13 @@ import com.example.demo.service.OrderService;
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
 
-    // 根据ID获取订单
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    // 根據ID取得訂單
     @GetMapping("/{id}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable String id) {
         try {
@@ -40,7 +42,7 @@ public class OrderController {
         }
     }
 
-    // 获取客户所有订单
+    // 取得客戶所有訂單
     @GetMapping("/customer/{customerId}")
     public List<OrderDTO> getCustomerOrders(@PathVariable String customerId) {
         return orderService.findCustomerOrders(customerId).stream()
@@ -48,7 +50,7 @@ public class OrderController {
                 .collect(Collectors.toList());
     }
 
-    // 创建订单
+    // 建立訂單
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(@RequestBody CreateOrderRequest request) {
         try {
@@ -64,7 +66,7 @@ public class OrderController {
         }
     }
 
-    // 取消订单
+    // 取消訂單
     @PostMapping("/{id}/cancel")
     public ResponseEntity<OrderDTO> cancelOrder(@PathVariable String id) {
         try {
@@ -75,7 +77,7 @@ public class OrderController {
         }
     }
 
-    // 更新订单状态
+    // 更新訂單狀態
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable String id,
@@ -88,7 +90,7 @@ public class OrderController {
         }
     }
 
-    // 添加订单项
+    // 新增訂單項
     @PostMapping("/{id}/items")
     public ResponseEntity<OrderDTO> addOrderItem(
             @PathVariable String id,
@@ -101,7 +103,7 @@ public class OrderController {
         }
     }
 
-    // 移除订单项
+    // 移除訂單項
     @DeleteMapping("/{orderId}/items/{productId}")
     public ResponseEntity<OrderDTO> removeOrderItem(
             @PathVariable String orderId,

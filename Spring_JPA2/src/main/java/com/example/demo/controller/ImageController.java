@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import java.io.IOException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,8 +22,11 @@ import com.example.demo.service.ImageService;
 @Controller
 public class ImageController {
 
-    @Autowired
-    private ImageService imageService;
+    private final ImageService imageService;
+
+    public ImageController(ImageService imageService) {
+        this.imageService = imageService;
+    }
 
     @GetMapping("/")
     public String home(Model model) {

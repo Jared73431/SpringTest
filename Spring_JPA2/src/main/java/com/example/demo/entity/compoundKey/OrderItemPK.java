@@ -17,7 +17,7 @@ public class OrderItemPK implements Serializable {
     @Column(name = "product_id", nullable = false, length = 36)
     private String productId;
 
-    // 构造函数
+    // 建構子
     public OrderItemPK() {}
 
     public OrderItemPK(String orderId, String productId) {

@@ -205,6 +205,17 @@ class OtherApiTest {
 	}
 
 	@Test
+	void homePage_shouldRenderImageList_whenImagesExist() {
+		uploadImage();
+
+		ResponseEntity<String> response = restTemplate.getForEntity("/", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getHeaders().getContentType().isCompatibleWith(MediaType.TEXT_HTML)).isTrue();
+		assertThat(response.getBody()).contains("test.png");
+	}
+
+	@Test
 	void getImage_shouldReturnNotFound_whenImageNotExists() {
 		ResponseEntity<byte[]> response = restTemplate.getForEntity("/api/images/999999", byte[].class);
 

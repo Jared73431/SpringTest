@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.User;
@@ -11,8 +10,11 @@ import com.example.demo.repository.UserRepository;
 @Service
 public class UserService {
 
-    @Autowired
-    UserRepository userDao;
+    private final UserRepository userDao;
+
+    public UserService(UserRepository userDao) {
+        this.userDao = userDao;
+    }
 
     public Optional<User> getTodosByUserId(Integer id) {
         Optional<User> data = userDao.findById(id);

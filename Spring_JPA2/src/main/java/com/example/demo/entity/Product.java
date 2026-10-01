@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "product")
 public class Product {
 
@@ -34,7 +36,7 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    // 构造函数
+    // 建構子
     public Product() {}
 
     public Product(String id, String name, BigDecimal price, Integer stock) {
@@ -44,10 +46,10 @@ public class Product {
         this.stock = stock;
     }
 
-    // 便捷方法：减少库存
+    // 便利方法：減少庫存
     public void reduceStock(int quantity) {
         if (this.stock < quantity) {
-            throw new RuntimeException("库存不足");
+            throw new RuntimeException("庫存不足");
         }
         this.stock -= quantity;
     }

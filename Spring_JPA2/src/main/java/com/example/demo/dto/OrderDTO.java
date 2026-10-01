@@ -21,7 +21,7 @@ public class OrderDTO {
     private String shippingAddress;
     private List<OrderItemDTO> items = new ArrayList<>();
 
-    // 构造函数
+    // 建構子
     public OrderDTO() {}
 
     public OrderDTO(Order order) {
@@ -32,7 +32,7 @@ public class OrderDTO {
         this.totalAmount = order.getTotalAmount();
         this.shippingAddress = order.getShippingAddress();
 
-        // 转换订单项
+        // 轉換訂單項
         if (order.getItems() != null) {
             for (OrderItem item : order.getItems()) {
                 this.items.add(new OrderItemDTO(item));

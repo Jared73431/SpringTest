@@ -14,7 +14,7 @@ public class OrderItemDTO {
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
 
-    // 构造函数
+    // 建構子
     public OrderItemDTO() {}
 
     public OrderItemDTO(OrderItem orderItem) {

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,11 +26,14 @@ import com.example.demo.service.ProductService;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
     /**
-     * 獲取所有商品
+     * 取得所有商品
      * @return 所有商品列表
      */
     @GetMapping
@@ -40,7 +42,7 @@ public class ProductController {
     }
 
     /**
-     * 根據ID獲取商品
+     * 根據ID取得商品
      * @param id 商品ID
      * @return 商品資訊或404
      */
@@ -52,9 +54,9 @@ public class ProductController {
     }
 
     /**
-     * 創建新商品
+     * 建立新商品
      * @param productDTO 商品資訊
-     * @return 創建的商品資訊和201狀態碼
+     * @return 建立的商品資訊和201狀態碼
      */
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {

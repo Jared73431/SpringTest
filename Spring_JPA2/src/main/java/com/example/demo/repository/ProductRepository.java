@@ -14,19 +14,19 @@ import com.example.demo.entity.Product;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, String> {
 
-    // 根据商品类别查找
+    // 根據商品類別查找
     List<Product> findByCategory(String category);
 
-    // 根据价格范围查找
+    // 根據價格範圍查找
     List<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
 
-    // 查找库存低于指定值的商品
+    // 查找庫存低於指定值的商品
     List<Product> findByStockLessThan(Integer stockThreshold);
 
-    // 按名称模糊查询
+    // 按名稱模糊查詢
     List<Product> findByNameContaining(String keyword);
 
-    // 自定义查询：查找某个类别中价格最高的n个商品
+    // 自定義查詢：查找某個類別中價格最高的n個商品
     @Query("SELECT p FROM Product p WHERE p.category = :category ORDER BY p.price DESC")
     List<Product> findTopPriceProductsByCategory(@Param("category") String category, Pageable pageable);
 }

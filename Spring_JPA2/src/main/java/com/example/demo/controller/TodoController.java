@@ -2,7 +2,6 @@ package com.example.demo.controller;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,8 +16,11 @@ import com.example.demo.service.TodoService;
 @RestController
 public class TodoController {
 
-    @Autowired
-    private TodoService todoservice;
+    private final TodoService todoservice;
+
+    public TodoController(TodoService todoservice) {
+        this.todoservice = todoservice;
+    }
 
     @GetMapping("/todo/{id}")
     public ResponseEntity getTodos (@PathVariable Integer id) {

@@ -5,10 +5,12 @@ import java.math.BigDecimal;
 import com.example.demo.entity.compoundKey.OrderItemPK;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "order_item")
 public class OrderItem {
 
@@ -16,12 +18,12 @@ public class OrderItem {
     private OrderItemPK id;
 
     @ManyToOne
-    @MapsId("orderId") // 映射到复合主键的orderId字段
+    @MapsId("orderId") // 映射到複合主鍵的orderId欄位
     @JoinColumn(name = "order_id", referencedColumnName = "order_id")
     private Order order;
 
     @ManyToOne
-    @MapsId("productId") // 映射到复合主键的productId字段
+    @MapsId("productId") // 映射到複合主鍵的productId欄位
     @JoinColumn(name = "product_id", referencedColumnName = "product_id")
     private Product product;
 
@@ -31,7 +33,7 @@ public class OrderItem {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    // 构造函数
+    // 建構子
     public OrderItem() {}
 
     public OrderItem(Order order, Product product, Integer quantity) {
@@ -42,7 +44,7 @@ public class OrderItem {
         this.unitPrice = product.getPrice();
     }
 
-    // 便捷方法：计算小计金额
+    // 便利方法：計算小計金額
     public BigDecimal getSubtotal() {
         return unitPrice.multiply(new BigDecimal(quantity));
     }

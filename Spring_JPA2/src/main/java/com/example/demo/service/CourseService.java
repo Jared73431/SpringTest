@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +16,15 @@ import com.example.demo.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 @Service
-public class CurseService {
+public class CourseService {
 
-    @Autowired
-    CourseRepository courseRepository;
-    @Autowired
-    StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
+    private final StudentRepository studentRepository;
+
+    public CourseService(CourseRepository courseRepository, StudentRepository studentRepository) {
+        this.courseRepository = courseRepository;
+        this.studentRepository = studentRepository;
+    }
 
     @Transactional(readOnly = true)
     public List<CourseDTO> getAllCourses() {
@@ -89,16 +91,16 @@ public class CurseService {
         return CourseDTO.fromEntityWithStudents(courseRepository.save(course));
     }
 
-    //批量添加学生到课程
+    //批次新增學生到課程
     @Transactional
     public CourseDTO addStudentsToCourse(Long courseId, Set<Long> studentIds) {
         CoursePO course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
 
-        // 批量查找学生
+        // 批次查找學生
         List<StudentPO> students = studentRepository.findAllById(studentIds);
 
-        // 检查是否所有学生都存在
+        // 檢查是否所有學生都存在
         if (students.size() != studentIds.size()) {
             Set<Long> foundIds = students.stream().map(StudentPO::getId).collect(Collectors.toSet());
             Set<Long> notFoundIds = studentIds.stream()
@@ -107,21 +109,21 @@ public class CurseService {
             throw new EntityNotFoundException("Students not found with ids: " + notFoundIds);
         }
 
-        // 使用 addStudents 方法批量添加
+        // 使用 addStudents 方法批次新增
         course.addStudents(students);
         return CourseDTO.fromEntityWithStudents(courseRepository.save(course));
     }
 
-    // 批量从课程中移除学生
+    // 批次從課程中移除學生
     @Transactional
     public CourseDTO removeStudentsFromCourse(Long courseId, Set<Long> studentIds) {
         CoursePO course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
 
-        // 批量查找学生
+        // 批次查找學生
         List<StudentPO> students = studentRepository.findAllById(studentIds);
 
-        // 检查是否所有学生都存在
+        // 檢查是否所有學生都存在
         if (students.size() != studentIds.size()) {
             Set<Long> foundIds = students.stream().map(StudentPO::getId).collect(Collectors.toSet());
             Set<Long> notFoundIds = studentIds.stream()
@@ -130,7 +132,7 @@ public class CurseService {
             throw new EntityNotFoundException("Students not found with ids: " + notFoundIds);
         }
 
-        // 使用 removeStudents 方法批量移除
+        // 使用 removeStudents 方法批次移除
         course.removeStudents(students);
         return CourseDTO.fromEntityWithStudents(courseRepository.save(course));
     }

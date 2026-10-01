@@ -3,7 +3,6 @@ package com.example.demo.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +17,13 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class StudentService {
 
-    @Autowired
-    CourseRepository courseRepository;
-    @Autowired
-    StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
+    private final StudentRepository studentRepository;
+
+    public StudentService(CourseRepository courseRepository, StudentRepository studentRepository) {
+        this.courseRepository = courseRepository;
+        this.studentRepository = studentRepository;
+    }
 
     @Transactional(readOnly = true)
     public List<StudentDTO> getAllStudents() {
@@ -119,7 +121,7 @@ public class StudentService {
             throw new EntityNotFoundException("Courses not found with ids: " + notFoundCourseIds);
         }
 
-        // 使用 StudentPO 的 addCourses 方法批量添加課程
+        // 使用 StudentPO 的 addCourses 方法批次新增課程
         student.addCourses(courses);
 
         return StudentDTO.fromEntity(studentRepository.save(student));
@@ -144,7 +146,7 @@ public class StudentService {
             throw new EntityNotFoundException("Courses not found with ids: " + notFoundCourseIds);
         }
 
-        // 使用 StudentPO 的 removeCourses 方法批量移除課程
+        // 使用 StudentPO 的 removeCourses 方法批次移除課程
         student.removeCourses(courses);
 
         return StudentDTO.fromEntity(studentRepository.save(student));

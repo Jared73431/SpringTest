@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.ProductDTO;
@@ -16,11 +15,14 @@ import com.example.demo.repository.ProductRepository;
 @Service
 public class ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
     /**
-     * 獲取所有商品
+     * 取得所有商品
      * @return 所有商品的DTO列表
      */
     public List<ProductDTO> getAllProducts() {
@@ -30,7 +32,7 @@ public class ProductService {
     }
 
     /**
-     * 根據ID獲取商品
+     * 根據ID取得商品
      * @param id 商品ID
      * @return 商品DTO的Optional包裝
      */
@@ -40,9 +42,9 @@ public class ProductService {
     }
 
     /**
-     * 創建新商品
+     * 建立新商品
      * @param productDTO 商品DTO
-     * @return 創建後的商品DTO
+     * @return 建立後的商品DTO
      * @throws IllegalArgumentException 如果商品ID已存在
      */
     public ProductDTO createProduct(ProductDTO productDTO) {

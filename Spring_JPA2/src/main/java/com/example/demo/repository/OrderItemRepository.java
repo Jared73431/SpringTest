@@ -15,16 +15,16 @@ import com.example.demo.entity.compoundKey.OrderItemPK;
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, OrderItemPK> {
 
-    // 查找某个订单的所有订单项
+    // 查找某個訂單的所有訂單項
     List<OrderItem> findByOrderId(String orderId);
 
-    // 查找包含某个商品的所有订单项
+    // 查找包含某個商品的所有訂單項
     List<OrderItem> findByProductId(String productId);
 
-    // 查找数量大于指定值的订单项
+    // 查找數量大於指定值的訂單項
     List<OrderItem> findByQuantityGreaterThan(Integer quantity);
 
-    // 自定义查询：查找某个时间段内售出数量最多的商品
+    // 自定義查詢：查找某個時間段內售出數量最多的商品
     @Query("SELECT i.product.id, SUM(i.quantity) as total FROM OrderItem i " +
             "JOIN i.order o WHERE o.orderDate BETWEEN :startDate AND :endDate " +
             "GROUP BY i.product.id ORDER BY total DESC")

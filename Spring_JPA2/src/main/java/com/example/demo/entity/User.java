@@ -5,12 +5,13 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "tbl_user")
-@Data
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -28,6 +29,5 @@ public class User {
 
     @JsonManagedReference
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
-    @EqualsAndHashCode.Exclude
     private Set<Todo> todos;
 }

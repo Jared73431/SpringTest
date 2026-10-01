@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,16 +15,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.CourseDTO;
-import com.example.demo.service.CurseService;
+import com.example.demo.service.CourseService;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @RestController
 @RequestMapping("/api/courses")
-public class CurseController {
+public class CourseController {
 
-    @Autowired
-    CurseService courseService;
+    private final CourseService courseService;
+
+    public CourseController(CourseService courseService) {
+        this.courseService = courseService;
+    }
 
     @GetMapping
     public ResponseEntity<List<CourseDTO>> getAllCourses() {
@@ -65,7 +67,7 @@ public class CurseController {
         }
     }
 
-    // 批量学生操作
+    // 批次學生操作
     @PostMapping("/{courseId}/students/batch")
     public ResponseEntity<CourseDTO> addStudentsToCourse(
             @PathVariable Long courseId,

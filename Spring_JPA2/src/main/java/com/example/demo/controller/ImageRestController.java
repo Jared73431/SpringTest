@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,8 +25,11 @@ import com.example.demo.service.ImageService;
 @RequestMapping("/api/images")
 public class ImageRestController {
 
-    @Autowired
-    private ImageService imageService;
+    private final ImageService imageService;
+
+    public ImageRestController(ImageService imageService) {
+        this.imageService = imageService;
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {

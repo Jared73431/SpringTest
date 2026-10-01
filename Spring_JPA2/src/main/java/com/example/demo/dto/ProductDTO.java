@@ -15,7 +15,7 @@ public class ProductDTO {
     private String description;
     private String category;
 
-    // 构造函数
+    // 建構子
     public ProductDTO() {}
 
     public ProductDTO(Product product) {
@@ -27,7 +27,7 @@ public class ProductDTO {
         this.category = product.getCategory();
     }
 
-    // 转换为实体
+    // 轉換為實體
     public Product toEntity() {
         Product product = new Product();
         product.setId(this.id);
