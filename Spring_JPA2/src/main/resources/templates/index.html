@@ -73,12 +73,13 @@
 <h2>圖片庫</h2>
 <div class="gallery">
   <div th:each="image : ${images}" class="gallery-item">
-    <img th:src="@{'/images/' + ${image.id}}" th:alt="${image.name}" />
+    <img th:src="@{'/api/images/' + ${image.id}}" th:alt="${image.name}" />
     <div th:text="${image.name}"></div>
     <div class="actions">
-      <a th:href="@{'/delete/' + ${image.id}}">
-        <button>刪除</button>
-      </a>
+      <!-- 刪除會修改資料，使用 POST 表單而不是連結（GET） -->
+      <form method="POST" th:action="@{'/images/' + ${image.id} + '/delete'}">
+        <button type="submit">刪除</button>
+      </form>
     </div>
   </div>
 </div>

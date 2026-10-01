@@ -1,12 +1,9 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
-import java.util.List;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +13,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.example.demo.entity.Image;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.ImageService;
 
+/**
+ * 圖片上傳頁面（Thymeleaf）。頁面上的圖片透過 GET /api/images/{id} 顯示。
+ */
 @Controller
 public class ImageController {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageController.class);
 
     private final ImageService imageService;
 
@@ -30,8 +32,7 @@ public class ImageController {
 
     @GetMapping("/")
     public String home(Model model) {
-        List<Image> images = imageService.getAllImages();
-        model.addAttribute("images", images);
+        model.addAttribute("images", imageService.getAllImages());
         return "index";
     }
 
@@ -46,33 +47,20 @@ public class ImageController {
             imageService.storeImage(file);
             redirectAttributes.addFlashAttribute("message", "圖片上傳成功!");
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("圖片上傳失敗: {}", file.getOriginalFilename(), e);
             redirectAttributes.addFlashAttribute("message", "圖片上傳失敗: " + e.getMessage());
         }
 
         return "redirect:/";
     }
 
-    @GetMapping("/images/{id}")
-    public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
-        Image image = imageService.getImage(id);
-        if (image == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType(image.getContentType()));
-        headers.setContentLength(image.getData().length);
-
-        return new ResponseEntity<>(image.getData(), headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/delete/{id}")
+    // 刪除會修改資料，使用 POST（修正前為 GET /delete/{id}）
+    @PostMapping("/images/{id}/delete")
     public String deleteImage(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             imageService.deleteImage(id);
             redirectAttributes.addFlashAttribute("message", "圖片刪除成功!");
-        } catch (Exception e) {
+        } catch (ResourceNotFoundException e) {
             redirectAttributes.addFlashAttribute("message", "圖片刪除失敗: " + e.getMessage());
         }
         return "redirect:/";

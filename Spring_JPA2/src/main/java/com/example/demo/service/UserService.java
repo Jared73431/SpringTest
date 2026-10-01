@@ -15,15 +15,15 @@ public class UserService {
         this.userDao = userDao;
     }
 
-    public User getTodosByUserId(Integer id) {
+    public User getUser(Integer id) {
         return userDao.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("使用者", id));
     }
 
-    public void saveUser(String name){
+    public User createUser(String name) {
         User user = new User();
         user.setName(name);
-        userDao.save(user);
+        return userDao.save(user);
     }
 
 }

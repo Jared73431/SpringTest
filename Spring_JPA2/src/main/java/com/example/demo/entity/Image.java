@@ -20,8 +20,8 @@ public class Image {
 
     private String contentType;
 
-    @Lob
-    @Column(length = 1000000)  // 設定適當的長度以儲存圖片
+    // 不使用 @Lob：Hibernate 在 PostgreSQL 會把 @Lob byte[] 存成 oid（Large Object），
+    // 讀取時必須在交易中，刪除資料列也不會自動刪除 Large Object。一般的 byte[] 會對應到 bytea。
     private byte[] data;
 
     private Date uploadDate;
