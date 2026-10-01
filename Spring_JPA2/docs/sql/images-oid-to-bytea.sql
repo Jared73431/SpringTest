@@ -8,8 +8,9 @@
 --
 -- 執行時機：在啟動新版應用程式「之前」執行
 -- 執行方式：psql -U postgres -d test -f images-oid-to-bytea.sql
--- 建議先備份：pg_dump -U postgres -d test -t images -Fc -f images-backup.dump
---            （-Fc 會一併備份 Large Object）
+-- 建議先備份：pg_dump -U postgres -d test -t images -b -Fc -f images-backup.dump
+--            （使用 -t 指定資料表時，Large Object 預設不會被備份，必須加上 -b；
+--             可用 pg_restore -l images-backup.dump 確認清單中有 BLOB 項目）
 -- =============================================================
 
 BEGIN;

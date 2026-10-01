@@ -285,8 +285,9 @@ docs/sql/images-oid-to-bytea.sql      # 既有資料庫的圖片欄位轉換 SQL
 若資料庫是用舊版本建立的（`images.data` 為 `oid`），請在啟動新版**之前**執行：
 
 ```bash
-# 建議先備份（-Fc 會一併備份 Large Object）
-pg_dump -U postgres -d test -t images -Fc -f images-backup.dump
+# 建議先備份。使用 -t 指定資料表時，Large Object 預設「不會」被備份，必須加上 -b
+pg_dump -U postgres -d test -t images -b -Fc -f images-backup.dump
+pg_restore -l images-backup.dump    # 確認清單中有 BLOB 項目
 
 psql -U postgres -d test -f docs/sql/images-oid-to-bytea.sql
 ```
