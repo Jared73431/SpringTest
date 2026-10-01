@@ -18,8 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.ProductDTO;
-import com.example.demo.entity.Product;
-import com.example.demo.repository.ProductRepository;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.ProductService;
 
 @RestController
@@ -50,7 +49,7 @@ public class ProductController {
     public ResponseEntity<ProductDTO> getProductById(@PathVariable String id) {
         return productService.getProductById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResourceNotFoundException("商品", id));
     }
 
     /**
@@ -60,13 +59,9 @@ public class ProductController {
      */
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
-        try {
-            ProductDTO createdProduct = productService.createProduct(productDTO);
-            return ResponseEntity.created(URI.create("/api/products/" + createdProduct.getId()))
-                    .body(createdProduct);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        ProductDTO createdProduct = productService.createProduct(productDTO);
+        return ResponseEntity.created(URI.create("/api/products/" + createdProduct.getId()))
+                .body(createdProduct);
     }
 
     /**
@@ -77,12 +72,8 @@ public class ProductController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable String id, @RequestBody ProductDTO productDTO) {
-        try {
-            ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
-            return ResponseEntity.ok(updatedProduct);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        ProductDTO updatedProduct = productService.updateProduct(id, productDTO);
+        return ResponseEntity.ok(updatedProduct);
     }
 
     /**
@@ -92,12 +83,8 @@ public class ProductController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
-        try {
-            productService.deleteProduct(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

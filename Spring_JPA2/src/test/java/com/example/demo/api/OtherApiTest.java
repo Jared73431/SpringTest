@@ -102,6 +102,18 @@ class OtherApiTest {
 				List.of(amy, 999999L), String.class, courseId);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+		assertThat(response.getBody()).contains("999999");
+	}
+
+	@Test
+	void addStudentToCourse_shouldReturnNotFound_whenStudentNotExists() {
+		Long courseId = createCourse("Java");
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/courses/{id}/students/{sid}", null,
+				String.class, courseId, 999999L);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -151,13 +163,28 @@ class OtherApiTest {
 		assertThat(response.getBody()).contains("\"password\"");
 	}
 
-	// [Potential Bug] 查不到 Todo 時回 200 與 null，而不是 404
 	@Test
-	void getTodos_shouldReturnOkWithNull_whenTodoNotExists() {
+	void getTodos_shouldReturnNotFound_whenTodoNotExists() {
 		ResponseEntity<String> response = restTemplate.getForEntity("/todo/999999", String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody()).isEqualTo("null");
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+	}
+
+	@Test
+	void getTodosByUserId_shouldReturnNotFound_whenUserNotExists() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/api/users/999999/todos", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	// 參數參照的使用者不存在：屬於請求錯誤（400）
+	@Test
+	void saveTodo_shouldReturnBadRequest_whenUserNotExists() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/saveTodo?task={task}&Userid={id}", null,
+				String.class, "Study", 999999);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
 	// ===== 圖片 =====

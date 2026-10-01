@@ -1,10 +1,9 @@
 package com.example.demo.service;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.User;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.UserRepository;
 
 @Service
@@ -16,9 +15,9 @@ public class UserService {
         this.userDao = userDao;
     }
 
-    public Optional<User> getTodosByUserId(Integer id) {
-        Optional<User> data = userDao.findById(id);
-        return data;
+    public User getTodosByUserId(Integer id) {
+        return userDao.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("使用者", id));
     }
 
     public void saveUser(String name){

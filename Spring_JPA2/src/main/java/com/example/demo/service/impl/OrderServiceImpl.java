@@ -10,8 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.entity.Order;
 import com.example.demo.entity.OrderItem;
-import com.example.demo.entity.compoundKey.OrderItemPK;
 import com.example.demo.entity.Product;
+import com.example.demo.entity.compoundKey.OrderItemPK;
+import com.example.demo.exception.BusinessRuleViolationException;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.OrderItemRepository;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.ProductRepository;
@@ -52,11 +55,11 @@ public class OrderServiceImpl implements OrderService {
 
             // 查找商品
             Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("商品不存在: " + productId));
+                    .orElseThrow(() -> new InvalidRequestException("商品不存在: " + productId));
 
             // 檢查庫存
             if (product.getStock() < quantity) {
-                throw new RuntimeException("商品庫存不足: " + product.getName());
+                throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
             }
 
             // 建立訂單項
@@ -82,7 +85,7 @@ public class OrderServiceImpl implements OrderService {
         // 檢查訂單狀態是否可以取消
         if (order.getStatus() == Order.OrderStatus.SHIPPED ||
                 order.getStatus() == Order.OrderStatus.DELIVERED) {
-            throw new RuntimeException("訂單已發貨或已交付，無法取消");
+            throw new BusinessRuleViolationException("訂單已發貨或已交付，無法取消");
         }
 
         // 更新訂單狀態
@@ -111,16 +114,16 @@ public class OrderServiceImpl implements OrderService {
 
         // 檢查訂單狀態
         if (order.getStatus() != Order.OrderStatus.PENDING) {
-            throw new RuntimeException("只能修改待處理狀態的訂單");
+            throw new BusinessRuleViolationException("只能修改待處理狀態的訂單");
         }
 
         // 查找商品
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("商品不存在: " + productId));
+                .orElseThrow(() -> new InvalidRequestException("商品不存在: " + productId));
 
         // 檢查庫存
         if (product.getStock() < quantity) {
-            throw new RuntimeException("商品庫存不足: " + product.getName());
+            throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
         }
 
         // 檢查訂單是否已包含該商品
@@ -158,13 +161,13 @@ public class OrderServiceImpl implements OrderService {
 
         // 檢查訂單狀態
         if (order.getStatus() != Order.OrderStatus.PENDING) {
-            throw new RuntimeException("只能修改待處理狀態的訂單");
+            throw new BusinessRuleViolationException("只能修改待處理狀態的訂單");
         }
 
         // 查找訂單項
         OrderItemPK pk = new OrderItemPK(orderId, productId);
         OrderItem item = orderItemRepository.findById(pk)
-                .orElseThrow(() -> new RuntimeException("訂單項不存在"));
+                .orElseThrow(() -> new ResourceNotFoundException("訂單項", productId));
 
         // 恢復商品庫存
         Product product = item.getProduct();
@@ -184,7 +187,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order findOrder(String orderId) {
         return orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("訂單不存在: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("訂單", orderId));
     }
 
     @Override

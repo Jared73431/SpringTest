@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import com.example.demo.TestcontainersConfiguration;
@@ -72,6 +73,14 @@ class OrderApiTest {
 		return restTemplate.postForEntity("/api/orders", request, OrderDTO.class);
 	}
 
+	private ResponseEntity<String> createOrderForResponse(String productId, int quantity) {
+		CreateOrderRequest request = new CreateOrderRequest();
+		request.setCustomerId("C1");
+		request.setShippingAddress("Taipei");
+		request.setProductQuantities(Map.of(productId, quantity));
+		return restTemplate.postForEntity("/api/orders", request, String.class);
+	}
+
 	private ResponseEntity<OrderDTO> updateStatus(String orderId, String status) {
 		return restTemplate.exchange("/api/orders/{id}/status?status={status}", HttpMethod.PUT, null,
 				OrderDTO.class, orderId, status);
@@ -94,21 +103,25 @@ class OrderApiTest {
 	}
 
 	@Test
-	void createOrder_shouldReturnBadRequest_whenStockIsInsufficient() {
+	void createOrder_shouldReturnConflict_whenStockIsInsufficient() {
 		String productId = createProduct(1);
 
-		ResponseEntity<OrderDTO> response = createOrder(productId, 5);
+		ResponseEntity<String> response = createOrderForResponse(productId, 5);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
 		assertThat(stockOf(productId)).isEqualTo(1);
 		assertThat(orderRepository.count()).isZero();
 	}
 
+	// 請求內容參照的商品不存在：屬於請求錯誤（400），不是 URL 資源不存在（404）
 	@Test
 	void createOrder_shouldReturnBadRequest_whenProductNotExists() {
-		ResponseEntity<OrderDTO> response = createOrder("not-exists", 1);
+		ResponseEntity<String> response = createOrderForResponse("not-exists", 1);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+		assertThat(response.getBody()).contains("not-exists");
 		assertThat(orderRepository.count()).isZero();
 	}
 
@@ -125,6 +138,16 @@ class OrderApiTest {
 	@Test
 	void getOrderById_shouldReturnNotFound_whenOrderNotExists() {
 		ResponseEntity<String> response = restTemplate.getForEntity("/api/orders/not-exists", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+		assertThat(response.getBody()).contains("not-exists");
+	}
+
+	@Test
+	void cancelOrder_shouldReturnNotFound_whenOrderNotExists() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/not-exists/cancel", null,
+				String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
@@ -157,7 +180,7 @@ class OrderApiTest {
 	}
 
 	@Test
-	void cancelOrder_shouldReturnBadRequest_whenOrderShipped() {
+	void cancelOrder_shouldReturnConflict_whenOrderShipped() {
 		String productId = createProduct(10);
 		String orderId = createOrder(productId, 2).getBody().getId();
 		updateStatus(orderId, "SHIPPED");
@@ -165,7 +188,7 @@ class OrderApiTest {
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/cancel", null,
 				String.class, orderId);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 		assertThat(stockOf(productId)).isEqualTo(8);
 	}
 
@@ -193,7 +216,7 @@ class OrderApiTest {
 	}
 
 	@Test
-	void addOrderItem_shouldReturnBadRequest_whenOrderNotPending() {
+	void addOrderItem_shouldReturnConflict_whenOrderNotPending() {
 		String productId = createProduct(10);
 		String orderId = createOrder(productId, 1).getBody().getId();
 		updateStatus(orderId, "SHIPPED");
@@ -201,7 +224,17 @@ class OrderApiTest {
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/items",
 				Map.of("productId", productId, "quantity", 1), String.class, orderId);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+	}
+
+	@Test
+	void removeOrderItem_shouldReturnNotFound_whenItemNotInOrder() {
+		String orderId = createOrder(createProduct(10), 1).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.exchange("/api/orders/{id}/items/{pid}", HttpMethod.DELETE,
+				null, String.class, orderId, "not-in-order");
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	// ===== 商品 =====
@@ -222,6 +255,16 @@ class OrderApiTest {
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/products", Map.of(), String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@Test
+	void createProduct_shouldReturnConflict_whenIdAlreadyExists() {
+		String productId = createProduct(1);
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/products",
+				Map.of("id", productId, "name", "Pen", "price", 10, "stock", 5), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 	}
 
 	@Test

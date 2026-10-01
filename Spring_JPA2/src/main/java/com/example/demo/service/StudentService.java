@@ -9,10 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.dto.StudentDTO;
 import com.example.demo.entity.CoursePO;
 import com.example.demo.entity.StudentPO;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.StudentRepository;
-
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class StudentService {
@@ -36,7 +36,7 @@ public class StudentService {
     public StudentDTO getStudentById(Long id) {
         return studentRepository.findWithCoursesById(id)
                 .map(StudentDTO::fromEntity)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", id));
     }
 
     @Transactional
@@ -48,7 +48,7 @@ public class StudentService {
     @Transactional
     public StudentDTO updateStudent(Long id, StudentDTO studentDTO) {
         StudentPO student = studentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", id));
         studentDTO.updateEntity(student);
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
@@ -56,7 +56,7 @@ public class StudentService {
     @Transactional
     public void deleteStudent(Long id) {
         StudentPO student = studentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", id));
 
         // Remove the student from all associated courses first
         student.clearCourses();
@@ -69,10 +69,10 @@ public class StudentService {
     @Transactional
     public StudentDTO addCourseToStudent(Long studentId, Long courseId) {
         StudentPO student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
         CoursePO course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
+                .orElseThrow(() -> new ResourceNotFoundException("課程", courseId));
 
         student.addCourse(course);
         return StudentDTO.fromEntity(studentRepository.save(student));
@@ -81,10 +81,10 @@ public class StudentService {
     @Transactional
     public StudentDTO removeCourseFromStudent(Long studentId, Long courseId) {
         StudentPO student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
         CoursePO course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
+                .orElseThrow(() -> new ResourceNotFoundException("課程", courseId));
 
         student.removeCourse(course);
         return StudentDTO.fromEntity(studentRepository.save(student));
@@ -94,7 +94,7 @@ public class StudentService {
     public List<StudentDTO> getStudentsByCourseId(Long courseId) {
         // Check if course exists
         if (!courseRepository.existsById(courseId)) {
-            throw new EntityNotFoundException("Course not found with id: " + courseId);
+            throw new ResourceNotFoundException("課程", courseId);
         }
 
         return studentRepository.findByCourseId(courseId).stream()
@@ -105,7 +105,7 @@ public class StudentService {
     @Transactional
     public StudentDTO addCoursesToStudent(Long studentId, List<Long> courseIds) {
         StudentPO student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
         // 根據課程ID列表查找所有課程
         List<CoursePO> courses = courseRepository.findAllById(courseIds);
@@ -118,7 +118,7 @@ public class StudentService {
             List<Long> notFoundCourseIds = courseIds.stream()
                     .filter(id -> !foundCourseIds.contains(id))
                     .collect(Collectors.toList());
-            throw new EntityNotFoundException("Courses not found with ids: " + notFoundCourseIds);
+            throw new InvalidRequestException("課程不存在: " + notFoundCourseIds);
         }
 
         // 使用 StudentPO 的 addCourses 方法批次新增課程
@@ -130,7 +130,7 @@ public class StudentService {
     @Transactional
     public StudentDTO removeCoursesFromStudent(Long studentId, List<Long> courseIds) {
         StudentPO student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
         // 根據課程ID列表查找所有課程
         List<CoursePO> courses = courseRepository.findAllById(courseIds);
@@ -143,7 +143,7 @@ public class StudentService {
             List<Long> notFoundCourseIds = courseIds.stream()
                     .filter(id -> !foundCourseIds.contains(id))
                     .collect(Collectors.toList());
-            throw new EntityNotFoundException("Courses not found with ids: " + notFoundCourseIds);
+            throw new InvalidRequestException("課程不存在: " + notFoundCourseIds);
         }
 
         // 使用 StudentPO 的 removeCourses 方法批次移除課程
@@ -155,7 +155,7 @@ public class StudentService {
     @Transactional
     public StudentDTO clearAllCoursesFromStudent(Long studentId) {
         StudentPO student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new EntityNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("學生", studentId));
 
         // 使用 StudentPO 的 clearCourses 方法清空所有課程
         student.clearCourses();

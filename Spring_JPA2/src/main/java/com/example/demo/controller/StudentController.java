@@ -14,9 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.StudentDTO;
+import com.example.demo.exception.InvalidRequestException;
 import com.example.demo.service.StudentService;
-
-import jakarta.persistence.EntityNotFoundException;
 
 @RestController
 @RequestMapping("/api/students")
@@ -35,11 +34,7 @@ public class StudentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(studentService.getStudentById(id));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(studentService.getStudentById(id));
     }
 
     @PostMapping
@@ -49,21 +44,13 @@ public class StudentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<StudentDTO> updateStudent(@PathVariable Long id, @RequestBody StudentDTO studentDTO) {
-        try {
-            return ResponseEntity.ok(studentService.updateStudent(id, studentDTO));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(studentService.updateStudent(id, studentDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
-        try {
-            studentService.deleteStudent(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        studentService.deleteStudent(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -74,18 +61,11 @@ public class StudentController {
     public ResponseEntity<StudentDTO> addCoursesToStudent(
             @PathVariable Long studentId,
             @RequestBody List<Long> courseIds) {
-        try {
-            if (courseIds == null || courseIds.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            StudentDTO updatedStudent = studentService.addCoursesToStudent(studentId, courseIds);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+        if (courseIds == null || courseIds.isEmpty()) {
+            throw new InvalidRequestException("課程 ID 清單不可為空");
         }
+        StudentDTO updatedStudent = studentService.addCoursesToStudent(studentId, courseIds);
+        return ResponseEntity.ok(updatedStudent);
     }
 
     /**
@@ -96,18 +76,11 @@ public class StudentController {
     public ResponseEntity<StudentDTO> removeCoursesFromStudent(
             @PathVariable Long studentId,
             @RequestBody List<Long> courseIds) {
-        try {
-            if (courseIds == null || courseIds.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            StudentDTO updatedStudent = studentService.removeCoursesFromStudent(studentId, courseIds);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+        if (courseIds == null || courseIds.isEmpty()) {
+            throw new InvalidRequestException("課程 ID 清單不可為空");
         }
+        StudentDTO updatedStudent = studentService.removeCoursesFromStudent(studentId, courseIds);
+        return ResponseEntity.ok(updatedStudent);
     }
 
     /**
@@ -116,12 +89,8 @@ public class StudentController {
      */
     @DeleteMapping("/{studentId}/courses/all")
     public ResponseEntity<StudentDTO> clearAllCoursesFromStudent(@PathVariable Long studentId) {
-        try {
-            StudentDTO updatedStudent = studentService.clearAllCoursesFromStudent(studentId);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        StudentDTO updatedStudent = studentService.clearAllCoursesFromStudent(studentId);
+        return ResponseEntity.ok(updatedStudent);
     }
 
     /**
@@ -132,11 +101,7 @@ public class StudentController {
     public ResponseEntity<StudentDTO> addCourseToStudent(
             @PathVariable Long studentId,
             @PathVariable Long courseId) {
-        try {
-            return ResponseEntity.ok(studentService.addCourseToStudent(studentId, courseId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(studentService.addCourseToStudent(studentId, courseId));
     }
 
     /**
@@ -147,11 +112,7 @@ public class StudentController {
     public ResponseEntity<StudentDTO> removeCourseFromStudent(
             @PathVariable Long studentId,
             @PathVariable Long courseId) {
-        try {
-            return ResponseEntity.ok(studentService.removeCourseFromStudent(studentId, courseId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(studentService.removeCourseFromStudent(studentId, courseId));
     }
 
     /**
@@ -160,10 +121,6 @@ public class StudentController {
      */
     @GetMapping("/by-course/{courseId}")
     public ResponseEntity<List<StudentDTO>> getStudentsByCourseId(@PathVariable Long courseId) {
-        try {
-            return ResponseEntity.ok(studentService.getStudentsByCourseId(courseId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(studentService.getStudentsByCourseId(courseId));
     }
 }

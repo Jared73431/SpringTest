@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Todo;
 import com.example.demo.entity.User;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.TodoRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -21,15 +21,15 @@ public class TodoService {
         this.userRepository = userRepository;
     }
 
-    public Optional<Todo> getTodos(Integer id) {
-        Optional<Todo> data = todores.findById(id);
-        return data;
+    public Todo getTodos(Integer id) {
+        return todores.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("待辦事項", id));
     }
 
     public void saveTodo(String task, Integer userId){
         // 從資料庫取得User實體（處於持久狀態）
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("找不到使用者 ID: " + userId));
+                .orElseThrow(() -> new InvalidRequestException("使用者不存在: " + userId));
 
         Todo todo = new Todo();
         todo.setTask(task);

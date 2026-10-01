@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.example.demo.exception.BusinessRuleViolationException;
+
 @Entity
 @Getter
 @Setter
@@ -49,7 +51,7 @@ public class Product {
     // 便利方法：減少庫存
     public void reduceStock(int quantity) {
         if (this.stock < quantity) {
-            throw new RuntimeException("庫存不足");
+            throw new BusinessRuleViolationException("庫存不足");
         }
         this.stock -= quantity;
     }

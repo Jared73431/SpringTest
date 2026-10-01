@@ -1,9 +1,5 @@
 package com.example.demo.controller;
 
-import java.util.Optional;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,9 +21,8 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}/todos")
-    public ResponseEntity getTodosByUserId (@PathVariable Integer id) {
-        Optional<User> todos = userService.getTodosByUserId(id);
-        return ResponseEntity.status(HttpStatus.OK).body(todos);
+    public User getTodosByUserId(@PathVariable Integer id) {
+        return userService.getTodosByUserId(id);
     }
 
     @PostMapping("/saveUser")

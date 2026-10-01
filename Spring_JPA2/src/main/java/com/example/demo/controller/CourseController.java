@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.CourseDTO;
 import com.example.demo.service.CourseService;
 
-import jakarta.persistence.EntityNotFoundException;
-
 @RestController
 @RequestMapping("/api/courses")
 public class CourseController {
@@ -36,11 +34,7 @@ public class CourseController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(courseService.getCourseById(id));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(courseService.getCourseById(id));
     }
 
     @PostMapping
@@ -50,21 +44,13 @@ public class CourseController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CourseDTO> updateCourse(@PathVariable Long id, @RequestBody CourseDTO courseDTO) {
-        try {
-            return ResponseEntity.ok(courseService.updateCourse(id, courseDTO));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(courseService.updateCourse(id, courseDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
-        try {
-            courseService.deleteCourse(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        courseService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
     }
 
     // 批次學生操作
@@ -72,52 +58,32 @@ public class CourseController {
     public ResponseEntity<CourseDTO> addStudentsToCourse(
             @PathVariable Long courseId,
             @RequestBody Set<Long> studentIds) {
-        try {
-            return ResponseEntity.ok(courseService.addStudentsToCourse(courseId, studentIds));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(courseService.addStudentsToCourse(courseId, studentIds));
     }
 
     @PostMapping("/{courseId}/students/{studentId}")
     public ResponseEntity<CourseDTO> addStudentToCourse(
             @PathVariable Long courseId,
             @PathVariable Long studentId) {
-        try {
-            return ResponseEntity.ok(courseService.addStudentToCourse(courseId, studentId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(courseService.addStudentToCourse(courseId, studentId));
     }
 
     @DeleteMapping("/{courseId}/students/batch")
     public ResponseEntity<CourseDTO> removeStudentsFromCourse(
             @PathVariable Long courseId,
             @RequestBody Set<Long> studentIds) {
-        try {
-            return ResponseEntity.ok(courseService.removeStudentsFromCourse(courseId, studentIds));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(courseService.removeStudentsFromCourse(courseId, studentIds));
     }
 
     @DeleteMapping("/{courseId}/students/{studentId}")
     public ResponseEntity<CourseDTO> removeStudentFromCourse(
             @PathVariable Long courseId,
             @PathVariable Long studentId) {
-        try {
-            return ResponseEntity.ok(courseService.removeStudentFromCourse(courseId, studentId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(courseService.removeStudentFromCourse(courseId, studentId));
     }
 
     @GetMapping("/by-student/{studentId}")
     public ResponseEntity<List<CourseDTO>> getCoursesByStudentId(@PathVariable Long studentId) {
-        try {
-            return ResponseEntity.ok(courseService.getCoursesByStudentId(studentId));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(courseService.getCoursesByStudentId(studentId));
     }
 }

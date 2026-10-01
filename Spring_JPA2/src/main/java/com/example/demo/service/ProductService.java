@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.ProductDTO;
 import com.example.demo.entity.Product;
+import com.example.demo.exception.BusinessRuleViolationException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.ProductRepository;
 
 @Service
@@ -50,7 +52,7 @@ public class ProductService {
     public ProductDTO createProduct(ProductDTO productDTO) {
         // 檢查ID是否已存在
         if (productDTO.getId() != null && productRepository.existsById(productDTO.getId())) {
-            throw new IllegalArgumentException("商品ID已存在: " + productDTO.getId());
+            throw new BusinessRuleViolationException("商品ID已存在: " + productDTO.getId());
         }
 
         // 如果沒有提供ID，生成一個
@@ -71,7 +73,7 @@ public class ProductService {
      */
     public ProductDTO updateProduct(String id, ProductDTO productDTO) {
         if (!productRepository.existsById(id)) {
-            throw new IllegalArgumentException("商品不存在: " + id);
+            throw new ResourceNotFoundException("商品", id);
         }
 
         productDTO.setId(id);
@@ -86,7 +88,7 @@ public class ProductService {
      */
     public void deleteProduct(String id) {
         if (!productRepository.existsById(id)) {
-            throw new IllegalArgumentException("商品不存在: " + id);
+            throw new ResourceNotFoundException("商品", id);
         }
 
         productRepository.deleteById(id);
