@@ -72,13 +72,16 @@ public class ProductService {
      * @throws IllegalArgumentException 如果商品不存在
      */
     public ProductDTO updateProduct(String id, ProductDTO productDTO) {
-        if (!productRepository.existsById(id)) {
-            throw new ResourceNotFoundException("商品", id);
-        }
-
-        productDTO.setId(id);
-        Product product = productRepository.save(productDTO.toEntity());
-        return new ProductDTO(product);
+        // 先讀出既有資料再修改欄位，而不是用 DTO 建立新物件：
+        // Product 有 @Version，新物件的 version 為 null，Spring Data 會把它當成新資料 INSERT
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("商品", id));
+        product.setName(productDTO.getName());
+        product.setPrice(productDTO.getPrice());
+        product.setStock(productDTO.getStock());
+        product.setDescription(productDTO.getDescription());
+        product.setCategory(productDTO.getCategory());
+        return new ProductDTO(productRepository.save(product));
     }
 
     /**

@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -13,6 +14,7 @@ import lombok.Setter;
 
 @Entity
 @Table
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public class Todo {
@@ -29,11 +31,11 @@ public class Todo {
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
-    private Date createTime = new Date();
+    private Date createTime;
 
     @LastModifiedDate
     @Column(nullable = false)
-    private Date updateTime = new Date();
+    private Date updateTime;
 
     @JsonBackReference
     @ManyToOne

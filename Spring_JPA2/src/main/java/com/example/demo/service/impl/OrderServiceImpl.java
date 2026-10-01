@@ -38,6 +38,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order createOrder(String customerId, String shippingAddress, Map<String, Integer> productQuantities) {
+        // 先檢查所有數量，避免負數數量反而增加庫存
+        productQuantities.forEach(this::requirePositiveQuantity);
+
         // 生成訂單ID
         String orderId = UUID.randomUUID().toString();
 
@@ -82,10 +85,9 @@ public class OrderServiceImpl implements OrderService {
     public Order cancelOrder(String orderId) {
         Order order = findOrder(orderId);
 
-        // 檢查訂單狀態是否可以取消
-        if (order.getStatus() == Order.OrderStatus.SHIPPED ||
-                order.getStatus() == Order.OrderStatus.DELIVERED) {
-            throw new BusinessRuleViolationException("訂單已發貨或已交付，無法取消");
+        // 依狀態機檢查是否可以取消（已取消的訂單不能再取消，避免重複補回庫存）
+        if (!order.getStatus().canTransitionTo(Order.OrderStatus.CANCELLED)) {
+            throw new BusinessRuleViolationException("訂單狀態為 " + order.getStatus() + "，無法取消");
         }
 
         // 更新訂單狀態
@@ -104,12 +106,23 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order updateOrderStatus(String orderId, Order.OrderStatus status) {
         Order order = findOrder(orderId);
+
+        // 取消需要補回庫存，只能透過取消訂單 API
+        if (status == Order.OrderStatus.CANCELLED) {
+            throw new BusinessRuleViolationException("取消訂單請使用 POST /api/orders/{id}/cancel，才會補回庫存");
+        }
+        if (!order.getStatus().canTransitionTo(status)) {
+            throw new BusinessRuleViolationException(
+                    "訂單狀態無法從 " + order.getStatus() + " 變更為 " + status);
+        }
+
         order.setStatus(status);
         return orderRepository.save(order);
     }
 
     @Override
     public Order addOrderItem(String orderId, String productId, int quantity) {
+        requirePositiveQuantity(productId, quantity);
         Order order = findOrder(orderId);
 
         // 檢查訂單狀態
@@ -193,5 +206,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> findCustomerOrders(String customerId) {
         return orderRepository.findByCustomerId(customerId);
+    }
+
+    private void requirePositiveQuantity(String productId, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidRequestException("商品數量必須大於 0: " + productId);
+        }
     }
 }

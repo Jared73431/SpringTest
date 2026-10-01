@@ -35,6 +35,17 @@ public class Product {
     @Column(name = "category", length = 50)
     private String category;
 
+    /**
+     * 樂觀鎖版本號。
+     * 每次更新時 Hibernate 會檢查版本是否與讀取時相同，並把版本 +1；
+     * 若期間已被其他交易修改（版本不同），更新失敗並拋出 OptimisticLockException，
+     * 避免同時下單時「讀取 → 扣庫存 → 寫回」互相覆蓋（lost update）。
+     * default 0：讓既有資料表新增此欄位時，舊資料自動補上版本 0。
+     */
+    @Version
+    @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
+
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
 

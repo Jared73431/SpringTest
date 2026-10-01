@@ -3,11 +3,20 @@ package com.example.demo.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -16,6 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
@@ -165,24 +175,38 @@ class OrderApiTest {
 		assertThat(stockOf(productId)).isEqualTo(10);
 	}
 
-	// [Potential Bug] 已取消的訂單可以再取消，每次都會補回庫存
 	@Test
-	void cancelOrder_shouldRestoreStockAgain_whenOrderAlreadyCancelled() {
+	void cancelOrder_shouldRestoreStock_whenOrderIsProcessing() {
 		String productId = createProduct(10);
 		String orderId = createOrder(productId, 2).getBody().getId();
-		restTemplate.postForEntity("/api/orders/{id}/cancel", null, OrderDTO.class, orderId);
+		updateStatus(orderId, "PROCESSING");
 
 		ResponseEntity<OrderDTO> response = restTemplate.postForEntity("/api/orders/{id}/cancel", null,
 				OrderDTO.class, orderId);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(stockOf(productId)).isEqualTo(12);
+		assertThat(stockOf(productId)).isEqualTo(10);
+	}
+
+	// 修正前：已取消的訂單可以再取消，每次都會補回庫存
+	@Test
+	void cancelOrder_shouldReturnConflictAndKeepStock_whenOrderAlreadyCancelled() {
+		String productId = createProduct(10);
+		String orderId = createOrder(productId, 2).getBody().getId();
+		restTemplate.postForEntity("/api/orders/{id}/cancel", null, OrderDTO.class, orderId);
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/cancel", null,
+				String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(stockOf(productId)).isEqualTo(10);
 	}
 
 	@Test
 	void cancelOrder_shouldReturnConflict_whenOrderShipped() {
 		String productId = createProduct(10);
 		String orderId = createOrder(productId, 2).getBody().getId();
+		updateStatus(orderId, "PROCESSING");
 		updateStatus(orderId, "SHIPPED");
 
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/cancel", null,
@@ -192,39 +216,119 @@ class OrderApiTest {
 		assertThat(stockOf(productId)).isEqualTo(8);
 	}
 
-	// [Potential Bug] 數量為負數也能下單，庫存反而增加
-	@Test
-	void createOrder_shouldIncreaseStock_whenQuantityIsNegative() {
+	// 修正前：數量為負數也能下單，庫存反而增加
+	@ParameterizedTest
+	@ValueSource(ints = { 0, -5 })
+	void createOrder_shouldReturnBadRequest_whenQuantityIsNotPositive(int quantity) {
 		String productId = createProduct(10);
 
-		ResponseEntity<OrderDTO> response = createOrder(productId, -5);
+		ResponseEntity<String> response = createOrderForResponse(productId, quantity);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-		assertThat(stockOf(productId)).isEqualTo(15);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(stockOf(productId)).isEqualTo(10);
+		assertThat(orderRepository.count()).isZero();
 	}
 
-	// [Potential Bug] 訂單狀態沒有轉換規則，已送達的訂單可以改回 PENDING
 	@Test
-	void updateOrderStatus_shouldAllowAnyTransition_whenOrderDelivered() {
+	void updateOrderStatus_shouldMoveForward_whenTransitionAllowed() {
 		String orderId = createOrder(createProduct(10), 1).getBody().getId();
+
+		assertThat(updateStatus(orderId, "PROCESSING").getBody().getStatus()).isEqualTo("PROCESSING");
+		assertThat(updateStatus(orderId, "SHIPPED").getBody().getStatus()).isEqualTo("SHIPPED");
+		assertThat(updateStatus(orderId, "DELIVERED").getBody().getStatus()).isEqualTo("DELIVERED");
+	}
+
+	// 修正前：訂單狀態沒有轉換規則，已送達的訂單可以改回 PENDING
+	@Test
+	void updateOrderStatus_shouldReturnConflict_whenOrderDelivered() {
+		String orderId = createOrder(createProduct(10), 1).getBody().getId();
+		updateStatus(orderId, "PROCESSING");
+		updateStatus(orderId, "SHIPPED");
 		updateStatus(orderId, "DELIVERED");
 
-		ResponseEntity<OrderDTO> response = updateStatus(orderId, "PENDING");
+		ResponseEntity<String> response = restTemplate.exchange("/api/orders/{id}/status?status=PENDING",
+				HttpMethod.PUT, null, String.class, orderId);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody().getStatus()).isEqualTo("PENDING");
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+	}
+
+	@Test
+	void updateOrderStatus_shouldReturnConflict_whenSkippingStatus() {
+		String orderId = createOrder(createProduct(10), 1).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.exchange("/api/orders/{id}/status?status=SHIPPED",
+				HttpMethod.PUT, null, String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+	}
+
+	// 取消必須透過 /cancel，才會補回庫存
+	@Test
+	void updateOrderStatus_shouldReturnConflictAndKeepStock_whenSetToCancelledDirectly() {
+		String productId = createProduct(10);
+		String orderId = createOrder(productId, 2).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.exchange("/api/orders/{id}/status?status=CANCELLED",
+				HttpMethod.PUT, null, String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(response.getBody()).contains("cancel");
+		assertThat(stockOf(productId)).isEqualTo(8);
 	}
 
 	@Test
 	void addOrderItem_shouldReturnConflict_whenOrderNotPending() {
 		String productId = createProduct(10);
 		String orderId = createOrder(productId, 1).getBody().getId();
-		updateStatus(orderId, "SHIPPED");
+		updateStatus(orderId, "PROCESSING");
 
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/items",
 				Map.of("productId", productId, "quantity", 1), String.class, orderId);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+	}
+
+	@Test
+	void addOrderItem_shouldReturnBadRequestAndKeepStock_whenQuantityIsNotPositive() {
+		String productId = createProduct(10);
+		String orderId = createOrder(productId, 1).getBody().getId();
+
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/orders/{id}/items",
+				Map.of("productId", productId, "quantity", -3), String.class, orderId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(stockOf(productId)).isEqualTo(9);
+	}
+
+	// 修正前：同時下單時「讀取 → 扣庫存 → 寫回」會互相覆蓋（lost update），庫存比實際售出多
+	// 修正後：Product 使用 @Version 樂觀鎖，衝突的請求回 409，庫存永遠等於「初始庫存 − 成功售出數量」
+	@Test
+	void createOrder_shouldNeverLoseStockUpdates_whenOrdersAreConcurrent() throws Exception {
+		String productId = createProduct(100);
+		int requests = 40;
+		ExecutorService executor = Executors.newFixedThreadPool(requests);
+		CountDownLatch start = new CountDownLatch(1);
+		List<Future<HttpStatusCode>> results = new ArrayList<>();
+		for (int i = 0; i < requests; i++) {
+			results.add(executor.submit(() -> {
+				start.await();
+				return createOrderForResponse(productId, 1).getStatusCode();
+			}));
+		}
+		start.countDown();
+		int created = 0;
+		for (Future<HttpStatusCode> result : results) {
+			HttpStatusCode status = result.get(30, TimeUnit.SECONDS);
+			assertThat(status).isIn(HttpStatus.CREATED, HttpStatus.CONFLICT);
+			if (status.value() == HttpStatus.CREATED.value()) {
+				created++;
+			}
+		}
+		executor.shutdown();
+
+		assertThat(created).isPositive();
+		assertThat(stockOf(productId)).isEqualTo(100 - created);
+		assertThat(orderItemRepository.count()).isEqualTo(created);
 	}
 
 	@Test
