@@ -79,8 +79,8 @@
 | [Spring_Eureka](Spring_Eureka) | 服務註冊中心 | Eureka Server | — |
 | [Spring_Eureka_Provider](Spring_Eureka_Provider) | 服務提供者 | 註冊到 Eureka 的 CRUD 服務 | 🐘 |
 | [Spring_Eureka_Client](Spring_Eureka_Client) | 服務消費者 | 透過 Eureka + OpenFeign 呼叫 Provider | — |
-| [Spring_Feign_Server](Spring_Feign_Server) | Feign 被呼叫端 | 一般 REST CRUD 服務 | 🐘 |
-| [Spring_Feign_Client](Spring_Feign_Client) | Feign 呼叫端 | 直接指定 URL 的 OpenFeign | — |
+| [Spring_Feign_Server](Spring_Feign_Server) 📘 | Feign 被呼叫端 | 一般 REST CRUD 服務（`/api/books`），與 Spring_JPA 共用 book 資料表 ✅ 已現代化 | 🐘 |
+| [Spring_Feign_Client](Spring_Feign_Client) 📘 | Feign 呼叫端 | OpenFeign、自訂 ErrorDecoder（錯誤原樣轉回）、逾時 / log 設定、WireMock 測試、Docker Compose 一次啟動三個服務、Feign vs HTTP Service Client ✅ 已現代化 | — |
 | [Spring_Gateway_Server](Spring_Gateway_Server) | API Gateway | 路由、`StripPrefix` | — |
 | [Spring_Gateway_Client](Spring_Gateway_Client) | Gateway 後端服務 | 被 Gateway 轉發的服務 | — |
 
@@ -100,8 +100,8 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅ |
-| 2.7.x | 11 / 17 | Eureka、Feign_Client、Feign_Server、Security3 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅ |
+| 2.7.x | 11 / 17 | Eureka、Security3 |
 | 3.0.x | 17 | Eureka_Client、Eureka_Provider、Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
@@ -195,3 +195,4 @@ Spring_Xxx/
 - [ ] 統一各模組 REST API 的 URL 設計規則
 - [ ] 提供 Postman Collection，可直接匯入測試各模組 API
 - [ ] 練習改為 Gradle 多模組專案（附 IDE 操作步驟）
+- [ ] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
