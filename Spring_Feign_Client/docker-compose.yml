@@ -1,0 +1,63 @@
+# ============================================================
+# 一次啟動 Feign 練習的三個服務：PostgreSQL、Book Server、Book Client
+#
+#   啟動：docker compose up --build        （在 Spring_Feign_Client 資料夾執行）
+#   測試：curl http://localhost:8083/api/hello   → Client 透過 Feign 呼叫 Server，回傳 Hello
+#   停止：docker compose down               （加上 -v 會一併刪除資料庫資料）
+#
+# 放在 Client 資料夾：Client 是呼叫端，也是對外的入口；Server 以相對路徑 ../Spring_Feign_Server 建置
+# ============================================================
+services:
+
+  # PostgreSQL 資料庫（只有 Book Server 會連線）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      # 第一次啟動時自動建立資料庫 test
+      - POSTGRES_DB=test
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機已有的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # 檢查資料庫是否已可接受連線，供 book-server 的 depends_on 判斷
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 被呼叫的一方：書籍 CRUD + PostgreSQL
+  book-server:
+    build: ../Spring_Feign_Server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # 對主機開放只是為了方便直接測試 Server；Client 走 compose 內部網路，不需要這個設定
+      - "8082:8082"
+    environment:
+      # Spring Boot 會把環境變數 SPRING_DATASOURCE_URL 對應到 spring.datasource.url，覆蓋 application.properties
+      # 資料庫 host 是服務名稱 postgres（容器內的 localhost 是容器自己）
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+
+  # 呼叫端：透過 Feign 呼叫 book-server
+  book-client:
+    build: .
+    # 只確保 book-server 容器已啟動；Server 尚未準備好時，Client 的請求會得到 503，稍後再試即可
+    depends_on:
+      - book-server
+    ports:
+      - "8083:8083"
+    environment:
+      # 對應 application.properties 的 book-server.url=${BOOK_SERVER_URL:...}
+      # 用服務名稱 book-server 找到 Server：compose 內建 DNS 負責「服務發現」，不需要 Eureka
+      - BOOK_SERVER_URL=http://book-server:8082
+
+# 沒有宣告 networks：compose 會自動建立本專案專用的網路，同一份 compose 內的服務可以直接用服務名稱互相連線
+
+volumes:
+  # 具名 volume：容器刪除後資料仍保留，直到執行 docker compose down -v
+  postgres-data:
