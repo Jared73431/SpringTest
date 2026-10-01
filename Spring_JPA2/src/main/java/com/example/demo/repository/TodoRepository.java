@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository;
 
 import com.example.demo.entity.Todo;
 
+/**
+ * 待辦事項的 Repository，主鍵型別為 Integer（與 Todo.id 一致）。
+ */
 @Repository
 public interface TodoRepository extends JpaRepository<Todo, Integer> {
 

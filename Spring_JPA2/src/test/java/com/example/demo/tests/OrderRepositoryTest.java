@@ -23,6 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 訂單相關 Repository 的查詢測試（衍生查詢與 JPQL），以及訂單總金額的計算。
+ * 每個測試前建立固定的商品與訂單，測試後清除；刪除順序為 訂單項 → 訂單 → 商品，避免外鍵限制。
+ */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 public class OrderRepositoryTest {

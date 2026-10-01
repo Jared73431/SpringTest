@@ -24,6 +24,10 @@ import jakarta.persistence.PersistenceContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Student ↔ Course 多對多關聯的 Repository 測試：建立關聯後清除持久化上下文，
+ * 再從資料庫重新讀取，確認中間表 selected_course 的資料正確。
+ */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class ApplicationTests {
@@ -37,6 +41,8 @@ class ApplicationTests {
     @PersistenceContext
     private EntityManager entityManager;
 
+    // 測試方法有 @Transactional，@BeforeEach 會在同一個交易中執行（這裡的 @Transactional 不會另外開交易）；
+    // 先刪除中間表 selected_course，再刪除兩邊的資料，避免外鍵限制
     @BeforeEach
     @Transactional
     public void clearDB() {
@@ -46,8 +52,8 @@ class ApplicationTests {
     }
 
     @Test
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)// 新增交易注解，確保在測試期間會話保持打開
-    @Commit // 或使用舊版的 @Rollback(false)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class) // 測試包在交易中，Hibernate Session 保持開啟，延遲載入的集合才讀得到
+    @Commit // 測試交易預設會 rollback；@Commit 讓資料真的寫入資料庫（舊版寫法為 @Rollback(false)）
     public void testManyToManyRelation() {
         // create courses
         CoursePO course1 = CoursePO.of("英文", 3);

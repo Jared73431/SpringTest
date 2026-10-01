@@ -9,7 +9,9 @@ import com.example.demo.entity.Todo;
 import com.example.demo.service.TodoService;
 
 /**
+ * 待辦事項 REST API：以 Todo 自己的 id 查詢。
  * 新增 Todo 屬於某個使用者，放在 POST /api/users/{id}/todos（UserController）。
+ * 不在這裡 try/catch，例外由 GlobalExceptionHandler 統一處理。
  */
 @RestController
 @RequestMapping("/api/todos")
@@ -21,6 +23,7 @@ public class TodoController {
         this.todoService = todoService;
     }
 
+    /** GET /api/todos/{id}：取得單筆待辦事項。200；不存在 → 404。 */
     @GetMapping("/{id}")
     public Todo getTodo(@PathVariable Integer id) {
         return todoService.getTodo(id);

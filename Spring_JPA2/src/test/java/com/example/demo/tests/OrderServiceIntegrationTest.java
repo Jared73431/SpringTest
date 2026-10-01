@@ -24,6 +24,10 @@ import com.example.demo.service.OrderService;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+/**
+ * OrderService 的整合測試：直接呼叫 Service（不經過 HTTP），驗證建立訂單、新增 / 移除訂單項、
+ * 取消訂單時的庫存變化與總金額計算。HTTP 層的行為（狀態碼、狀態機）見 api.OrderApiTest。
+ */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 public class OrderServiceIntegrationTest {

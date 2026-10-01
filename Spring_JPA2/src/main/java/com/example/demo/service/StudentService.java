@@ -14,6 +14,11 @@ import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.StudentRepository;
 
+/**
+ * 學生 CRUD 與「學生 ↔ 課程」多對多關聯的維護，對外回傳 StudentDTO。
+ * StudentPO 是多對多的被擁有方（mappedBy），所以關聯變動必須透過 StudentPO 的便利方法同步更新 CoursePO.students，
+ * 否則中間表 selected_course 不會被寫入。
+ */
 @Service
 public class StudentService {
 
@@ -25,6 +30,10 @@ public class StudentService {
         this.studentRepository = studentRepository;
     }
 
+    /**
+     * 取得所有學生與各自的課程 ID。
+     * [Learning] StudentDTO.fromEntity 會讀取 LAZY 的 courses，每位學生各多一次查詢（N+1），資料量大時可改用 fetch join。
+     */
     @Transactional(readOnly = true)
     public List<StudentDTO> getAllStudents() {
         return studentRepository.findAll().stream()
@@ -32,6 +41,7 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
+    /** 取得單一學生與其課程（一次載入 courses）。學生不存在 → ResourceNotFoundException（404）。 */
     @Transactional(readOnly = true)
     public StudentDTO getStudentById(Long id) {
         return studentRepository.findWithCoursesById(id)
@@ -39,12 +49,17 @@ public class StudentService {
                 .orElseThrow(() -> new ResourceNotFoundException("學生", id));
     }
 
+    /** 建立學生（不處理課程關聯）。 */
     @Transactional
     public StudentDTO createStudent(StudentDTO studentDTO) {
         StudentPO student = studentDTO.toEntity();
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /**
+     * 更新學生基本資料（只更新 name，不改動課程關聯）；先讀出既有 Entity 再覆寫欄位。
+     * 學生不存在 → ResourceNotFoundException（404）。
+     */
     @Transactional
     public StudentDTO updateStudent(Long id, StudentDTO studentDTO) {
         StudentPO student = studentRepository.findById(id)
@@ -53,19 +68,24 @@ public class StudentService {
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /**
+     * 刪除學生，課程本身不會被刪除。學生不存在 → ResourceNotFoundException（404）。
+     */
     @Transactional
     public void deleteStudent(Long id) {
         StudentPO student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("學生", id));
 
-        // Remove the student from all associated courses first
+        // 先從所有課程（擁有方）的 students 集合移除此學生，Hibernate 才會刪除中間表的關聯資料；
+        // 學生是被擁有方，若直接刪除，中間表仍參照此學生，會違反外鍵限制
         student.clearCourses();
         studentRepository.save(student);
 
-        // Now delete the student
+        // 關聯解除後再刪除學生本身
         studentRepository.delete(student);
     }
 
+    /** 為學生加選單一課程。學生或課程不存在 → ResourceNotFoundException（404），兩者的 ID 都在 URL 中。 */
     @Transactional
     public StudentDTO addCourseToStudent(Long studentId, Long courseId) {
         StudentPO student = studentRepository.findById(studentId)
@@ -78,6 +98,7 @@ public class StudentService {
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /** 為學生退選單一課程（只刪除中間表關聯）。學生或課程不存在 → ResourceNotFoundException（404）。 */
     @Transactional
     public StudentDTO removeCourseFromStudent(Long studentId, Long courseId) {
         StudentPO student = studentRepository.findById(studentId)
@@ -90,9 +111,13 @@ public class StudentService {
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /**
+     * 查詢修習某課程的所有學生。
+     * 課程不存在 → ResourceNotFoundException（404）；課程存在但沒有學生 → 回傳空 List。
+     */
     @Transactional(readOnly = true)
     public List<StudentDTO> getStudentsByCourseId(Long courseId) {
-        // Check if course exists
+        // 先確認課程存在：否則「課程不存在」與「課程沒有學生」都會回傳空 List，用戶端無法區分
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFoundException("課程", courseId);
         }
@@ -102,6 +127,12 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 批次為學生加選課程。
+     * 學生不存在 → ResourceNotFoundException（404）；Body 中有任一課程 ID 不存在 → InvalidRequestException（400），整批都不加選。
+     * [Potential Bug] courseIds 是 List，若包含重複 ID，findAllById 回傳的筆數會少於 courseIds.size()，
+     * 導致誤判為「課程不存在」且錯誤訊息列出空清單；CourseService 的批次方法使用 Set，沒有這個問題。
+     */
     @Transactional
     public StudentDTO addCoursesToStudent(Long studentId, List<Long> courseIds) {
         StudentPO student = studentRepository.findById(studentId)
@@ -127,6 +158,11 @@ public class StudentService {
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /**
+     * 批次為學生退選課程。
+     * 學生不存在 → ResourceNotFoundException（404）；Body 中有任一課程 ID 不存在 → InvalidRequestException（400）。
+     * 與 addCoursesToStudent 相同，courseIds 含重複 ID 時會被誤判為不存在。
+     */
     @Transactional
     public StudentDTO removeCoursesFromStudent(Long studentId, List<Long> courseIds) {
         StudentPO student = studentRepository.findById(studentId)
@@ -152,6 +188,7 @@ public class StudentService {
         return StudentDTO.fromEntity(studentRepository.save(student));
     }
 
+    /** 清空學生的所有選課（學生與課程本身都保留）。學生不存在 → ResourceNotFoundException（404）。 */
     @Transactional
     public StudentDTO clearAllCoursesFromStudent(Long studentId) {
         StudentPO student = studentRepository.findById(studentId)

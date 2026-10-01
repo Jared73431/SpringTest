@@ -62,8 +62,10 @@
 <body>
 <h1>圖片上傳與管理系統</h1>
 
+<!-- message 來自 Controller 的 Flash Attribute，只在 redirect 後的第一次顯示 -->
 <div th:if="${message}" class="message" th:text="${message}"></div>
 
+<!-- 上傳檔案必須使用 multipart/form-data，Controller 才能以 MultipartFile 接收 -->
 <form method="POST" action="/upload" enctype="multipart/form-data">
   <h2>上傳新圖片</h2>
   <input type="file" name="file" accept="image/*" required />
@@ -73,6 +75,7 @@
 <h2>圖片庫</h2>
 <div class="gallery">
   <div th:each="image : ${images}" class="gallery-item">
+    <!-- images 只有中繼資料；圖片內容由瀏覽器另外向 GET /api/images/{id} 請求 -->
     <img th:src="@{'/api/images/' + ${image.id}}" th:alt="${image.name}" />
     <div th:text="${image.name}"></div>
     <div class="actions">

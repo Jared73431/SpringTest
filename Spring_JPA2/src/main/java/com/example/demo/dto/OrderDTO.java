@@ -10,6 +10,10 @@ import com.example.demo.entity.OrderItem;
 
 import lombok.Data;
 
+/**
+ * 訂單的回應 DTO：把 Order Entity 攤平成 API 需要的格式（status 轉為字串，訂單項轉為 OrderItemDTO）。
+ * 不直接回傳 Entity，可避免 Order ↔ OrderItem ↔ Product 的雙向關聯在序列化時無限遞迴。
+ */
 @Data
 public class OrderDTO {
 
@@ -22,8 +26,10 @@ public class OrderDTO {
     private List<OrderItemDTO> items = new ArrayList<>();
 
     // 建構子
+    // 無參數建構子供 Jackson 反序列化使用
     public OrderDTO() {}
 
+    // 會走訪 items 與每個 item 的 product，需在交易內（Entity 仍為 managed 狀態）呼叫
     public OrderDTO(Order order) {
         this.id = order.getId();
         this.customerId = order.getCustomerId();

@@ -20,6 +20,11 @@ import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.OrderService;
 
+/**
+ * OrderService 的實作，方法說明請見 OrderService interface。
+ * 類別層級 @Transactional：每個 public 方法都是一個交易，訂單與庫存的修改要嘛全部成功、要嘛全部 rollback。
+ * 交易在方法結束時 commit，回傳的 Entity 會在 Controller 轉 DTO 時才載入 Lazy 關聯（依賴 Open Session In View）。
+ */
 @Service
 @Transactional
 public class OrderServiceImpl implements OrderService {
@@ -48,7 +53,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order(orderId, customerId);
         order.setShippingAddress(shippingAddress);
 
-        // 保存訂單
+        // 保存訂單（使用 save 回傳的 managed 物件，之後加入的 OrderItem 都掛在它上面）
         order = orderRepository.save(order);
 
         // 新增訂單項
@@ -56,20 +61,22 @@ public class OrderServiceImpl implements OrderService {
             String productId = entry.getKey();
             Integer quantity = entry.getValue();
 
-            // 查找商品
+            // 查找商品：商品 ID 來自 Request Body 而非 URL，所以是 400 而不是 404
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new InvalidRequestException("商品不存在: " + productId));
 
-            // 檢查庫存
+            // 檢查庫存；在迴圈中途拋例外時，前面已保存的訂單與已扣的庫存都會隨交易 rollback
             if (product.getStock() < quantity) {
                 throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
             }
 
-            // 建立訂單項
+            // 建立訂單項（addItem 同時維護 Order ↔ OrderItem 雙向關聯）
             OrderItem orderItem = new OrderItem(order, product, quantity);
             order.addItem(orderItem);
 
             // 減少商品庫存
+            // [Learning] product 是交易內的 managed entity，commit 時 dirty checking 會自動 UPDATE，
+            // 這裡的 save() 不是必要的，但明確寫出可讓讀者看出「庫存有被修改」
             product.reduceStock(quantity);
             productRepository.save(product);
         }
@@ -93,7 +100,8 @@ public class OrderServiceImpl implements OrderService {
         // 更新訂單狀態
         order.setStatus(Order.OrderStatus.CANCELLED);
 
-        // 恢復商品庫存
+        // 恢復商品庫存：下單時扣掉的數量要還回去，否則取消的訂單會永久佔用庫存
+        // Product 有 @Version，若同時有其他交易修改同一商品，commit 時會發生樂觀鎖衝突（409）
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
             product.setStock(product.getStock() + item.getQuantity());
@@ -135,6 +143,8 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new InvalidRequestException("商品不存在: " + productId));
 
         // 檢查庫存
+        // [Potential Bug] 若訂單已包含該商品，可用庫存其實是「目前庫存 + 原數量」，
+        // 但這裡只比較目前庫存，可能誤判庫存不足；修改前需先確認預期行為並補測試
         if (product.getStock() < quantity) {
             throw new BusinessRuleViolationException("商品庫存不足: " + product.getName());
         }
@@ -144,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
         Optional<OrderItem> existingItem = orderItemRepository.findById(pk);
 
         if (existingItem.isPresent()) {
-            // 更新已有訂單項的數量
+            // 更新已有訂單項的數量：新數量「取代」原數量（不是累加），所以庫存要先補回再扣
             OrderItem item = existingItem.get();
             // 先恢復原來的庫存
             product.setStock(product.getStock() + item.getQuantity());
@@ -187,7 +197,8 @@ public class OrderServiceImpl implements OrderService {
         product.setStock(product.getStock() + item.getQuantity());
         productRepository.save(product);
 
-        // 移除訂單項
+        // 移除訂單項：先從 Order 的集合移除（維護雙向關聯），之後 recalculateTotalAmount 才不會算到它。
+        // Order.items 有 orphanRemoval = true，flush 時本來就會 DELETE；這裡的 delete() 只是明確寫出意圖
         order.removeItem(item);
         orderItemRepository.delete(item);
 
@@ -208,6 +219,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByCustomerId(customerId);
     }
 
+    // 數量必須 > 0：負數會讓 reduceStock 反而增加庫存，因此必須在動到庫存之前先驗證
     private void requirePositiveQuantity(String productId, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new InvalidRequestException("商品數量必須大於 0: " + productId);

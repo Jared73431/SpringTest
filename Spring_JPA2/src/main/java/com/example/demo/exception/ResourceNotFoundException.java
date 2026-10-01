@@ -3,6 +3,7 @@ package com.example.demo.exception;
 /**
  * URL 指定的資源不存在，回 404。
  * 例如 GET /api/orders/{id} 查不到訂單。
+ * 由 Service 拋出，Controller 不需 try/catch，交給 GlobalExceptionHandler 轉成 ProblemDetail。
  */
 public class ResourceNotFoundException extends RuntimeException {
 

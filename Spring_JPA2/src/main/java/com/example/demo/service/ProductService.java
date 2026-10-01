@@ -14,6 +14,11 @@ import com.example.demo.exception.BusinessRuleViolationException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.ProductRepository;
 
+/**
+ * 商品的 CRUD 與查詢，對外只回傳 ProductDTO，不讓 Entity 直接暴露給 Controller。
+ * 未標註 @Transactional：每個 Repository 呼叫各自是一個交易；目前每個方法只有單一寫入，因此影響不大。
+ * Product 有 @Version 樂觀鎖，並行修改的衝突由 GlobalExceptionHandler 轉成 409。
+ */
 @Service
 public class ProductService {
 
@@ -36,7 +41,7 @@ public class ProductService {
     /**
      * 根據ID取得商品
      * @param id 商品ID
-     * @return 商品DTO的Optional包裝
+     * @return 商品DTO的Optional包裝；查無資料時為 empty，由 Controller 決定回 404
      */
     public Optional<ProductDTO> getProductById(String id) {
         return productRepository.findById(id)
@@ -47,7 +52,7 @@ public class ProductService {
      * 建立新商品
      * @param productDTO 商品DTO
      * @return 建立後的商品DTO
-     * @throws IllegalArgumentException 如果商品ID已存在
+     * @throws BusinessRuleViolationException 如果商品ID已存在（409）
      */
     public ProductDTO createProduct(ProductDTO productDTO) {
         // 檢查ID是否已存在
@@ -55,7 +60,7 @@ public class ProductService {
             throw new BusinessRuleViolationException("商品ID已存在: " + productDTO.getId());
         }
 
-        // 如果沒有提供ID，生成一個
+        // 如果沒有提供ID，生成一個（ID 是 String，不由資料庫自動產生）
         if (productDTO.getId() == null) {
             productDTO.setId(UUID.randomUUID().toString());
         }
@@ -69,11 +74,12 @@ public class ProductService {
      * @param id 商品ID
      * @param productDTO 商品DTO
      * @return 更新後的商品DTO
-     * @throws IllegalArgumentException 如果商品不存在
+     * @throws ResourceNotFoundException 如果商品不存在（404）
      */
     public ProductDTO updateProduct(String id, ProductDTO productDTO) {
         // 先讀出既有資料再修改欄位，而不是用 DTO 建立新物件：
-        // Product 有 @Version，新物件的 version 為 null，Spring Data 會把它當成新資料 INSERT
+        // Product 有 @Version，新物件的 version 為 null，Spring Data 會把它當成新資料 INSERT（造成主鍵重複）
+        // 讀出的物件帶有目前 version，save 時若已被其他交易修改，會拋出樂觀鎖例外（409）
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("商品", id));
         product.setName(productDTO.getName());
@@ -87,7 +93,7 @@ public class ProductService {
     /**
      * 刪除商品
      * @param id 商品ID
-     * @throws IllegalArgumentException 如果商品不存在
+     * @throws ResourceNotFoundException 如果商品不存在（404）
      */
     public void deleteProduct(String id) {
         if (!productRepository.existsById(id)) {

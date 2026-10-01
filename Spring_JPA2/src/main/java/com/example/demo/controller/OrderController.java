@@ -23,6 +23,11 @@ import com.example.demo.service.OrderService;
 
 import jakarta.validation.Valid;
 
+/**
+ * 訂單 REST API：Controller 只負責 HTTP 轉換，商業邏輯與交易都在 OrderService。
+ * 不在這裡 try/catch，Service 拋出的例外由 GlobalExceptionHandler 統一轉成 ProblemDetail。
+ * 已知限制：Entity 轉 OrderDTO 發生在 Service 交易結束後，讀取 LAZY 關聯依賴 Open Session In View。
+ */
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -33,14 +38,21 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // 根據ID取得訂單
+    /**
+     * GET /api/orders/{id}：取得單筆訂單（含訂單項）。
+     * 200；訂單不存在 → 404。
+     */
     @GetMapping("/{id}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable String id) {
         Order order = orderService.findOrder(id);
         return ResponseEntity.ok(new OrderDTO(order));
     }
 
-    // 取得客戶所有訂單
+    /**
+     * GET /api/orders/customer/{customerId}：取得客戶的所有訂單。
+     * 200；客戶沒有訂單時回傳空陣列（Order 只存 customerId，沒有客戶資源可用來判斷 404）。
+     * [Learning] 每筆訂單轉 DTO 時會 LAZY 載入訂單項，訂單數多時會產生 N+1 查詢。
+     */
     @GetMapping("/customer/{customerId}")
     public List<OrderDTO> getCustomerOrders(@PathVariable String customerId) {
         return orderService.findCustomerOrders(customerId).stream()
@@ -48,7 +60,10 @@ public class OrderController {
                 .collect(Collectors.toList());
     }
 
-    // 建立訂單
+    /**
+     * POST /api/orders：建立訂單並扣減庫存。
+     * 201 + Location；驗證失敗、數量 ≤ 0 或商品不存在 → 400；庫存不足 → 409。
+     */
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         Order order = orderService.createOrder(
@@ -60,14 +75,21 @@ public class OrderController {
                 .body(new OrderDTO(order));
     }
 
-    // 取消訂單
+    /**
+     * POST /api/orders/{id}/cancel：取消訂單並補回庫存。
+     * 用 POST 表示「動作」而不是 PUT status，因為取消還帶有補回庫存的副作用。
+     * 200；訂單不存在 → 404；目前狀態不可取消 → 409。
+     */
     @PostMapping("/{id}/cancel")
     public ResponseEntity<OrderDTO> cancelOrder(@PathVariable String id) {
         Order order = orderService.cancelOrder(id);
         return ResponseEntity.ok(new OrderDTO(order));
     }
 
-    // 更新訂單狀態
+    /**
+     * PUT /api/orders/{id}/status?status=XXX：依狀態機變更訂單狀態。
+     * 200；訂單不存在 → 404；status 缺少或不是合法的列舉值 → 400；目標為 CANCELLED 或不合法的狀態轉換 → 409。
+     */
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable String id,
@@ -76,7 +98,10 @@ public class OrderController {
         return ResponseEntity.ok(new OrderDTO(order));
     }
 
-    // 新增訂單項
+    /**
+     * POST /api/orders/{id}/items：新增商品到訂單；商品已存在時以新數量取代。
+     * 200（回傳整張訂單）；訂單不存在 → 404；驗證失敗或商品不存在 → 400；訂單非 PENDING 或庫存不足 → 409。
+     */
     @PostMapping("/{id}/items")
     public ResponseEntity<OrderDTO> addOrderItem(
             @PathVariable String id,
@@ -85,7 +110,10 @@ public class OrderController {
         return ResponseEntity.ok(new OrderDTO(order));
     }
 
-    // 移除訂單項
+    /**
+     * DELETE /api/orders/{orderId}/items/{productId}：從訂單移除商品並補回庫存。
+     * 200（回傳更新後的訂單而非 204，方便用戶端取得新的總金額）；訂單或訂單項不存在 → 404；訂單非 PENDING → 409。
+     */
     @DeleteMapping("/{orderId}/items/{productId}")
     public ResponseEntity<OrderDTO> removeOrderItem(
             @PathVariable String orderId,

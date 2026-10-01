@@ -13,6 +13,11 @@ import jakarta.validation.constraints.Size;
 
 import lombok.Data;
 
+/**
+ * 課程的資料傳輸物件（DTO），同時作為 API 的 Request 與 Response。
+ * 不直接回傳 CoursePO，可避免雙向關聯造成 JSON 無限遞迴與 LAZY 載入例外，也讓 API 格式不受資料表結構綁定。
+ * Bean Validation 註解（@NotBlank、@Size…）搭配 Controller 的 @Valid 在進入 Service 前檢查輸入。
+ */
 @Data
 public class CourseDTO {
     private long id;
@@ -23,10 +28,12 @@ public class CourseDTO {
 
     @PositiveOrZero(message = "學分不可為負數")
     private int point;
+    // 預設只回傳學生 ID（輕量）；需要學生詳細資料時才使用 fromEntityWithStudents 填入 students
     private Set<Long> studentIds;
     private Set<StudentDTO> students = new HashSet<>();
 
     // From entity to DTO with student IDs only
+    // 會存取 LAZY 的 students 集合，必須在交易內呼叫，或事先以 @EntityGraph 載入，否則可能拋出 LazyInitializationException
     public static CourseDTO fromEntity(CoursePO course) {
         CourseDTO dto = new CourseDTO();
         dto.setId(course.getId());
@@ -48,6 +55,7 @@ public class CourseDTO {
     }
 
     // Convert DTO to entity (for create/update operations)
+    // 刻意不複製 id 與 studentIds：id 由資料庫產生，學生關聯不在此建立（由 Service 的加入 / 移除學生方法另外處理）
     public CoursePO toEntity() {
         CoursePO course = new CoursePO();
         course.setName(this.name);
@@ -56,6 +64,7 @@ public class CourseDTO {
     }
 
     // Update existing entity with DTO values (for update operations)
+    // 直接修改從資料庫查出的 managed Entity，交易提交時 Hibernate 的 dirty checking 會自動產生 UPDATE
     public void updateEntity(CoursePO course) {
         course.setName(this.name);
         course.setPoint(this.point);

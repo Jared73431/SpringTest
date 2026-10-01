@@ -10,6 +10,10 @@ import lombok.Setter;
 
 import com.example.demo.exception.BusinessRuleViolationException;
 
+/**
+ * 商品 Entity，透過 {@link OrderItem} 與 Order 形成多對多關聯。
+ * 以 @Version 樂觀鎖保護庫存，避免多筆訂單同時扣庫存時互相覆蓋。
+ */
 @Entity
 @Getter
 @Setter
@@ -46,6 +50,8 @@ public class Product {
     @Column(name = "version", nullable = false, columnDefinition = "bigint default 0")
     private Long version;
 
+    // inverse side：外鍵由 OrderItem.product 維護。
+    // 刻意不設 cascade：刪除商品不應連帶刪除歷史訂單項（@OneToMany 預設為 LAZY）
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -60,6 +66,7 @@ public class Product {
     }
 
     // 便利方法：減少庫存
+    // 業務規則放在 Entity 內（而非 Service 直接 setStock），庫存檢查集中在一處，呼叫端不必各自判斷
     public void reduceStock(int quantity) {
         if (this.stock < quantity) {
             throw new BusinessRuleViolationException("庫存不足");
