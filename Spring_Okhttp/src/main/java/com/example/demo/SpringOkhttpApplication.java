@@ -1,32 +1,19 @@
 package com.example.demo;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-import com.example.demo.service.OKHttpService;
-
+/**
+ * OkHttp 練習：以 OkHttp 呼叫外部 API（JSONPlaceholder），提供同步與非同步兩種 API。
+ * {@code @ConfigurationPropertiesScan}：註冊 JsonPlaceholderProperties（record + @ConfigurationProperties）。
+ */
 @SpringBootApplication
-public class SpringOkhttpApplication implements CommandLineRunner {
-
-	@Autowired
-	private OKHttpService okHttpService;
+@ConfigurationPropertiesScan
+public class SpringOkhttpApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(SpringOkhttpApplication.class, args);
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
-		System.out.println("=== Spring Boot + OKHttp 練習 ===\n");
-
-		// 執行 GET 請求
-		okHttpService.performGetRequest();
-
-		System.out.println("\n" + "=".repeat(50) + "\n");
-
-		// 執行 POST 請求
-		okHttpService.performPostRequest();
-	}
 }

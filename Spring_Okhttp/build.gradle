@@ -17,35 +17,33 @@ repositories {
 	mavenCentral()
 }
 
+// OkHttp 不在 Spring Boot 的版本管理內，需自行指定版本
+ext {
+	okhttpVersion = '5.5.0'
+}
+
 dependencies {
-	// Spring Boot Starters
-	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
-	// OKHttp 核心庫
-	implementation 'com.squareup.okhttp3:okhttp:5.5.0'
+	// OkHttp 核心與日誌 interceptor
+	implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
+	implementation "com.squareup.okhttp3:logging-interceptor:${okhttpVersion}"
 
-	// OKHttp LoggingInterceptor
-	implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	// Gson - 用於JSON序列化和反序列化
-	implementation 'com.google.code.gson:gson'
-
-	// Spring Boot 測試
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
 	testImplementation 'org.springframework.boot:spring-boot-restclient'
-	testImplementation 'com.squareup.okhttp3:mockwebserver:5.5.0'
+	// OkHttp 官方的測試用 HTTP server（5.x 的新版 API）
+	testImplementation "com.squareup.okhttp3:mockwebserver3:${okhttpVersion}"
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-// 測試配置
-test {
-	useJUnitPlatform()
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
 
-// 編譯選項
-tasks.withType(JavaCompile).configureEach {
-	options.encoding = 'UTF-8'
-	options.compilerArgs += ['-parameters']
+tasks.named('test') {
+	useJUnitPlatform()
 }
