@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -19,6 +20,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
  * 路由的 uri 寫死為 http://localhost:8081/，因此 WireMock 只能固定使用 8081。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class RouteTest {
 
 	@RegisterExtension
