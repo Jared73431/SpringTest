@@ -8,7 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -24,6 +25,7 @@ import okhttp3.mockwebserver.RecordedRequest;
  * 應用程式啟動時（CommandLineRunner）也會呼叫外部 API，因此用 Dispatcher 依路徑回應，而不是依序排隊的回應。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class OKHttpControllerBaselineTest {
 
 	static final MockWebServer SERVER = new MockWebServer();
