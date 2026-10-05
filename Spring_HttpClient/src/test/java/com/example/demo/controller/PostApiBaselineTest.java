@@ -18,7 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
  * DemoRunner 會在應用程式啟動時呼叫外部 API，因此必須在 Spring 啟動前（@BeforeAll）先準備好回應，否則啟動失敗。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class PostApiBaselineTest {
 
 	@RegisterExtension
