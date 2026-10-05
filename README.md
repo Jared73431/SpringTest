@@ -81,8 +81,8 @@
 | [Spring_Eureka_Client](Spring_Eureka_Client) 📘 | 服務消費者 | 以服務名稱呼叫（Eureka + OpenFeign + LoadBalancer）、Round Robin 負載平衡測試、Docker Compose 啟動兩個 Provider ✅ 已現代化 | — |
 | [Spring_Feign_Server](Spring_Feign_Server) 📘 | Feign 被呼叫端 | 一般 REST CRUD 服務（`/api/books`），與 Spring_JPA 共用 book 資料表 ✅ 已現代化 | 🐘 |
 | [Spring_Feign_Client](Spring_Feign_Client) 📘 | Feign 呼叫端 | OpenFeign、自訂 ErrorDecoder（錯誤原樣轉回）、逾時 / log 設定、WireMock 測試、Docker Compose 一次啟動三個服務、Feign vs HTTP Service Client ✅ 已現代化 | — |
-| [Spring_Gateway_Server](Spring_Gateway_Server) | API Gateway | 路由、`StripPrefix` | — |
-| [Spring_Gateway_Client](Spring_Gateway_Client) | Gateway 後端服務 | 被 Gateway 轉發的服務 | — |
+| [Spring_Gateway_Server](Spring_Gateway_Server) 📘 | API Gateway | 固定網址與 `lb://`（Eureka）兩種路由、StripPrefix vs RewritePath、自訂 GlobalFilter、改寫 Location header、Docker Compose 以 Gateway 為唯一入口 ✅ 已現代化 | — |
+| [Spring_Gateway_Client](Spring_Gateway_Client) 📘 | Gateway 後端服務 | 被 Gateway 轉送的 first-service（`/api/hello`） ✅ 已現代化 | — |
 
 微服務模組需要**同時啟動多個專案**，建議啟動順序：
 
@@ -100,9 +100,9 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅ |
 | 2.7.x | 11 / 17 | Security3 |
-| 3.0.x | 17 | Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
+| 3.0.x | 17 | Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）

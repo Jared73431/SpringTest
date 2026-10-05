@@ -10,6 +10,8 @@
 
 一次啟動全部服務（含兩個 Provider 實例）的 Docker Compose 放在 [Spring_Eureka_Client](../Spring_Eureka_Client/readme.md#docker)。
 
+[Spring_Gateway_Server](../Spring_Gateway_Server) 也會以 `lb://service-provider` 透過 Eureka 轉送到 Provider，示範「Gateway + 服務註冊中心」的組合。
+
 這是本 Repo 早期的練習，已完成現代化（Spring Boot 2.7 → 4.1），詳見「[現代化紀錄](#現代化紀錄)」。
 
 ## 技術版本
