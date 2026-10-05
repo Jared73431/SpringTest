@@ -3,13 +3,19 @@ server:
 
 spring:
   application:
-    name: api-gateway
+    name: api-gateway  # 也以這個名稱註冊到 Eureka
   cloud:
     gateway:
       server:
         webflux:
+          # 套用到所有路由的 filter
+          default-filters:
+            # 在回應加上 header，呼叫端可以看出這個回應經過了 Gateway
+            - AddResponseHeader=X-Gateway, api-gateway
           routes:
             # 路由 = id + 目的地（uri）+ 條件（predicates）+ 加工（filters）
+
+            # 路由一：固定網址的後端（Spring_Gateway_Client）
             - id: first-service
               # 後端位址從設定讀取：本機預設 localhost:8086，Docker Compose 以環境變數 FIRST_SERVICE_URL 改成服務名稱
               uri: ${FIRST_SERVICE_URL:http://localhost:8086}
@@ -20,3 +26,29 @@ spring:
                 # 去掉路徑的第一段再轉送：/first-service/api/hello → /api/hello
                 # 前綴只用來判斷「轉給誰」，後端只需要提供 /api/... 路徑
                 - StripPrefix=1
+
+            # 路由二：註冊在 Eureka 的服務（Spring_Eureka_Provider，可能有多個實例）
+            - id: books-service
+              # lb://服務名稱：向 Eureka 查詢實例，再由 LoadBalancer 挑一台（與 Feign 的 @FeignClient(name = ...) 相同機制）
+              uri: lb://service-provider
+              predicates:
+                - Path=/books-service/**
+              filters:
+                # 用正規表示式改寫路徑，效果與 StripPrefix=1 相同：/books-service/api/books → /api/books
+                # $\{segment}：在 YAML 中 ${...} 會被 Spring 當成設定值的佔位符，因此寫成 $\{...}
+                - RewritePath=/books-service/(?<segment>.*), /$\{segment}
+    loadbalancer:
+      cache:
+        # LoadBalancer 快取服務清單的時間（預設 35 秒）。練習用縮短，新啟動的 Provider 能較快被選到
+        ttl: 5s
+
+eureka:
+  client:
+    service-url:
+      # Eureka 註冊中心的位址；Docker Compose 以環境變數 EUREKA_URL 改成服務名稱
+      # defaultZone 必須維持駝峰大小寫：它是 Map 的 key，Eureka 用這個名字查詢
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    # 向 Eureka 重新抓取服務清單的間隔（預設 30 秒），練習用縮短
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
