@@ -1,280 +1,260 @@
-# Spring Boot HttpClient 練習專案
+# Spring HttpClient - RestClient 與 WebClient 對照
 
-這是一個用於練習Spring Boot HttpClient的完整範例專案，使用JSONPlaceholder API作為測試端點。
+以兩種 HTTP client 呼叫同一個外部 API（[JSONPlaceholder](https://jsonplaceholder.typicode.com/)，公開的假資料 API），對照寫法與行為：
 
-## 專案特色
+| API | HTTP client | 風格 |
+|---|---|---|
+| `/api/posts` | **RestClient**（Spring 6.1+） | 同步：呼叫後直接拿到結果 |
+| `/api/reactive/posts` | **WebClient**（Spring 5+） | Reactive：回傳 `Mono` / `Flux` |
 
-- 🚀 使用Spring WebFlux WebClient進行HTTP請求
-- 📊 支援所有HTTP方法（GET、POST、PUT、DELETE）
-- 🔄 響應式程式設計（Reactive Programming）
-- 🧪 完整的單元測試
-- 📝 詳細的日誌輸出
-- 🎯 多種測試方式
+兩者功能完全相同，測試也用同一組案例驗證。其他寫法（RestTemplate、Feign、HTTP Service Client）見「[四種 HTTP client 比較](#1-四種-http-client-比較)」。
 
-## 技術棧
+這是 2025 年加入的練習，已完成現代化（Spring Boot 3.5 → 4.1），詳見「[現代化紀錄](#現代化紀錄)」。
 
-- **Java 17**
-- **Spring Boot 3.2.0**
-- **Spring WebFlux**
-- **Gradle**
-- **JUnit 5**
-- **Reactor Test**
+## 技術版本
+
+| 項目 | 版本 |
+|---|---|
+| Java | 21 |
+| Spring Boot | 4.1.1（Spring MVC，Tomcat） |
+| HTTP client | RestClient（JDK HttpClient）、WebClient（Reactor Netty） |
+| Gradle | 9.8.0（使用 Gradle Wrapper） |
+| 測試 | JUnit 5、WireMock 3、TestRestTemplate |
+
+## 架構
+
+```text
+呼叫端
+  ↓ :8087
+PostController          /api/posts            → PostRestClient（RestClient）─┐
+ReactivePostController  /api/reactive/posts   → PostWebClient（WebClient）───┤ HTTPS
+                                                                              ▼
+                                                        jsonplaceholder.typicode.com
+GlobalExceptionHandler：外部 API 的錯誤 → ProblemDetail
+DemoRunner：啟動後自動示範一次 GET / POST / PUT / DELETE（輸出到 log）
+```
 
 ## 專案結構
 
-```
-src/
-├── main/
-│   └── java/
-│       └── com/example/demo/
-│           ├── Application.java              # 主程式
-│           ├── runner
-│           │   └──DemoRunner.java              # 示範執行器
-│           ├── controller/
-│           │   ├── HttpController.java      # REST API控制器
-│           │   └── TestController.java      # 測試控制器
-│           ├── model/
-│           │   └── Post.java                # 資料模型
-│           └── service/
-│               └── HttpClientService.java   # HTTP客戶端服務
-└── test/
-    └── java/
-        └── com/example/demo/service/
-            └── HttpClientTest.java          # 單元測試
+```text
+src/main/java/com/example/demo/
+├── client/
+│   ├── JsonPlaceholderProperties.java   # 外部 API 的位址與逾時（@ConfigurationProperties）
+│   ├── PostRestClient.java              # RestClient 版本
+│   └── PostWebClient.java               # WebClient 版本
+├── controller/
+│   ├── PostController.java              # /api/posts
+│   └── ReactivePostController.java      # /api/reactive/posts
+├── exception/GlobalExceptionHandler.java
+├── model/Post.java                      # record
+└── runner/DemoRunner.java               # 啟動示範
 ```
 
-## 快速開始
+## 執行方式
 
-### 1. 克隆專案
+需要網路（會呼叫 JSONPlaceholder）：
 
 ```bash
-git clone <repository-url>
-cd spring-boot-httpclient
+./gradlew bootRun        # Windows：gradlew.bat bootRun
 ```
 
-### 2. 運行專案
+- Port：`8087`
+- 啟動後 log 會輸出示範結果；沒有網路時只會出現警告，應用程式仍正常啟動
+- 關閉啟動示範：`./gradlew bootRun --args='--demo.runner.enabled=false'`
+
+## API
+
+| Method | RestClient 版本 | WebClient 版本 | 說明 | 成功 |
+|---|---|---|---|---|
+| `GET` | `/api/posts` | `/api/reactive/posts` | 查詢全部（100 筆） | `200` |
+| `GET` | `/api/posts/{id}` | `/api/reactive/posts/{id}` | 查詢一筆 | `200` |
+| `POST` | `/api/posts` | `/api/reactive/posts` | 新增 | `201` + `Location` |
+| `PUT` | `/api/posts/{id}` | `/api/reactive/posts/{id}` | 修改 | `200` |
+| `DELETE` | `/api/posts/{id}` | `/api/reactive/posts/{id}` | 刪除 | `204` |
 
 ```bash
-./gradlew bootRun
-```
-
-### 3. 查看示範
-
-專案啟動後會自動執行HTTP請求示範，你可以在控制台看到：
-- GET請求獲取貼文
-- POST請求建立貼文
-- PUT請求更新貼文
-- DELETE請求刪除貼文
-
-## API 端點
-
-### 主要API端點
-
-| 方法 | 端點 | 描述 |
-|------|------|------|
-| GET | `/api/posts/{id}` | 獲取單一貼文 |
-| GET | `/api/posts` | 獲取所有貼文 |
-| POST | `/api/posts` | 建立新貼文 |
-| PUT | `/api/posts/{id}` | 更新貼文 |
-| DELETE | `/api/posts/{id}` | 刪除貼文 |
-
-### 測試端點
-
-| 方法 | 端點 | 描述 |
-|------|------|------|
-| GET | `/test/get/{id}` | 測試GET請求 |
-| POST | `/test/post-simple` | 測試POST請求（URL參數） |
-| POST | `/test/post-json` | 測試POST請求（JSON） |
-| GET | `/test/create-sample` | 建立範例貼文 |
-
-## 測試方式
-
-### 1. 瀏覽器測試（最簡單）
-
-直接在瀏覽器中訪問：
-- `http://localhost:8080/test/get/1`
-- `http://localhost:8080/test/create-sample`
-- `http://localhost:8080/api/posts`
-
-### 2. curl 測試
-
-#### GET 請求
-```bash
-# 獲取單一貼文
-curl -X GET http://localhost:8080/test/get/1
-
-# 獲取所有貼文
-curl -X GET http://localhost:8080/api/posts
-```
-
-#### POST 請求
-```bash
-# 使用URL參數
-curl -X POST "http://localhost:8080/test/post-simple?userId=1&title=我的標題&body=我的內容"
-
-# 使用JSON請求體
-curl -X POST http://localhost:8080/test/post-json \
+curl http://localhost:8087/api/posts/1
+curl -X POST http://localhost:8087/api/reactive/posts \
   -H "Content-Type: application/json" \
-  -d '{
-    "userId": 1,
-    "title": "我的新貼文",
-    "body": "這是貼文內容"
-  }'
-
-# 建立範例貼文
-curl -X GET http://localhost:8080/test/create-sample
+  -d '{"userId": 1, "title": "我的標題", "body": "我的內容"}'
 ```
 
-#### PUT 請求
-```bash
-curl -X PUT http://localhost:8080/api/posts/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": 1,
-    "userId": 1,
-    "title": "更新後的標題",
-    "body": "更新後的內容"
-  }'
+> JSONPlaceholder 是假資料 API：新增、修改、刪除都會回傳成功，但**資料不會真的被儲存**（新增的 id 永遠是 101）。
+
+### 錯誤回應
+
+| 情境 | 回應 |
+|---|---|
+| 外部 API 回 4xx（例如 `/api/posts/99999` 查無資料） | 相同狀態碼（404） |
+| 外部 API 回 5xx | `502 Bad Gateway` |
+| 連不上、逾時（連線 2 秒 / 讀取 5 秒） | `503 Service Unavailable`，詳細原因記錄在 log |
+
+所有錯誤皆為 ProblemDetail（`application/problem+json`）。
+
+## 設定
+
+```properties
+server.port=8087
+jsonplaceholder.base-url=https://jsonplaceholder.typicode.com
+jsonplaceholder.connect-timeout=2s
+jsonplaceholder.read-timeout=5s
+demo.runner.enabled=true
 ```
 
-#### DELETE 請求
-```bash
-curl -X DELETE http://localhost:8080/api/posts/1
-```
+`jsonplaceholder.*` 對應 [JsonPlaceholderProperties](src/main/java/com/example/demo/client/JsonPlaceholderProperties.java)（record + `@ConfigurationProperties`），比多個 `@Value` 更集中、有型別檢查；`Duration` 可以寫成 `2s`、`500ms`。
 
-### 3. Postman 測試
-
-#### GET 請求
-- Method: `GET`
-- URL: `http://localhost:8080/test/get/1`
-
-#### POST 請求
-- Method: `POST`
-- URL: `http://localhost:8080/test/post-json`
-- Headers: `Content-Type: application/json`
-- Body (raw JSON):
-```json
-{
-  "userId": 1,
-  "title": "我的標題",
-  "body": "我的內容"
-}
-```
-
-### 4. 單元測試
+## 測試
 
 ```bash
-# 執行所有測試
 ./gradlew test
-
-# 執行特定測試
-./gradlew test --tests HttpClientTest
 ```
 
-## 資料模型
+**不需要網路**。JSONPlaceholder 以 WireMock 模擬：
 
-```java
-public class Post {
-    private Long id;
-    private Long userId;
-    private String title;
-    private String body;
-    
-    // 建構子、getter、setter...
-}
-```
+| 測試 | 內容 |
+|---|---|
+| `PostApiContractTest`（抽象類別） | 測試案例只寫一次：CRUD、404、502、逾時 503 |
+| `RestClientPostApiTest` / `WebClientPostApiTest` | 繼承上面的案例，分別測 `/api/posts` 與 `/api/reactive/posts`，**確保兩個版本行為一致** |
+| `UpstreamUnreachableTest` | 外部 API 連不上：應用程式仍可啟動（DemoRunner 只記錄警告）、兩個版本都回 503 |
 
-## 核心服務
-
-### HttpClientService
-
-使用Spring WebFlux的WebClient進行HTTP請求：
-
-```java
-@Service
-public class HttpClientService {
-    private final WebClient webClient;
-    
-    // GET請求
-    public Mono<Post> getPost(Long id) { ... }
-    
-    // POST請求
-    public Mono<Post> createPost(Post post) { ... }
-    
-    // PUT請求
-    public Mono<Post> updatePost(Long id, Post post) { ... }
-    
-    // DELETE請求
-    public Mono<Void> deletePost(Long id) { ... }
-}
-```
-
-## 常見問題解決
-
-### 1. Required request body is missing
-
-**問題**：POST請求時出現此錯誤
-**解決方案**：
-- 確保POST請求包含 `Content-Type: application/json` header
-- 確保請求體不為空且格式正確
-- 使用測試端點 `/test/post-simple` 進行簡單測試
-
-### 2. JSON格式錯誤
-
-**問題**：JSON解析失敗
-**解決方案**：
-- 檢查JSON語法是否正確
-- 確保字串使用雙引號
-- 使用JSON驗證工具檢查格式
-
-### 3. 連線問題
-
-**問題**：無法連接到服務
-**解決方案**：
-- 確保Spring Boot應用程式已啟動
-- 檢查端口8080是否被佔用
-- 確認防火牆設定
-
-## 學習重點
-
-### 1. WebClient vs RestTemplate
-- WebClient是Spring 5+推薦的HTTP客戶端
-- 支援響應式程式設計
-- 更好的效能和非阻塞I/O
-
-### 2. 響應式程式設計
-- 使用Mono和Flux處理非同步操作
-- 支援背壓（backpressure）
-- 更好的資源利用率
-
-### 3. 錯誤處理
-- 使用doOnError處理錯誤
-- 適當的異常處理機制
-- 日誌記錄和監控
-
-## 擴展建議
-
-1. **添加認證機制**：實作JWT或OAuth2認證
-2. **添加快取**：使用Redis或Caffeine快取
-3. **添加重試機制**：處理網路不穩定情況
-4. **添加監控**：使用Micrometer和Prometheus
-5. **添加文檔**：使用OpenAPI/Swagger自動生成API文檔
-
-## 參考資源
-
-- [Spring WebFlux Documentation](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html)
-- [JSONPlaceholder API](https://jsonplaceholder.typicode.com/)
-- [Project Reactor Documentation](https://projectreactor.io/docs/core/release/reference/)
-- [Spring Boot Testing](https://spring.io/guides/gs/testing-web/)
-
-## 授權
-
-本專案使用MIT授權條款。
-
-## 貢獻
-
-歡迎提交Issue和Pull Request！
+> 修正前的測試直接呼叫真正的 JSONPlaceholder：沒有網路就失敗，而且依賴對方的資料（例如「剛好 100 筆」）。呼叫外部服務的程式，測試時應該用 WireMock 這類工具模擬，才能穩定重現成功、錯誤、逾時等情境。
 
 ---
 
-**開始你的HTTP Client學習之旅！** 🚀
+## HTTP Client 教學
+
+### 1. 四種 HTTP client 比較
+
+| Client | 出現版本 | 風格 | 現況 | 本 Repo 範例 |
+|---|---|---|---|---|
+| `RestTemplate` | Spring 3 | 同步，方法很多（`getForObject`、`exchange`…） | 維護模式，新程式不建議使用 | — |
+| `WebClient` | Spring 5 | Reactive，回傳 `Mono` / `Flux` | 適合 WebFlux 應用程式 | 本模組 |
+| **`RestClient`** | Spring 6.1 | 同步，流暢 API（與 WebClient 相似） | **Spring MVC 應用程式的建議選擇** | 本模組 |
+| OpenFeign | Spring Cloud | 宣告式介面 | 功能完成（只修 Bug） | [Spring_Feign_Client](../Spring_Feign_Client) |
+| HTTP Service Client（`@HttpExchange`） | Spring 6 | 宣告式介面，底層用 RestClient / WebClient | 官方建議取代 Feign | 之後另建模組 |
+
+### 2. 同一件事的兩種寫法
+
+```java
+// RestClient：同步，呼叫完就拿到 Post
+public Post findById(Long id) {
+    return restClient.get()
+            .uri("/posts/{id}", id)
+            .retrieve()
+            .body(Post.class);
+}
+
+// WebClient：回傳 Mono<Post>，此時「還沒送出請求」，要等有人訂閱才會執行
+public Mono<Post> findById(Long id) {
+    return webClient.get()
+            .uri("/posts/{id}", id)
+            .retrieve()
+            .bodyToMono(Post.class);
+}
+```
+
+| | RestClient | WebClient |
+|---|---|---|
+| 回傳 | `Post`、`List<Post>` | `Mono<Post>`、`Flux<Post>` |
+| 執行時機 | 呼叫方法時立即送出 | 被訂閱時才送出（lazy） |
+| 錯誤例外 | `RestClientResponseException`（4xx / 5xx）、`ResourceAccessException`（I/O） | `WebClientResponseException`、`WebClientRequestException` |
+| 底層 | JDK `HttpClient`（本專案指定） | Reactor Netty |
+| 需要的依賴 | `spring-boot-starter-restclient` | `spring-boot-starter-webclient` |
+
+### 3. 在 Spring MVC 裡使用 WebClient：不等於「全 Reactive」
+
+本應用程式是 **Spring MVC（Tomcat）**。Controller 回傳 `Mono` / `Flux` 時，Spring MVC 會以非同步請求處理、完成後再寫出回應，**但伺服器仍是 Servlet**。
+
+| 情境 | 建議 |
+|---|---|
+| Spring MVC 應用程式 | **RestClient**（寫法直覺，不必學 Reactor） |
+| Spring WebFlux 應用程式 | **WebClient**（全程非阻塞，不可以呼叫 `block()`） |
+| MVC 中要同時呼叫多個 API 並行處理 | WebClient 的 `Mono.zip(...)` 很方便；或用 RestClient 搭配 Virtual Threads |
+
+修正前的 README 寫「響應式程式設計、非阻塞 I/O、更好的效能」，但在 MVC 應用程式中並不成立；本模組只引入 `spring-boot-starter-webclient`（不是整個 WebFlux），讓應用程式明確是 MVC。
+
+### 4. 使用 Spring Boot 提供的 Builder
+
+```java
+// ✘ 修正前：自己建立 builder，不會套用 Spring Boot 的設定
+this.webClient = WebClient.builder().baseUrl("https://...").build();
+
+// ✔ 修正後：注入 Spring Boot 提供的 Builder
+public PostWebClient(WebClient.Builder builder, JsonPlaceholderProperties properties) {
+    this.webClient = builder.baseUrl(properties.baseUrl())...build();
+}
+```
+
+Spring Boot 提供的 `RestClient.Builder` / `WebClient.Builder` 已經套用了 Jackson 設定、observability（追蹤與 metrics）、自訂的 customizer，自己 `builder()` 建立的就沒有這些。
+
+### 5. 逾時
+
+沒有設定逾時，外部 API 不回應時請求會一直卡住，佔用執行緒與連線。
+
+```java
+// RestClient（JDK HttpClient）
+HttpClient httpClient = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_1_1)
+        .connectTimeout(properties.connectTimeout())   // 連線逾時
+        .build();
+JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+requestFactory.setReadTimeout(properties.readTimeout()); // 讀取逾時
+
+// WebClient（Reactor Netty）
+HttpClient httpClient = HttpClient.create()
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) properties.connectTimeout().toMillis())
+        .responseTimeout(properties.readTimeout());
+```
+
+#### 踩坑：JDK HttpClient 的 HTTP/2 升級
+
+測試時 RestClient 的 **PUT** 失敗（`EOFException: EOF reached while reading`），GET / POST / DELETE 正常，WebClient 版本也正常。
+
+**原因**：JDK `HttpClient` 預設使用 HTTP/2；在 `http://`（非 HTTPS）連線上，會先送出「升級到 HTTP/2」（h2c）的請求。部分伺服器（例如 WireMock 使用的 Jetty）收到**帶有 body 的升級請求**時直接斷線。
+
+**解法**：`version(HttpClient.Version.HTTP_1_1)`。HTTPS 連線用另一種方式（ALPN）協商 HTTP/2，不受影響，所以正式呼叫 JSONPlaceholder 時看不出問題，**只有在測試或呼叫內部的 http:// 服務時才會出現**。
+
+### 6. 錯誤處理
+
+```java
+@ExceptionHandler(RestClientResponseException.class)   // RestClient：4xx / 5xx
+@ExceptionHandler(WebClientResponseException.class)    // WebClient：4xx / 5xx
+@ExceptionHandler(ResourceAccessException.class)       // RestClient：連不上、逾時
+@ExceptionHandler(WebClientRequestException.class)     // WebClient：連不上、逾時
+```
+
+兩種 client 的例外類別不同，但對應規則相同（4xx 原樣、5xx → 502、無法使用 → 503），與 [Spring_Feign_Client](../Spring_Feign_Client) 的做法一致。
+
+### 7. 啟動示範（CommandLineRunner）的注意事項
+
+```java
+@ConditionalOnProperty(name = "demo.runner.enabled", havingValue = "true", matchIfMissing = true)
+public class DemoRunner implements CommandLineRunner { ... }
+```
+
+- **`CommandLineRunner` 拋出例外會讓應用程式啟動失敗**。修正前用 `block()` 呼叫外部 API，沒有網路就無法啟動，連 `contextLoads` 測試都會失敗；現在改為 catch 後只記錄警告
+- 用 `@ConditionalOnProperty` 加上開關，測試時關閉，避免每次啟動都呼叫外部 API
+
+---
+
+## 現代化紀錄
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | 外部 API 位址改為可設定（預設不變），以 WireMock 測試取代連外部網路的測試，固定原本行為 |
+| 2 | Java 17 → 21、Spring Boot 3.5.3 → 3.5.16、Gradle 8.14.2 → 8.14.3 |
+| 3 | Spring Boot → 4.1.1、Gradle → 9.8.0 |
+| 4 | RestClient / WebClient 兩個版本、逾時、錯誤處理、DemoRunner 開關、刪除 TestController、`Post` 改為 record、port 8080 → 8087 |
+| 5 | 重寫 README，修正 `gradlew` 執行權限 |
+
+### 行為變更
+
+| 項目 | 修改前 | 修改後 |
+|---|---|---|
+| Port | `8080` | `8087` |
+| WebClient 版本的 API | `/api/posts` | `/api/reactive/posts`（`/api/posts` 改由 RestClient 處理） |
+| 新增 | 回 `200` | 回 `201` + `Location` |
+| 刪除 | 回 `200` | 回 `204` |
+| 外部 API 錯誤 | 一律 `500` | 4xx 原樣、5xx → `502`、無法使用 → `503` |
+| 沒有網路時啟動 | **啟動失敗** | 正常啟動，示範只記錄警告 |
+| 測試端點 `/test/...` | 存在（`GET /test/create-sample` 會新增資料） | 移除 |

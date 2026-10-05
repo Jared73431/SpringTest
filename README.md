@@ -52,7 +52,7 @@
 | [Spring_Thymeleaf](Spring_Thymeleaf) | 模板引擎 | Thymeleaf 頁面渲染 | — |
 | [Spring_Swagger](Spring_Swagger) 📘 | API 文件 | springdoc-openapi、統一回應格式、全域例外處理 | 🐘 |
 | [Spring_Webflux](Spring_Webflux) | Reactive Streams | Mono / Flux 各種操作子示範 | — |
-| [Spring_HttpClient](Spring_HttpClient) 📘 | 呼叫外部 API | WebClient | — |
+| [Spring_HttpClient](Spring_HttpClient) 📘 | 呼叫外部 API | RestClient（同步）與 WebClient（Reactive）對照、逾時、錯誤對應、WireMock 契約測試 ✅ 已現代化 | — |
 | [Spring_Okhttp](Spring_Okhttp) 📘 | 呼叫外部 API | OkHttp、Logging Interceptor、Gson | — |
 
 ### 即時通訊
@@ -100,7 +100,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
