@@ -1,35 +1,14 @@
 package com.example.demo.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+/**
+ * JSONPlaceholder 的貼文資料，同時作為 API 的 Request 與 Response。
+ * 使用 record：不可變、自動產生建構子與 accessor（title()），Jackson 依欄位名稱對應 JSON。
+ * 新增時 id 為 null，由外部 API 產生。
+ */
+public record Post(Long id, Long userId, String title, String body) {
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
-@Getter
-@Setter
-@ToString
-public class Post {
-
-    @JsonProperty("id")
-    private Long id;
-
-    @JsonProperty("userId")
-    private Long userId;
-
-    @JsonProperty("title")
-    private String title;
-
-    @JsonProperty("body")
-    private String body;
-
-    // 預設建構子
-    public Post() {}
-
-    // 帶參數建構子
-    public Post(Long userId, String title, String body) {
-        this.userId = userId;
-        this.title = title;
-        this.body = body;
-    }
+	/** 新增用：還沒有 id */
+	public static Post of(Long userId, String title, String body) {
+		return new Post(null, userId, title, body);
+	}
 }

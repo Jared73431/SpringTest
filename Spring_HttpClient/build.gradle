@@ -13,28 +13,27 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	compileOnly 'org.projectlombok:lombok'
+	// RestClient（同步）與 WebClient（Reactive）兩種 HTTP client；
+	// 只引入 WebClient，不引入整個 WebFlux，應用程式仍以 Spring MVC（Tomcat）執行
+	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.springframework.boot:spring-boot-starter-webclient'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
-	testImplementation 'org.springframework.boot:spring-boot-restclient'
 	testImplementation 'io.projectreactor:reactor-test'
 	testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
 
 tasks.named('test') {
