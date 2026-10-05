@@ -7,16 +7,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
-import lombok.Data;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
 @Entity
-@Data
+@ToString
 public class Book implements Serializable{
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -2836661917894057082L;
+	private static final long serialVersionUID = -3392162000827962466L;
 
 	@Id
 	@SequenceGenerator(name="Book_id_GENERATOR", sequenceName="Book_id_seq", allocationSize = 1)

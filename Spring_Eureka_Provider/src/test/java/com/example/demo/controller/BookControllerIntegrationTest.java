@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import com.example.demo.PostgresContainerTestBase;
@@ -109,39 +110,39 @@ class BookControllerIntegrationTest extends PostgresContainerTestBase {
 		assertThat(response.getBody().getTitle()).isEqualTo("Java");
 	}
 
-	// [Potential Bug] 目前查不到資料時回 500，預計修正為 404
 	@Test
-	void getOneBook_shouldReturnInternalServerError_whenIdNotExists() {
+	void getOneBook_shouldReturnNotFoundProblemDetail_whenIdNotExists() {
 		ResponseEntity<String> response = restTemplate.getForEntity("/getOneBook/999999", String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+		assertThat(response.getBody()).contains("999999");
 	}
 
-	// [Potential Bug] 目前「更新」不會修改原資料，而是新增一筆，預計修正
 	@Test
-	void updateBook_shouldInsertNewRowAndKeepOriginal_whenIdExists() {
+	void updateBook_shouldUpdateExistingRow_whenIdExists() {
 		Book saved = saveBook(12345, "Java");
 
 		ResponseEntity<Book> response = restTemplate.postForEntity("/updateBook?ID=" + saved.getId()
 				+ "&ISBN=12345&title=Java 2nd&author=Tom&year=2021&publisher=OReilly&cost=500", null, Book.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody().getId()).isNotEqualTo(saved.getId());
+		assertThat(response.getBody().getId()).isEqualTo(saved.getId());
 		assertThat(response.getBody().getTitle()).isEqualTo("Java 2nd");
-		assertThat(bookRepo.count()).isEqualTo(2);
-		assertThat(bookRepo.findById(saved.getId()).orElseThrow().getTitle()).isEqualTo("Java");
+		assertThat(bookRepo.count()).isEqualTo(1);
+		Book updated = bookRepo.findById(saved.getId()).orElseThrow();
+		assertThat(updated.getTitle()).isEqualTo("Java 2nd");
+		assertThat(updated.getYear()).isEqualTo(2021);
+		assertThat(updated.getCost()).isEqualTo(500);
 	}
 
-	// [Potential Bug] Hibernate 5（Boot 2.7）會默默新增一筆；
-	// Hibernate 6.6（Boot 3.5+）對不存在的 id 執行 merge 會拋出 StaleObjectStateException，因此回 500。
-	// 預計修正為 404
 	@Test
-	void updateBook_shouldReturnInternalServerError_whenIdNotExists() {
+	void updateBook_shouldReturnNotFound_whenIdNotExists() {
 		ResponseEntity<String> response = restTemplate.postForEntity(
 				"/updateBook?ID=999999&ISBN=11111&title=Ghost&author=X&year=2000&publisher=P&cost=1", null,
 				String.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(bookRepo.count()).isZero();
 	}
 
