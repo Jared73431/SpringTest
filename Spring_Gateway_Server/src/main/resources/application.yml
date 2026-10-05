@@ -5,16 +5,18 @@ server:
 spring:
   cloud:
     gateway:
-      routes:
+      server:
+        webflux:
+          routes:
       
-      - id: employeeModule
-        uri: http://localhost:8081/
-        predicates:
-        - Path=/employee/**
-        filters:
-        - StripPrefix=1
+          - id: employeeModule
+            uri: http://localhost:8081/
+            predicates:
+            - Path=/employee/**
+            filters:
+            - StripPrefix=1
         
-      - id: consumerModule
-        uri: http://localhost:8082/
-        predicates:
-        - Path=/consumer/**
+          - id: consumerModule
+            uri: http://localhost:8082/
+            predicates:
+            - Path=/consumer/**
