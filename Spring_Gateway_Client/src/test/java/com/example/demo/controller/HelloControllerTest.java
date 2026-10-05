@@ -16,15 +16,15 @@ class HelloControllerTest {
 	private MockMvc mockMvc;
 
 	@Test
-	void hello_shouldReturnMessage() throws Exception {
-		mockMvc.perform(get("/employee/message"))
+	void hello_shouldReturnServiceName() throws Exception {
+		mockMvc.perform(get("/api/hello"))
 				.andExpect(status().isOk())
-				.andExpect(content().string("Hello JavaInUse Called in First Service"));
+				.andExpect(content().string("Hello from first-service"));
 	}
 
-	// Gateway 的 StripPrefix=1 會把 /employee/message 轉成 /message，但本服務沒有這個路徑
+	// 依專案 URL 規則改為 /api/hello，舊路徑不再提供
 	@Test
-	void message_shouldReturnNotFound_whenPrefixStripped() throws Exception {
-		mockMvc.perform(get("/message")).andExpect(status().isNotFound());
+	void legacyEndpoint_shouldReturnNotFound() throws Exception {
+		mockMvc.perform(get("/employee/message")).andExpect(status().isNotFound());
 	}
 }

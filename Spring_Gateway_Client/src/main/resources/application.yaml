@@ -1,5 +1,6 @@
 spring:
   application:
-    name: first-service
+    name: first-service  # 服務名稱，/api/hello 的回應會帶出這個名字
+
 server:
-  port: 8081
+  port: 8086  # Gateway 的路由 first-service 轉送到這個 port
