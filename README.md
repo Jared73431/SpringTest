@@ -76,9 +76,9 @@
 
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
-| [Spring_Eureka](Spring_Eureka) | 服務註冊中心 | Eureka Server | — |
-| [Spring_Eureka_Provider](Spring_Eureka_Provider) | 服務提供者 | 註冊到 Eureka 的 CRUD 服務 | 🐘 |
-| [Spring_Eureka_Client](Spring_Eureka_Client) | 服務消費者 | 透過 Eureka + OpenFeign 呼叫 Provider | — |
+| [Spring_Eureka](Spring_Eureka) 📘 | 服務註冊中心 | Eureka Server、註冊 / 心跳 / 自我保護原理、Eureka vs K8S Service ✅ 已現代化 | — |
+| [Spring_Eureka_Provider](Spring_Eureka_Provider) 📘 | 服務提供者 | 註冊到 Eureka 的 REST CRUD（`/api/books`），`/api/hello` 回傳實例 id ✅ 已現代化 | 🐘 |
+| [Spring_Eureka_Client](Spring_Eureka_Client) 📘 | 服務消費者 | 以服務名稱呼叫（Eureka + OpenFeign + LoadBalancer）、Round Robin 負載平衡測試、Docker Compose 啟動兩個 Provider ✅ 已現代化 | — |
 | [Spring_Feign_Server](Spring_Feign_Server) 📘 | Feign 被呼叫端 | 一般 REST CRUD 服務（`/api/books`），與 Spring_JPA 共用 book 資料表 ✅ 已現代化 | 🐘 |
 | [Spring_Feign_Client](Spring_Feign_Client) 📘 | Feign 呼叫端 | OpenFeign、自訂 ErrorDecoder（錯誤原樣轉回）、逾時 / log 設定、WireMock 測試、Docker Compose 一次啟動三個服務、Feign vs HTTP Service Client ✅ 已現代化 | — |
 | [Spring_Gateway_Server](Spring_Gateway_Server) | API Gateway | 路由、`StripPrefix` | — |
@@ -100,9 +100,9 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅ |
-| 2.7.x | 11 / 17 | Eureka、Security3 |
-| 3.0.x | 17 | Eureka_Client、Eureka_Provider、Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅ |
+| 2.7.x | 11 / 17 | Security3 |
+| 3.0.x | 17 | Gateway、Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
