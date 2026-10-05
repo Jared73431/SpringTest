@@ -23,10 +23,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 
 	// OKHttp 核心庫
-	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+	implementation 'com.squareup.okhttp3:okhttp:5.5.0'
 
 	// OKHttp LoggingInterceptor
-	implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+	implementation 'com.squareup.okhttp3:logging-interceptor:5.5.0'
 
 	// Gson - 用於JSON序列化和反序列化
 	implementation 'com.google.code.gson:gson'
@@ -35,7 +35,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
 	testImplementation 'org.springframework.boot:spring-boot-restclient'
-	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:5.5.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
