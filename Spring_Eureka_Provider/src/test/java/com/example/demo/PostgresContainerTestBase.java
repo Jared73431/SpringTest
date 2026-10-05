@@ -6,7 +6,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 整合測試共用的 PostgreSQL 容器。
- * 測試時由 Testcontainers 啟動一個臨時資料庫，不會連到本機開發用的資料庫。
+ * 測試時由 Testcontainers 啟動一個臨時資料庫，不會連到本機開發用的資料庫；同時關閉 Eureka 註冊，測試不需要註冊中心。
  */
 public abstract class PostgresContainerTestBase {
 
@@ -24,5 +24,7 @@ public abstract class PostgresContainerTestBase {
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
 		// 測試不連 Eureka 註冊中心
 		registry.add("eureka.client.enabled", () -> "false");
+		// 固定的實例 id，讓 /api/hello 的回應可以精確比對
+		registry.add("eureka.instance.instance-id", () -> "test-instance");
 	}
 }

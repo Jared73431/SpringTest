@@ -1,17 +1,30 @@
+server:
+  port: 8084  # 服務的 port
+
 spring:
   application:
-    name: service-provider  #服务名称
+    # 服務名稱：向 Eureka 註冊時使用的名字，呼叫端用 @FeignClient(name = "service-provider") 找到這個服務
+    name: service-provider
   datasource:
-    password: ${DB_PASSWORD:postgres}
     url: jdbc:postgresql://localhost:5432/test
     username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-server:
-  port: 8081  #服务端口
+  mvc:
+    problemdetails:
+      enabled: true  # 所有錯誤回應統一使用 RFC 9457 ProblemDetail 格式
+
 eureka:
   client:
-    serviceUrl: #注册中心注册地址
-      defaultZone: http://localhost:8761/eureka/
+    service-url:
+      # Eureka 註冊中心的位址；Docker Compose 以環境變數 EUREKA_URL 改成服務名稱
+      # defaultZone 必須維持駝峰大小寫：它是 Map 的 key，Eureka 用這個名字查詢
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    # 註冊 IP 而不是主機名稱：容器的主機名稱是隨機的 container id，其他容器無法用它連線
+    prefer-ip-address: true
+    # 每個實例的唯一 id，同一個服務開多台時用來區分（Eureka dashboard 與 /api/hello 都會顯示）
+    instance-id: ${spring.cloud.client.ip-address}:${server.port}
