@@ -1,0 +1,65 @@
+# ============================================================
+# 一次啟動 Eureka 練習的所有服務：Eureka、Provider ×2、Client、PostgreSQL
+#
+#   啟動：docker compose up --build        （在 Spring_Eureka_Client 資料夾執行）
+#   觀察：http://localhost:8761             → Eureka dashboard，可看到 SERVICE-PROVIDER 有兩個實例
+#         curl http://localhost:8085/api/hello  → 連續執行幾次，"Hello from <ip>:8084" 會輪流出現兩個 ip
+#   停止：docker compose down               （加上 -v 會一併刪除資料庫資料）
+#
+# 服務剛啟動時要等約 30 秒：Provider 註冊、Client 抓到最新清單都需要時間，期間 Client 可能回 503
+# ============================================================
+services:
+
+  # PostgreSQL 資料庫（只有 Provider 會連線）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機已有的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 註冊中心
+  eureka:
+    build: ../Spring_Eureka
+    ports:
+      - "8761:8761"  # dashboard
+
+  # 服務提供者：同時啟動兩個實例，示範服務發現與負載平衡
+  provider:
+    build: ../Spring_Eureka_Provider
+    deploy:
+      # 同一個 image 啟動兩個容器；兩者都以 service-provider 的名稱註冊到 Eureka
+      replicas: 2
+    # 不對主機開放 port：兩個實例不能同時綁定主機的同一個 port，而且 Client 是透過 Eureka 找到它們
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      # 對應 application.yaml 的 defaultZone: ${EUREKA_URL:...}；用服務名稱 eureka 連到註冊中心
+      - EUREKA_URL=http://eureka:8761/eureka/
+
+  # 服務消費者：只知道服務名稱 service-provider，實際位址由 Eureka 提供
+  client:
+    build: .
+    depends_on:
+      - eureka
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_URL=http://eureka:8761/eureka/
+
+volumes:
+  postgres-data:
