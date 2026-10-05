@@ -131,6 +131,7 @@ demo.runner.enabled=true
 | `WebClient` | Spring 5 | Reactive，回傳 `Mono` / `Flux` | 適合 WebFlux 應用程式 | 本模組 |
 | **`RestClient`** | Spring 6.1 | 同步，流暢 API（與 WebClient 相似） | **Spring MVC 應用程式的建議選擇** | 本模組 |
 | OpenFeign | Spring Cloud | 宣告式介面 | 功能完成（只修 Bug） | [Spring_Feign_Client](../Spring_Feign_Client) |
+| OkHttp | Square（非 Spring） | 較底層，需自行處理 JSON 與狀態碼 | 持續維護；Spring 7 已移除整合，只能直接使用 | [Spring_Okhttp](../Spring_Okhttp) |
 | HTTP Service Client（`@HttpExchange`） | Spring 6 | 宣告式介面，底層用 RestClient / WebClient | 官方建議取代 Feign | 之後另建模組 |
 
 ### 2. 同一件事的兩種寫法
