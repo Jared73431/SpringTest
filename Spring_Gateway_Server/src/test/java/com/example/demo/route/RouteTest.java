@@ -3,6 +3,7 @@ package com.example.demo.route;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,6 +98,17 @@ class RouteTest {
 		int received = providerA.findAll(getRequestedFor(urlEqualTo("/api/books/1"))).size()
 				+ providerB.findAll(getRequestedFor(urlEqualTo("/api/books/1"))).size();
 		assertThat(received).isEqualTo(1);
+	}
+
+	// Provider 回傳的 Location 是自己的路徑，Gateway 要把前綴補回去，呼叫端才能直接用它呼叫 Gateway
+	@Test
+	void booksServiceRoute_shouldRewriteLocationHeaderToGatewayPath() {
+		providerA.stubFor(post("/api/books").willReturn(aResponse().withStatus(201).withHeader("Location", "/api/books/1")));
+		providerB.stubFor(post("/api/books").willReturn(aResponse().withStatus(201).withHeader("Location", "/api/books/1")));
+
+		webTestClient.post().uri("/books-service/api/books").exchange()
+				.expectStatus().isCreated()
+				.expectHeader().valueEquals("Location", "/books-service/api/books/1");
 	}
 
 	// 同一個服務有兩個實例時，LoadBalancer（預設 Round Robin）把請求輪流送到兩台

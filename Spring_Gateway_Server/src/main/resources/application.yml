@@ -37,6 +37,9 @@ spring:
                 # 用正規表示式改寫路徑，效果與 StripPrefix=1 相同：/books-service/api/books → /api/books
                 # $\{segment}：在 YAML 中 ${...} 會被 Spring 當成設定值的佔位符，因此寫成 $\{...}
                 - RewritePath=/books-service/(?<segment>.*), /$\{segment}
+                # Provider 新增資料時回傳 Location: /api/books/1（它不知道自己在 Gateway 後面），
+                # 呼叫端拿這個路徑回來呼叫 Gateway 會 404，因此把前綴補回去：/books-service/api/books/1
+                - RewriteResponseHeader=Location, ^/api/, /books-service/api/
     loadbalancer:
       cache:
         # LoadBalancer 快取服務清單的時間（預設 35 秒）。練習用縮短，新啟動的 Provider 能較快被選到
