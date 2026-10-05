@@ -1,9 +1,38 @@
 server:
-  port: 8080  #服务端口
-eureka:
-  client:
-    serviceUrl: #注册中心注册地址
-      defaultZone: http://localhost:8761/eureka/
+  port: 8085  # 服務的 port
+
 spring:
   application:
-    name: service-consumer #服务名称
+    name: service-consumer  # 服務名稱：本服務向 Eureka 註冊時使用的名字
+  cloud:
+    openfeign:
+      client:
+        config:
+          # 對應 @FeignClient(name = "service-provider")，只套用在這個 client
+          service-provider:
+            connect-timeout: 2000  # 連線逾時（毫秒）
+            read-timeout: 5000     # 讀取逾時（毫秒）
+            logger-level: basic    # 記錄方法、URL、狀態碼、耗時；可看出這次請求送到哪一台 Provider
+    loadbalancer:
+      cache:
+        # LoadBalancer 快取服務清單的時間（預設 35 秒）。練習用縮短，新啟動的 Provider 能較快被選到
+        ttl: 5s
+  mvc:
+    problemdetails:
+      enabled: true  # 所有錯誤回應統一使用 RFC 9457 ProblemDetail 格式
+
+eureka:
+  client:
+    service-url:
+      # Eureka 註冊中心的位址；Docker Compose 以環境變數 EUREKA_URL 改成服務名稱
+      # defaultZone 必須維持駝峰大小寫：它是 Map 的 key，Eureka 用這個名字查詢
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    # 向 Eureka 重新抓取服務清單的間隔（預設 30 秒）。練習用縮短；正式環境通常保留預設，避免增加註冊中心負擔
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    # Feign 的 log 只會以 DEBUG 等級輸出
+    com.example.demo.client.BookClient: DEBUG
