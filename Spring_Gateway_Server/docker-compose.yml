@@ -1,0 +1,72 @@
+# ============================================================
+# 以 Gateway 為唯一入口的完整練習環境：
+#   Gateway、first-service、Eureka、Provider ×2、PostgreSQL
+#
+#   啟動：docker compose up --build        （在 Spring_Gateway_Server 資料夾執行）
+#   測試：curl http://localhost:10000/first-service/api/hello   → first-service（固定網址）
+#         curl http://localhost:10000/books-service/api/hello   → Provider（lb://，連續執行會輪流出現兩個 ip）
+#         http://localhost:8761                                  → Eureka dashboard
+#   停止：docker compose down               （加上 -v 會一併刪除資料庫資料）
+#
+# 除了 Gateway 與 Eureka dashboard，其他服務都不對主機開放 port：所有請求都必須經過 Gateway
+# 服務剛啟動時要等約 30 秒：Provider 註冊、Gateway 抓到最新清單都需要時間，期間 books-service 可能回 503
+# ============================================================
+services:
+
+  # API Gateway：唯一對外開放的服務
+  gateway:
+    build: .
+    depends_on:
+      - eureka
+      - first-service
+    ports:
+      - "10000:10000"
+    environment:
+      # 對應 application.yml 的 uri: ${FIRST_SERVICE_URL:...}；固定網址的路由，用 compose 的服務名稱連線
+      - FIRST_SERVICE_URL=http://first-service:8086
+      # lb:// 路由透過 Eureka 找到 Provider
+      - EUREKA_URL=http://eureka:8761/eureka/
+
+  # 路由一的後端（Spring_Gateway_Client）：不註冊到 Eureka，Gateway 用固定網址轉送
+  first-service:
+    build: ../Spring_Gateway_Client
+
+  # 註冊中心
+  eureka:
+    build: ../Spring_Eureka
+    ports:
+      - "8761:8761"  # dashboard
+
+  # 路由二的後端（Spring_Eureka_Provider）：兩個實例，Gateway 用 lb://service-provider 輪流轉送
+  provider:
+    build: ../Spring_Eureka_Provider
+    deploy:
+      replicas: 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - EUREKA_URL=http://eureka:8761/eureka/
+
+  # PostgreSQL 資料庫（只有 Provider 會連線）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
