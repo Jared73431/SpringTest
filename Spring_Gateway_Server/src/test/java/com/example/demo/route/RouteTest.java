@@ -11,44 +11,61 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
 /**
- * Baseline：用 WireMock 模擬後端 first-service，鎖定目前 Gateway 的路由行為。
- * 路由的 uri 寫死為 http://localhost:8081/，因此 WireMock 只能固定使用 8081。
+ * Gateway 路由測試：以隨機 port 啟動 Gateway，用 WireMock 模擬後端 first-service，
+ * 驗證「哪些路徑會被轉送、轉送到後端的路徑是什麼」。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 class RouteTest {
 
 	@RegisterExtension
-	static WireMockExtension backend = WireMockExtension.newInstance().options(wireMockConfig().port(8081)).build();
+	static WireMockExtension firstService = WireMockExtension.newInstance().options(wireMockConfig().dynamicPort())
+			.build();
+
+	// 對應 application.yml 的 uri: ${FIRST_SERVICE_URL:...}
+	@DynamicPropertySource
+	static void backendUrl(DynamicPropertyRegistry registry) {
+		registry.add("FIRST_SERVICE_URL", firstService::baseUrl);
+	}
 
 	@Autowired
 	private WebTestClient webTestClient;
 
-	// [Potential Bug] 後端實際路徑是 /employee/message，但 StripPrefix=1 轉送成 /message，經過 Gateway 永遠 404
+	// 修正前：StripPrefix=1 把 /employee/message 轉成 /message，但後端路徑是 /employee/message，經過 Gateway 永遠 404
 	@Test
-	void employeeRoute_shouldReturnNotFound_whenBackendServesEmployeeMessage() {
-		backend.stubFor(get("/employee/message").willReturn(aResponse().withBody("Hello JavaInUse")));
+	void firstServiceRoute_shouldStripPrefixAndForwardToApiPath() {
+		firstService.stubFor(get("/api/hello").willReturn(aResponse().withBody("Hello from first-service")));
 
-		webTestClient.get().uri("/employee/message").exchange().expectStatus().isNotFound();
+		webTestClient.get().uri("/first-service/api/hello").exchange()
+				.expectStatus().isOk()
+				.expectBody(String.class).isEqualTo("Hello from first-service");
+		firstService.verify(getRequestedFor(urlEqualTo("/api/hello")));
 	}
 
+	// 後端回傳的狀態碼原樣轉回
 	@Test
-	void employeeRoute_shouldStripFirstPathSegment() {
-		backend.stubFor(get("/message").willReturn(aResponse().withBody("stripped")));
+	void firstServiceRoute_shouldPassThroughBackendStatus() {
+		firstService.stubFor(get("/api/missing").willReturn(aResponse().withStatus(404)));
 
-		webTestClient.get().uri("/employee/message").exchange()
-				.expectStatus().isOk()
-				.expectBody(String.class).isEqualTo("stripped");
-		backend.verify(getRequestedFor(urlEqualTo("/message")));
+		webTestClient.get().uri("/first-service/api/missing").exchange().expectStatus().isNotFound();
 	}
 
 	@Test
 	void unknownPath_shouldReturnNotFound() {
 		webTestClient.get().uri("/unknown").exchange().expectStatus().isNotFound();
+	}
+
+	// 舊路由（/employee/**、/consumer/**）已移除
+	@Test
+	void legacyRoutes_shouldReturnNotFound() {
+		webTestClient.get().uri("/employee/message").exchange().expectStatus().isNotFound();
+		webTestClient.get().uri("/consumer/anything").exchange().expectStatus().isNotFound();
 	}
 }

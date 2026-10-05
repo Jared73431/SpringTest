@@ -1,22 +1,22 @@
-
 server:
-  port: 10000
+  port: 10000  # Gateway 對外的唯一入口
 
 spring:
+  application:
+    name: api-gateway
   cloud:
     gateway:
       server:
         webflux:
           routes:
-      
-          - id: employeeModule
-            uri: http://localhost:8081/
-            predicates:
-            - Path=/employee/**
-            filters:
-            - StripPrefix=1
-        
-          - id: consumerModule
-            uri: http://localhost:8082/
-            predicates:
-            - Path=/consumer/**
+            # 路由 = id + 目的地（uri）+ 條件（predicates）+ 加工（filters）
+            - id: first-service
+              # 後端位址從設定讀取：本機預設 localhost:8086，Docker Compose 以環境變數 FIRST_SERVICE_URL 改成服務名稱
+              uri: ${FIRST_SERVICE_URL:http://localhost:8086}
+              predicates:
+                # 路徑以 /first-service/ 開頭的請求走這條路由
+                - Path=/first-service/**
+              filters:
+                # 去掉路徑的第一段再轉送：/first-service/api/hello → /api/hello
+                # 前綴只用來判斷「轉給誰」，後端只需要提供 /api/... 路徑
+                - StripPrefix=1
