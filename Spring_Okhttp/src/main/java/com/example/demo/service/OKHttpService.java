@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
@@ -23,6 +24,9 @@ public class OKHttpService {
 
     @Autowired
     private Gson gson;
+
+    @Value("${jsonplaceholder.base-url:https://jsonplaceholder.typicode.com}")
+    private String baseUrl;
 
     // JSON 數據模型類
     static class Post {
@@ -71,7 +75,7 @@ public class OKHttpService {
         System.out.println("📥 執行 GET 請求...");
         System.out.println("使用 Spring Boot 管理的 OkHttpClient\n");
 
-        String url = "https://jsonplaceholder.typicode.com/posts/1";
+        String url = baseUrl + "/posts/1";
 
         Request request = new Request.Builder()
                 .url(url)
@@ -112,7 +116,7 @@ public class OKHttpService {
         System.out.println("📤 執行 POST 請求...");
         System.out.println("使用 Spring Boot + LoggingInterceptor\n");
 
-        String url = "https://jsonplaceholder.typicode.com/posts";
+        String url = baseUrl + "/posts";
 
         // 創建要發送的數據
         Post newPost = new Post(1, "Spring Boot + OKHttp 測試", "這是在 Spring Boot 中使用 OKHttp 發送的 POST 請求");
@@ -166,7 +170,7 @@ public class OKHttpService {
         System.out.println("🔄 執行異步請求...");
 
         Request request = new Request.Builder()
-                .url("https://jsonplaceholder.typicode.com/posts/1")
+                .url(baseUrl + "/posts/1")
                 .build();
 
         okHttpClient.newCall(request).enqueue(new Callback() {
