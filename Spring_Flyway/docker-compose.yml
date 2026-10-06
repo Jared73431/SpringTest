@@ -1,0 +1,41 @@
+# ============================================================
+# Flyway 練習環境：PostgreSQL + 應用程式
+#
+#   啟動：docker compose up --build        （應用程式啟動時自動執行所有遷移）
+#   查看：curl http://localhost:8093/actuator/flyway     ← 每個遷移的版本、狀態、checksum
+#         docker compose exec postgres psql -U postgres -d Flyway -c "SELECT * FROM flyway_schema_history"
+#   停止：docker compose down               （加上 -v 會刪除資料庫，下次啟動重新執行所有遷移）
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=Flyway
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d Flyway"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8093:8093"
+    environment:
+      # 對應 application.properties 的 ${DB_HOST:localhost}
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+
+volumes:
+  postgres-data:
