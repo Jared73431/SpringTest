@@ -1,0 +1,56 @@
+# ============================================================
+# Redis 練習環境：Redis + RedisInsight（官方管理介面）+ 應用程式
+#
+#   啟動：docker compose up --build
+#   API： curl -X POST http://localhost:8089/api/redis/sample-data
+#   管理介面：http://localhost:5540
+#           第一次開啟時選擇「Add Redis database」，Host 填 redis、Port 填 6379
+#           （在 compose 網路中以服務名稱連線，不是 localhost）
+#   停止：docker compose down               （加上 -v 會一併刪除 Redis 資料）
+#
+# 只想要 Redis（在本機用 ./gradlew bootRun 開發）：
+#   docker compose up -d redis redisinsight，並把下方 redis 的 ports 註解打開
+# ============================================================
+services:
+
+  redis:
+    image: redis:7-alpine
+    # appendonly yes：開啟 AOF 持久化，容器重啟後資料仍在（預設只有定期的 RDB 快照）
+    command: ["redis-server", "--appendonly", "yes"]
+    # 刻意不對主機開放 6379，避免與本機已有的 Redis 衝突；需要時打開下面兩行
+    # ports:
+    #   - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis 官方的圖形化管理工具：瀏覽 key、查看各種資料結構、執行指令
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight-data:/data
+    depends_on:
+      - redis
+
+  app:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8089:8089"
+    environment:
+      # 對應 application.properties 的 spring.data.redis.host=${REDIS_HOST:localhost}
+      - REDIS_HOST=redis
+      # 容器預設為 UTC；LocalDateTime.now() 依時區產生，設定為台灣時間
+      - TZ=Asia/Taipei
+
+volumes:
+  redis-data:
+  redisinsight-data:
