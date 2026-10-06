@@ -1,0 +1,64 @@
+# ============================================================
+# Spring Cache 練習環境：PostgreSQL + Redis + RedisInsight + 應用程式
+#
+#   啟動：docker compose up --build
+#   API： curl -X POST http://localhost:8090/api/users -H "Content-Type: application/json" \
+#              -d '{"name":"Amy","email":"amy@example.com","age":20}'
+#         curl http://localhost:8090/api/users/1     ← 連續查兩次，第二次 log 中不會出現 SQL（快取命中）
+#   管理介面：http://localhost:5540（Add Redis database：Host 填 redis、Port 填 6379），
+#           可看到 app-cache::users::1 等快取 key 與剩餘 TTL
+#   停止：docker compose down               （加上 -v 會一併刪除資料）
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=test2
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test2"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    # 刻意不對主機開放 6379，避免與本機的 Redis 衝突
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis 官方管理介面：觀察快取 key、內容與 TTL
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    environment:
+      # 對應 application.properties 的 ${DB_HOST:localhost}、${REDIS_HOST:localhost}
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - REDIS_HOST=redis
+      - TZ=Asia/Taipei
+
+volumes:
+  postgres-data:
