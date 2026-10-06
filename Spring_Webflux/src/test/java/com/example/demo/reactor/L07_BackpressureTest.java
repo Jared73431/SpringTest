@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 
 import reactor.core.Exceptions;
+import reactor.core.publisher.BufferOverflowStrategy;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -27,7 +28,7 @@ import reactor.test.StepVerifier;
  * 預設                    來不及送就拋出 OverflowException
  * onBackpressureDrop      丟掉下游來不及要的資料
  * onBackpressureLatest    只保留最新的一筆
- * onBackpressureBuffer    先存起來（要設上限，否則可能耗盡記憶體）
+ * onBackpressureBuffer(n) 先存起來（一定要設上限，否則可能耗盡記憶體），滿了再出錯或丟棄
  * </pre>
  */
 class L07_BackpressureTest {
@@ -94,6 +95,40 @@ class L07_BackpressureTest {
 				.thenRequest(1).expectNext(4L) // 立刻拿到目前最新的一筆
 				.thenCancel()
 				.verify();
+	}
+
+	// onBackpressureBuffer 一定要設上限：沒有上限時，下游一直不要，緩衝區就一直長大，最後耗盡記憶體。
+	// 設了上限，滿了之後預設丟出 OverflowException（溢出的那一筆會先交給 onOverflow）。
+	// 注意：錯誤排在緩衝區的資料<b>後面</b>，下游要先把已存的資料拿走才會收到錯誤；一直不 request 就永遠等不到錯誤
+	@Test
+	void onBackpressureBuffer_shouldFailWithOverflow_afterBufferedItems_whenBufferIsFull() {
+		var overflowed = new CopyOnWriteArrayList<Long>();
+
+		StepVerifier.withVirtualTime(
+				() -> Flux.interval(Duration.ofSeconds(1)).onBackpressureBuffer(3, overflowed::add), 0)
+				.expectSubscription()
+				.thenAwait(Duration.ofSeconds(4)) // 0、1、2 放進緩衝區，第 4 秒的 3 放不下
+				.thenRequest(3).expectNext(0L, 1L, 2L)
+				.expectErrorMatches(Exceptions::isOverflow)
+				.verify();
+
+		assertThat(overflowed).containsExactly(3L);
+	}
+
+	// 也可以指定滿了之後的策略：DROP_OLDEST 丟掉最舊的、保留最新的（DROP_LATEST 則相反）
+	@Test
+	void onBackpressureBuffer_shouldDropOldest_whenStrategyIsDropOldest() {
+		var dropped = new CopyOnWriteArrayList<Long>();
+
+		StepVerifier.withVirtualTime(() -> Flux.interval(Duration.ofSeconds(1))
+				.onBackpressureBuffer(3, dropped::add, BufferOverflowStrategy.DROP_OLDEST), 0)
+				.expectSubscription()
+				.thenAwait(Duration.ofSeconds(5)) // 0～4 共 5 筆，緩衝區只放得下 3 筆
+				.thenRequest(3).expectNext(2L, 3L, 4L)
+				.thenCancel()
+				.verify();
+
+		assertThat(dropped).containsExactly(0L, 1L);
 	}
 
 	// Virtual time：每分鐘一筆、持續一小時的串流，測試瞬間完成
