@@ -2,7 +2,7 @@ package com.example.demo;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 整合測試共用的 PostgreSQL 容器：每次測試都從乾淨的空資料庫開始執行所有遷移，不會連到本機的資料庫。
@@ -12,7 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 public abstract class PostgresContainerTestBase {
 
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine");
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:15-alpine");
 
 	static {
 		POSTGRES.start();
