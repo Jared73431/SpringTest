@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 /**
- * 第 2 課：忽略回傳值的 Bug（第 1 課的直接後果，也是 WebFlux 最常見的 Bug）。
+ * 第 3 課：忽略回傳值的 Bug（第 1 課的直接後果，也是 WebFlux 最常見的 Bug）。
  *
  * <p>
  * 直覺以為：{@code repository.save(user);} 這一行會存檔。<br>
@@ -21,7 +21,7 @@ import reactor.test.StepVerifier;
  * 原則：每一個 Mono / Flux 都必須接到最後回傳的那條 chain 上（flatMap、then、thenReturn、Mono.when…），
  * 讓框架的訂閱一路傳到它。
  */
-class L02_IgnoredReturnValueTest {
+class L03_IgnoredReturnValueTest {
 
 	record User(String name) {
 	}

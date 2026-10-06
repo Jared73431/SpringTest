@@ -13,7 +13,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * 第 5 課：程式跑在哪個執行緒？
+ * 第 6 課：程式跑在哪個執行緒？
  *
  * <p>
  * 直覺以為：一個請求一個執行緒，從頭到尾都在同一個執行緒上。<br>
@@ -26,7 +26,7 @@ import reactor.test.StepVerifier;
  * Schedulers.boundedElastic()    包裝阻塞呼叫（JDBC、檔案、舊的 SDK）  boundedElastic-N（數量有上限）
  * </pre>
  */
-class L05_SchedulerTest {
+class L06_SchedulerTest {
 
 	private final List<String> threads = new CopyOnWriteArrayList<>();
 

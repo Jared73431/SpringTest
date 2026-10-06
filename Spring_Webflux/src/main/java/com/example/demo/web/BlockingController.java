@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * 阻塞呼叫的錯誤與正確寫法（第 5 課在 WebFlux 中的樣子）。回應中的 thread 欄位顯示阻塞呼叫實際在哪個執行緒上執行。
+ * 阻塞呼叫的錯誤與正確寫法（第 6 課在 WebFlux 中的樣子）。回應中的 thread 欄位顯示阻塞呼叫實際在哪個執行緒上執行。
  *
  * <p>
  * Netty 只有少量的 event loop 執行緒（約等於 CPU 核心數），負責所有連線的讀寫。

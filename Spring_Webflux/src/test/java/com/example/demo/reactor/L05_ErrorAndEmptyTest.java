@@ -12,14 +12,14 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 /**
- * 第 4 課：錯誤與空值都是「訊號」。
+ * 第 5 課：錯誤與空值都是「訊號」。
  *
  * <p>
  * 直覺以為：用 try/catch 接住錯誤；查不到資料就是 null。<br>
  * 實際上：錯誤是沿著 chain 往下傳的 onError 訊號，要用 onErrorXxx 操作子處理；查不到資料是 Mono.empty()（直接完成、沒有資料），
  * Reactor 不允許 null。
  */
-class L04_ErrorAndEmptyTest {
+class L05_ErrorAndEmptyTest {
 
 	static class UserNotFoundException extends RuntimeException {
 		UserNotFoundException(String id) {

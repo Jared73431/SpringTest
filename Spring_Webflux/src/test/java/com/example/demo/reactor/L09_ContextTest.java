@@ -9,18 +9,18 @@ import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 
 /**
- * 第 7 課：Context 取代 ThreadLocal。
+ * 第 9 課：Context 取代 ThreadLocal。
  *
  * <p>
  * 直覺以為：用 ThreadLocal（例如 MDC、Spring Security 的 SecurityContextHolder）傳遞 traceId、登入者。<br>
- * 實際上：第 5 課看到一個請求會在多個執行緒之間切換，ThreadLocal 會遺失。Reactor 的做法是 Context：
+ * 實際上：第 6 課看到一個請求會在多個執行緒之間切換，ThreadLocal 會遺失。Reactor 的做法是 Context：
  * 綁在「這一次訂閱」上，而不是綁在執行緒上。
  *
  * <p>
  * 反直覺的地方：Context 是從 Subscriber 往上游傳的，所以 contextWrite 只對寫在它「上面」的操作子有效。
  * 在 WebFlux 中通常由 WebFilter 在最外層寫入，Controller 裡的程式就都讀得到。
  */
-class L07_ContextTest {
+class L09_ContextTest {
 
 	private static final ThreadLocal<String> TRACE_ID = new ThreadLocal<>();
 

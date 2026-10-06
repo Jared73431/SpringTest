@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 /**
- * 第 6 課：背壓（第 0 課的 request(n)，在 Reactor 中的樣子）。
+ * 第 7 課：背壓（第 0 課的 request(n)，在 Reactor 中的樣子）。
  *
  * <p>
  * 直覺以為：subscribe() 會一筆一筆慢慢要。<br>
@@ -30,7 +30,7 @@ import reactor.test.StepVerifier;
  * onBackpressureBuffer    先存起來（要設上限，否則可能耗盡記憶體）
  * </pre>
  */
-class L06_BackpressureTest {
+class L07_BackpressureTest {
 
 	private final List<Long> requests = new CopyOnWriteArrayList<>();
 

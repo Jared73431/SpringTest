@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 /**
- * 第 8 課：WebFlux 端點。
+ * 第 10 課：WebFlux 端點。
  *
  * <p>
  * 使用 RANDOM_PORT 啟動真正的 Netty，才能觀察 event loop 執行緒（MOCK 環境不會經過 Netty）。
@@ -29,7 +29,7 @@ import reactor.test.StepVerifier;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
 		"demo.numbers.delay=10ms", "demo.ticks.interval=50ms", "demo.blocking.delay=10ms" })
 @AutoConfigureWebTestClient
-class L08_WebEndpointsTest {
+class L10_WebEndpointsTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
