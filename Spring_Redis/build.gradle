@@ -13,12 +13,6 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
@@ -26,10 +20,7 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-	// Lombok (可選，用於減少 boilerplate code)
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// Spring Boot DevTools (開發時自動重啟)
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -43,6 +34,11 @@ dependencies {
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
 
 tasks.named('test') {

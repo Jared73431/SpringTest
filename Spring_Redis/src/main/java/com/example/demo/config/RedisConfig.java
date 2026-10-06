@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import com.example.demo.entity.User;
+import com.example.demo.model.User;
 
 import tools.jackson.databind.json.JsonMapper;
 
