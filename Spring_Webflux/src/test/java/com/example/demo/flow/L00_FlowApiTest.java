@@ -24,6 +24,9 @@ import org.junit.jupiter.api.Test;
  * 最重要的一點：<b>資料不是 Publisher 想送就送，而是 Subscriber 用 request(n) 要多少才送多少</b>。
  *
  * <p>
+ * 先用觀察者模式對照：Reactive Streams 就是「觀察者模式 + 消費者控制速度（背壓）+ 完成與錯誤的訊號」。
+ *
+ * <p>
  * SubmissionPublisher 在其他執行緒把資料送給 Subscriber，所以測試等待 completion()，而不是 Thread.sleep。
  */
 class L00_FlowApiTest {
@@ -33,6 +36,85 @@ class L00_FlowApiTest {
 	private static void await(RecordingSubscriber<?> subscriber) throws Exception {
 		subscriber.completion().get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 	}
+
+	// ---- 先看前身：觀察者模式 ----
+
+	/** 觀察者模式（GoF）：Subject 有變化就呼叫每個 Observer 的 update，Observer 只能被動接收 */
+	interface Observer<T> {
+		void update(T item);
+	}
+
+	static class Subject<T> {
+
+		private final List<Observer<T>> observers = new ArrayList<>();
+
+		void attach(Observer<T> observer) {
+			observers.add(observer);
+		}
+
+		void publish(T item) {
+			observers.forEach(observer -> observer.update(item));
+		}
+	}
+
+	// Observer 沒有辦法說「我只要 2 筆」或「我忙不過來」；而且沒有完成、錯誤的訊號，不知道資料是不是已經送完了
+	@Test
+	void observer_shouldReceiveEverything_becauseItCannotControlTheRate() {
+		var subject = new Subject<Integer>();
+		var received = new ArrayList<Integer>();
+		subject.attach(received::add);
+
+		for (int i = 1; i <= 5; i++) {
+			subject.publish(i);
+		}
+
+		assertThat(received).containsExactly(1, 2, 3, 4, 5);
+	}
+
+	// Reactive Streams 在觀察者模式上加了 Subscription：Subscriber 用 request(n) 決定要幾筆，另外有 onComplete / onError
+	@Test
+	void flowSubscriber_shouldReceiveOnlyWhatItRequested() throws Exception {
+		var received = new ArrayList<Integer>();
+		var twoReceived = new CountDownLatch(2);
+		Flow.Subscriber<Integer> subscriber = new Flow.Subscriber<>() {
+			@Override
+			public void onSubscribe(Flow.Subscription subscription) {
+				subscription.request(2); // 只要 2 筆
+			}
+
+			@Override
+			public void onNext(Integer item) {
+				received.add(item);
+				twoReceived.countDown();
+			}
+
+			@Override
+			public void onError(Throwable throwable) {
+			}
+
+			@Override
+			public void onComplete() {
+			}
+		};
+
+		try (var publisher = new SubmissionPublisher<Integer>()) {
+			publisher.subscribe(subscriber);
+			for (int i = 1; i <= 5; i++) {
+				publisher.submit(i);
+			}
+			assertThat(twoReceived.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
+
+			// 等到 Publisher 確認「3 筆沒有被消費」：如果 Subscriber 收到第 3 筆，未消費數量會小於 3，迴圈就會等到逾時
+			long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
+			while (publisher.estimateMaximumLag() != 3 && System.nanoTime() < deadline) {
+				Thread.onSpinWait();
+			}
+			assertThat(publisher.estimateMaximumLag()).isEqualTo(3);
+			assertThat(received).containsExactly(1, 2); // 其餘 3 筆留在 Publisher 的緩衝區，等 Subscriber 再要
+		}
+	}
+
+	// ---- Reactive Streams ----
 
 	@Test
 	void subscriber_shouldReceiveAllItemsThenComplete_whenPublisherCloses() throws Exception {
