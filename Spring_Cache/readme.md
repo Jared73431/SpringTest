@@ -4,7 +4,7 @@
 
 相關模組：
 - [Spring_Redis](../Spring_Redis)：直接用 `RedisTemplate` 操作 Redis
-- Spring_Caffeine（規劃中）：同一套註解，改用本機記憶體快取 Caffeine
+- [Spring_Caffeine](../Spring_Caffeine)：同一套註解與 UserService，改用本機記憶體快取 Caffeine（Redis vs Caffeine 的比較見該模組）
 
 這是 2025 年加入的練習，已完成現代化（Spring Boot 3.5 → 4.1），過程中修正了多個**快取不一致**與**安全性**問題，詳見「[現代化紀錄](#現代化紀錄)」。
 
