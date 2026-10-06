@@ -124,4 +124,87 @@ class L10_WebEndpointsTest {
 				.expectBody(BlockingResult.class)
 				.value(result -> assertThat(result.thread()).startsWith("boundedElastic-"));
 	}
+
+	// ---- 訊息：Sinks 廣播（第 2 課的 Hot 在 HTTP 上的樣子） ----
+
+	private Message send(String text) {
+		return webTestClient.post().uri("/api/messages").bodyValue(new MessageRequest(text)).exchange()
+				.expectStatus().isCreated()
+				.expectBody(Message.class).returnResult().getResponseBody();
+	}
+
+	/** 開啟 SSE 連線，只保留訊息的文字（略過連線時的註解事件） */
+	private Flux<String> openStream() {
+		return webTestClient.get().uri("/api/messages").accept(MediaType.TEXT_EVENT_STREAM).exchange()
+				.expectStatus().isOk()
+				.returnResult(new ParameterizedTypeReference<ServerSentEvent<Message>>() {
+				}).getResponseBody()
+				.filter(event -> event.data() != null)
+				.map(event -> event.data().text());
+	}
+
+	@Test
+	void send_shouldReturn201WithLocation() {
+		webTestClient.post().uri("/api/messages").bodyValue(new MessageRequest("哈囉")).exchange()
+				.expectStatus().isCreated()
+				.expectHeader().value("Location", location -> assertThat(location).matches("/api/messages/\\d+"))
+				.expectBody().jsonPath("$.text").isEqualTo("哈囉");
+	}
+
+	@Test
+	void send_shouldReturn400ProblemDetail_whenTextIsBlank() {
+		webTestClient.post().uri("/api/messages").bodyValue(new MessageRequest(" ")).exchange()
+				.expectStatus().isBadRequest()
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON);
+	}
+
+	@Test
+	void stream_shouldBroadcastToAllConnectedClients_butNotToLateOnes() {
+		Flux<String> alice = openStream();
+		Flux<String> bob = openStream();
+		send("第一則");
+
+		Flux<String> late = openStream(); // 第一則送出之後才連線
+		send("第二則");
+
+		StepVerifier.create(alice.take(2)).expectNext("第一則", "第二則").expectComplete().verify(Duration.ofSeconds(5));
+		StepVerifier.create(bob.take(2)).expectNext("第一則", "第二則").expectComplete().verify(Duration.ofSeconds(5));
+		StepVerifier.create(late.take(1)).expectNext("第二則").expectComplete().verify(Duration.ofSeconds(5));
+	}
+
+	// 歷史訊息用 JSON 查詢（SSE 只負責即時推播）
+	@Test
+	void findAll_shouldReturnHistory_whenAcceptIsJson() {
+		Message sent = send("留下紀錄");
+
+		webTestClient.get().uri("/api/messages").accept(MediaType.APPLICATION_JSON).exchange()
+				.expectStatus().isOk()
+				.expectBodyList(Message.class).value(list -> assertThat(list).contains(sent));
+	}
+
+	// ---- 查不到資料：空的 Mono 是 200，加上 switchIfEmpty 才是 404（第 5 課） ----
+
+	@Test
+	void findById_shouldReturnMessage_whenExists() {
+		Message sent = send("找得到");
+
+		webTestClient.get().uri("/api/messages/{id}", sent.id()).exchange()
+				.expectStatus().isOk()
+				.expectBody(Message.class).isEqualTo(sent);
+	}
+
+	@Test
+	void findById_shouldReturn404ProblemDetail_whenMissing() {
+		webTestClient.get().uri("/api/messages/{id}", 999_999).exchange()
+				.expectStatus().isNotFound()
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
+				.expectBody().jsonPath("$.detail").isEqualTo("找不到訊息：999999");
+	}
+
+	@Test
+	void findByIdUnchecked_shouldReturn200WithEmptyBody_whenMissing() {
+		webTestClient.get().uri("/api/messages/{id}/unchecked", 999_999).exchange()
+				.expectStatus().isOk() // 查不到，卻是 200
+				.expectBody().isEmpty();
+	}
 }
