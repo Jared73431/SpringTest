@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+version = '1.0-SNAPSHOT'
 
 java {
 	toolchain {
@@ -18,11 +18,19 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// 只引入 WebFlux：應用程式以 Netty 執行（同時引入 webmvc 時 Spring Boot 會選擇 MVC）
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// WebTestClient、StepVerifier（reactor-test）
+	testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
 
 tasks.named('test') {
