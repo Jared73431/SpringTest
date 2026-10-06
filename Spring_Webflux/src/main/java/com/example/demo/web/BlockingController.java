@@ -41,7 +41,7 @@ public class BlockingController {
 		return new BlockingResult("完成", Thread.currentThread().getName());
 	}
 
-	// 錯誤：阻塞呼叫直接在 Netty 的 event loop（webflux-http-*，Boot 3 以前是 reactor-http-*）上執行。功能正常，但在高流量下會拖慢所有請求
+	// 錯誤：阻塞呼叫直接在 Netty 的 event loop（reactor-http-nio-* / reactor-http-epoll-*）上執行。功能正常，但在高流量下會拖慢所有請求
 	@GetMapping("/on-event-loop")
 	public Mono<BlockingResult> onEventLoop() {
 		return Mono.fromCallable(this::legacyBlockingCall);

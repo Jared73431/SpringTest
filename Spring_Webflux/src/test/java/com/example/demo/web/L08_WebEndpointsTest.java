@@ -107,13 +107,14 @@ class L08_WebEndpointsTest {
 
 	// ---- 阻塞呼叫在哪個執行緒上執行 ----
 
-	// Boot 4 的 Netty 伺服器執行緒名稱是 webflux-http-*（Boot 3 以前是 reactor-http-*）
+	// Netty event loop 的執行緒名稱：正式執行時使用 Reactor Netty 的全域資源（reactor-http-nio-* / reactor-http-epoll-*）；
+	// 測試中由 Spring 的 ReactorResourceFactory 建立專用資源（webflux-http-*）。兩者都是 event loop
 	@Test
 	void onEventLoop_shouldBlockNettyEventLoopThread() {
 		webTestClient.get().uri("/api/blocking/on-event-loop").exchange()
 				.expectStatus().isOk()
 				.expectBody(BlockingResult.class)
-				.value(result -> assertThat(result.thread()).startsWith("webflux-http-"));
+				.value(result -> assertThat(result.thread()).matches("(reactor|webflux)-http-.+"));
 	}
 
 	@Test
