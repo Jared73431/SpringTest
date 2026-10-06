@@ -27,7 +27,7 @@
 | [Spring_R2DBC2](Spring_R2DBC2) 📘 | R2DBC + WebFlux | 響應式 CRUD、Validation、全域例外處理、Flyway、Docker Compose | 🐘 |
 | [Spring_Flyway](Spring_Flyway) 📘 | 資料庫版本控管 | SQL / Java Migration、Repeatable Migration、多路徑設定 | 🐘 |
 | [Spring_Redis](Spring_Redis) 📘 | Redis 操作 | 五種資料結構、安全的 JSON 序列化、排行榜 / 限流（Lua）/ 分散式鎖、Testcontainers、RedisInsight ✅ 已現代化 | 🟥 |
-| [Spring_Cache](Spring_Cache) 📘 | Spring Cache | `@Cacheable` / `@CachePut` / `@CacheEvict` 搭配 Redis | 🐘 🟥 |
+| [Spring_Cache](Spring_Cache) 📘 | Spring Cache | `@Cacheable` / `@CachePut` / `@CacheEvict` 搭配 Redis、快取一致性、`unless` 與 Optional、型別安全的序列化、`transactionAware` ✅ 已現代化 | 🐘 🟥 |
 
 ### 批次與排程
 
@@ -100,7 +100,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |

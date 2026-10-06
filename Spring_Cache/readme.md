@@ -1,265 +1,285 @@
-# Spring Redis Cache 練習專案
+# Spring Cache - 以註解宣告快取（Redis）
 
-這是一個使用 Spring Boot 整合 Redis 快取的練習專案，展示了如何在 Spring 應用程式中使用各種快取註解來提升應用程式效能。
+使用 Spring Cache 的 `@Cacheable` / `@CachePut` / `@CacheEvict` / `@Caching` 宣告快取行為，快取存放在 Redis。以使用者 CRUD 為例，示範**怎麼讓快取與資料庫保持一致**。
 
-## 專案概述
+相關模組：
+- [Spring_Redis](../Spring_Redis)：直接用 `RedisTemplate` 操作 Redis
+- Spring_Caffeine（規劃中）：同一套註解，改用本機記憶體快取 Caffeine
 
-本專案實現了一個簡單的使用者管理系統，包含：
-- 使用者的 CRUD 操作
-- Redis 快取整合
-- Spring Cache 註解的使用
-- 手動快取操作
+這是 2025 年加入的練習，已完成現代化（Spring Boot 3.5 → 4.1），過程中修正了多個**快取不一致**與**安全性**問題，詳見「[現代化紀錄](#現代化紀錄)」。
 
-## 技術棧
+## 技術版本
 
-- **Spring Boot** - 主要框架
-- **Spring Data JPA** - 資料庫操作
-- **Redis** - 快取資料庫
-- **Spring Cache** - 快取抽象層
-- **Lombok** - 簡化程式碼
+| 項目 | 版本 |
+|---|---|
+| Java | 21 |
+| Spring Boot | 4.1.1（Spring Data Redis 4、Spring Data JPA） |
+| 快取 | Redis 7（`RedisCacheManager`，Jackson 3 序列化） |
+| 資料庫 | PostgreSQL |
+| Gradle | 9.8.0（使用 Gradle Wrapper） |
+| 測試 | JUnit 5、Testcontainers 2.0（PostgreSQL + Redis）、TestRestTemplate |
 
-## 專案結構
+## 架構
 
-```
-src/main/java/com/example/demo/
-├── config/
-│   └── RedisConfig.java          # Redis 配置
-├── controller/
-│   └── UserController.java       # REST API 控制器
-├── entity/
-│   └── User.java                 # 使用者實體
-├── repository/
-│   └── UserRepository.java       # 資料庫操作接口
-└── service/
-    └── UserService.java          # 業務邏輯服務
+```text
+UserController（/api/users）
+  ↓
+UserService：@Cacheable / @CachePut / @CacheEvict（Spring 以 AOP proxy 攔截方法呼叫）
+  ├─ 快取命中 → 直接回傳 Redis 中的資料，不執行方法
+  └─ 快取未命中 → 執行方法查 PostgreSQL → 結果寫入 Redis
 ```
 
-## 快取註解說明
+| 快取名稱 | key 範例 | 內容 | 寫入 | 清除 |
+|---|---|---|---|---|
+| `users` | `app-cache::users::1` | `UserDto` | 查詢、修改（`@CachePut`） | 刪除 |
+| `usersByEmail` | `app-cache::usersByEmail::a@x.com` | `UserDto` | 查詢 | 修改、刪除 |
+| `allUsers` | `app-cache::allUsers::all` | `List<UserDto>` | 查詢全部 | 新增、修改、刪除 |
 
-### @Cacheable
+所有快取 TTL 為 10 分鐘。
 
-**用途**：用於查詢操作，將方法的返回值儲存到快取中。如果快取中已存在相同 key 的資料，則直接返回快取中的資料，不執行方法。
+## 執行方式
 
-**屬性**：
-- `value` 或 `cacheNames`：指定快取的名稱
-- `key`：指定快取的 key（支援 SpEL 表達式）
-- `condition`：快取的條件（滿足條件才快取）
-- `unless`：排除快取的條件（滿足條件則不快取）
+### Docker（建議）
 
-**範例**：
+```bash
+docker compose up --build
+```
+
+| 服務 | Port | 說明 |
+|---|---|---|
+| `app` | `8090` | 本應用程式 |
+| `redisinsight` | `5540` | 觀察快取 key、內容與剩餘 TTL（Add Redis database：Host 填 `redis`、Port 填 `6379`） |
+| `postgres`、`redis` | 不開放 | 避免與本機的服務衝突 |
+
+```bash
+curl -X POST http://localhost:8090/api/users -H "Content-Type: application/json" \
+     -d '{"name":"Amy","email":"amy@example.com","age":20}'
+curl http://localhost:8090/api/users/1
+curl http://localhost:8090/api/users/1      # 第二次：log 中不會出現「從資料庫查詢」與 SQL（快取命中）
+```
+
+### 本機執行
+
+需要 JDK 21、PostgreSQL（資料庫 `test2`）與 Redis：
+
+```bash
+./gradlew bootRun        # Windows：gradlew.bat bootRun
+```
+
+| 環境變數 | 預設值 | 說明 |
+|---|---|---|
+| `DB_HOST` | `localhost` | PostgreSQL 位址 |
+| `DB_USERNAME` / `DB_PASSWORD` | `postgres` | 資料庫帳密 |
+| `REDIS_HOST` | `localhost` | Redis 位址 |
+
+## API
+
+| Method | Path | 說明 | 快取 | 成功 | 失敗 |
+|---|---|---|---|---|---|
+| `GET` | `/api/users/{id}` | 查詢 | `@Cacheable` | `200` | `404` |
+| `GET` | `/api/users/email/{email}` | 依 email 查詢 | `@Cacheable` | `200` | `404` |
+| `GET` | `/api/users` | 查詢全部 | `@Cacheable` | `200` | |
+| `POST` | `/api/users` | 新增 | 清除 `allUsers` | `201` + `Location` | `400` |
+| `PUT` | `/api/users/{id}` | 修改 | 更新 `users`，清除另外兩個 | `200` | `400` / `404` |
+| `DELETE` | `/api/users/{id}` | 刪除 | 清除三個快取 | `204` | `404` |
+| `DELETE` | `/api/users/cache` | 清除所有使用者快取 | | `204` | |
+
+Request Body（`POST` / `PUT`）：
+
+```json
+{ "name": "Amy", "email": "amy@example.com", "age": 20 }
+```
+
+錯誤皆為 ProblemDetail；Redis 連不上時回 `503`。
+
+## 測試
+
+```bash
+./gradlew test
+```
+
+> ⚠️ 需要 **Docker 正在執行**（Testcontainers 啟動 PostgreSQL 與 Redis，不會連到本機的服務）。
+
+`UserCacheApiTest` 判斷「資料來自快取」的方式：查詢一次後**繞過 Service 直接修改資料庫**，再查詢時若仍是舊值，代表結果來自快取。修正前的每個 Bug 都有對應的測試證明已修正。
+
+---
+
+## Spring Cache 教學
+
+### 1. 四個註解
+
+| 註解 | 行為 | 用在 |
+|---|---|---|
+| `@Cacheable` | 快取有就直接回傳、**不執行方法**；沒有才執行並寫入 | 查詢 |
+| `@CachePut` | **一定執行方法**，並用結果更新快取 | 修改 |
+| `@CacheEvict` | 清除快取（`allEntries = true` 清除整個快取） | 新增、修改、刪除 |
+| `@Caching` | 在同一個方法上組合多個上述註解 | 一次影響多個快取 |
+
 ```java
-// 根據 ID 查詢使用者，快取 key 為 users::1
+@Transactional
+@Caching(
+        put = @CachePut(cacheNames = "users", key = "#id"),
+        evict = {
+                @CacheEvict(cacheNames = "usersByEmail", allEntries = true),
+                @CacheEvict(cacheNames = "allUsers", allEntries = true) })
+public UserDto update(Long id, UserRequest request) { ... }
+```
+
+### 2. 最重要的原則：每個寫入操作都要處理「所有相關的快取」
+
+修正前只處理了 `users`（依 id）這一個快取：
+
+| 快取 | 新增 | 修改 | 刪除 | 修正前的結果 |
+|---|---|---|---|---|
+| 依 id | — | ✔ 更新 | ✔ 清除 | 正確 |
+| 依 email | — | ✘ | ✘ | 修改、刪除後仍查到**舊資料** |
+| 全部 | ✘ | ✘ | ✘ | 列表**一直不變**，直到 TTL 10 分鐘 |
+
+**同一筆資料被快取在幾個地方，每個寫入操作就要處理幾個地方。** 新增一種查詢方式（多一個快取）時，所有寫入方法都要跟著檢查。
+
+#### 註解的限制：舊 email 的 key
+
+修改時 email 可能也改了，要清除的是**舊 email** 的快取，但註解只拿得到方法參數（新的值）。本模組用 `allEntries = true` 清除整個 `usersByEmail` 快取，簡單且正確，代價是其他使用者的 email 快取也被清掉。需要精準清除時，可以在方法中先查出舊資料，再用 `CacheManager` 手動 `evict(oldEmail)`。
+
+### 3. 查不到資料：不要讓 null 進快取
+
+修正前：
+
+```java
 @Cacheable(value = "users", key = "#id")
 public User findById(Long id) {
-    return userRepository.findById(id).orElse(null);
+    return userRepository.findById(id).orElse(null);   // 查不到回傳 null
 }
-
-// 根據 email 查詢，自訂快取 key
-@Cacheable(value = "users", key = "'email:' + #email")
-public User findByEmail(String email) {
-    return userRepository.findByEmail(email).orElse(null);
-}
+// CacheManager 設定了 disableCachingNullValues()
 ```
 
-### @CachePut
+Spring 嘗試把 null 寫入快取時拋出：
 
-**用途**：用於更新操作，每次都會執行方法並將結果更新到快取中。與 @Cacheable 不同，@CachePut 不會跳過方法執行。
-
-**屬性**：與 @Cacheable 相同
-
-**範例**：
-```java
-// 更新使用者資料並同步更新快取
-@CachePut(value = "users", key = "#user.id")
-public User updateUser(User user) {
-    return userRepository.save(user);
-}
+```text
+IllegalArgumentException: Cache 'users' does not allow 'null' values;
+Avoid storing null via '@Cacheable(unless="#result == null")' ...
 ```
 
-### @CacheEvict
-
-**用途**：用於刪除操作，從快取中移除指定的資料。
-
-**屬性**：
-- `value` 或 `cacheNames`：指定快取的名稱
-- `key`：指定要刪除的快取 key
-- `allEntries`：是否清除所有快取項目（預設為 false）
-- `beforeInvocation`：是否在方法執行前清除快取（預設為 false）
-
-**範例**：
-```java
-// 刪除特定使用者的快取
-@CacheEvict(value = "users", key = "#id")
-public void deleteUser(Long id) {
-    userRepository.deleteById(id);
-}
-
-// 清除所有使用者快取
-@CacheEvict(value = "users", allEntries = true)
-public void clearAllCache() {
-    System.out.println("清除所有用戶快取");
-}
-```
-
-### @Caching
-
-**用途**：組合多個快取註解，可以在一個方法上同時使用多個快取操作。
-
-**屬性**：
-- `cacheable`：@Cacheable 註解陣列
-- `put`：@CachePut 註解陣列
-- `evict`：@CacheEvict 註解陣列
-
-**範例**：
-```java
-// 同時快取多個 key 並清除舊快取
-@Caching(
-    put = {
-        @CachePut(value = "users", key = "#user.id"),
-        @CachePut(value = "users", key = "'email:' + #user.email")
-    },
-    evict = {
-        @CacheEvict(value = "allUsers", allEntries = true)
-    }
-)
-public User updateUserWithMultipleCache(User user) {
-    return userRepository.save(user);
-}
-
-// 根據不同條件快取
-@Caching(
-    cacheable = {
-        @Cacheable(value = "users", key = "#id", condition = "#id > 0"),
-        @Cacheable(value = "userDetails", key = "#id", condition = "#id > 100")
-    }
-)
-public User findUserWithConditions(Long id) {
-    return userRepository.findById(id).orElse(null);
-}
-```
-
-### @CacheConfig
-
-**用途**：類別級別的快取配置，可以為整個類別設定共通的快取配置。
-
-**範例**：
-```java
-@Service
-@CacheConfig(cacheNames = "users")
-public class UserService {
-    
-    @Cacheable(key = "#id")  // 不需要再指定 value
-    public User findById(Long id) {
-        return userRepository.findById(id).orElse(null);
-    }
-}
-```
-
-## API 端點
-
-### 使用者管理
-- `GET /api/users/{id}` - 根據 ID 查詢使用者
-- `GET /api/users/email/{email}` - 根據 email 查詢使用者
-- `GET /api/users` - 查詢所有使用者
-- `POST /api/users` - 建立新使用者
-- `PUT /api/users/{id}` - 更新使用者
-- `DELETE /api/users/{id}` - 刪除使用者
-
-### 快取管理
-- `POST /api/users/cache/clear` - 清除所有使用者快取
-- `POST /api/users/cache/{key}` - 設定自訂快取
-- `GET /api/users/cache/{key}` - 取得自訂快取
-
-## 配置說明
-
-### Redis 配置 (RedisConfig.java)
+結果**查無資料回 500**，Controller 的 `notFound()` 永遠不會執行。修正後：
 
 ```java
-@Configuration
-public class RedisConfig {
-    
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        
-        // 使用 JSON 序列化
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
-        template.setValueSerializer(jsonSerializer);
-        template.setKeySerializer(new StringRedisSerializer());
-        
-        return template;
-    }
-    
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory factory) {
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))  // 10分鐘過期
-                .disableCachingNullValues();       // 不快取 null 值
-        
-        return RedisCacheManager.builder(factory)
-                .cacheDefaults(config)
-                .build();
-    }
-}
+@Cacheable(cacheNames = "users", key = "#id", unless = "#result == null")
+public Optional<UserDto> findById(Long id) { ... }
 ```
 
-## 快取策略最佳實踐
+- 回傳 `Optional` 時，`#result` 指的是 `Optional` 裡面的值，查不到時 `#result == null`，不寫入快取
+- Controller 以 `orElseThrow` 轉成 404
 
-1. **查詢操作使用 @Cacheable**
-   - 適用於讀取頻繁且資料變化不大的場景
-   - 注意快取穿透問題
+> **快取 null（快取穿透的防護）**：如果有人大量查詢不存在的 id，每次都會打到資料庫。這種情況可以改為快取「查無資料」的結果（允許 null + 較短的 TTL），或使用 Bloom Filter。本模組選擇不快取 null，以正確性為優先。
 
-2. **更新操作使用 @CachePut**
-   - 確保快取與資料庫資料一致性
-   - 避免髒讀問題
+### 4. 快取什麼：DTO，不是 Entity
 
-3. **刪除操作使用 @CacheEvict**
-   - 及時清除過期的快取資料
-   - 考慮是否需要清除相關的快取
+| | 快取 Entity（修正前） | 快取 DTO（修正後） |
+|---|---|---|
+| 內容 | 可能有 Hibernate 代理、lazy 欄位 | 單純的資料 |
+| 與資料表的關係 | 資料表一改，快取中的舊 JSON 可能無法反序列化 | 只有對外需要的欄位 |
+| 序列化 | 需要 `Serializable` 或型別資訊 | `record`，Jackson 直接處理 |
 
-4. **複雜場景使用 @Caching**
-   - 一次操作影響多個快取時
-   - 需要同時進行多種快取操作時
+### 5. 序列化與安全性
 
-## 測試方法
+修正前使用 `GenericJackson2JsonRedisSerializer`，JSON 帶有類別名稱（`@class`），讀取時允許建立任意類別；同時有一個 `POST /api/users/cache/{key}` 可以寫入**任意 key**：
 
-1. 啟動 Redis 服務
-2. 啟動 Spring Boot 應用程式
-3. 使用 Postman 或 curl 測試 API 端點
-4. 觀察控制台輸出，確認快取是否生效
-
-## 注意事項
-
-- 確保 Redis 服務正在運行
-- 快取的 key 需要具有唯一性
-- 注意快取雪崩和快取穿透問題
-- 合理設定快取過期時間
-- 被快取的物件必須可序列化
-
-## 依賴項
-
-## 依賴項
-
-```gradle
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-cache'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'org.postgresql:postgresql'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
+```text
+POST /api/users/cache/users::1   body: "hacked"
+GET  /api/users/1                → ClassCastException: String cannot be cast to User（快取被竄改）
 ```
 
-## 擴展功能
+修正後：
+- 移除可寫入任意 key 的 API（手動操作 Redis 的示範見 [Spring_Redis](../Spring_Redis)）
+- 每個快取綁定明確型別，Redis 中只有一般的 JSON：
 
-- 快取監控和統計
-- 分散式快取一致性
-- 快取預熱機制
-- 快取降級策略
+```java
+.withCacheConfiguration("users", defaults.serializeValuesWith(
+        SerializationPair.fromSerializer(new JacksonJsonRedisSerializer<>(jsonMapper, UserDto.class))))
+```
+
+> Spring Boot 4 的 `GenericJacksonJsonRedisSerializer`（Jackson 3）**預設不再帶型別資訊**；要恢復舊行為必須明確呼叫 `enableUnsafeDefaultTyping()`，方法名稱本身就標示了風險。
+
+### 6. 設定的陷阱：自訂 CacheManager 後，`spring.cache.redis.*` 不會生效
+
+修正前 `application.properties` 寫了：
+
+```properties
+spring.cache.redis.time-to-live=600000
+spring.cache.redis.key-prefix=app-cache::
+```
+
+但專案同時自己定義了 `CacheManager` Bean，Spring Boot 的自動設定就**不會套用**這些屬性，`app-cache::` 前綴一直沒有生效，也沒有任何警告。設定只能選一個地方：本模組全部寫在 `RedisConfig`。
+
+同一個設定檔還有其他沒有作用的設定：
+
+| 設定 | 問題 |
+|---|---|
+| `Server.port:8015` | `S` 大寫，Spring 不認得 → 實際 port 是 8080 |
+| `spring.redis.*` | Spring Boot 3 起改名為 `spring.data.redis.*` |
+| `spring.redis.jedis.pool.*` | 專案使用 Lettuce，不是 Jedis |
+
+> 檢查設定是否生效：Spring Boot Actuator 的 `/actuator/configprops`、`/actuator/env`，或在測試中直接驗證行為（例如本模組驗證 Redis key 的前綴）。
+
+### 7. 快取與交易：`transactionAware()`
+
+```java
+RedisCacheManager.builder(cacheWriter)
+        ...
+        .transactionAware()
+        .build();
+```
+
+在 `@Transactional` 方法中，快取的寫入與清除會**延後到交易提交之後**。交易失敗 rollback 時，快取不會留下沒有寫進資料庫的資料。
+
+### 8. Spring Data Redis 4：清除快取預設是非同步的
+
+升級後跑完整測試時，「清除快取」的測試**時好時壞**。追查原因：
+
+- `@CacheEvict(allEntries = true)` 呼叫 `Cache.clear()`（`beforeInvocation = true` 時才呼叫立即的 `invalidate()`）
+- Spring Data Redis 4 搭配 Lettuce 時，`clear()` 以**非同步**方式執行（回傳 `CompletableFuture`）
+- 請求已經回應，快取卻還沒真的清掉，緊接著的查詢會讀到舊資料
+
+解法：
+
+```java
+RedisCacheWriter cacheWriter = RedisCacheWriter.create(factory, writer -> writer.immediateWrites());
+```
+
+**時好時壞的測試通常代表真實的併發問題**，不要用「重跑一次」帶過。
+
+### 9. 其他注意事項
+
+- **自我呼叫不會觸發快取**：同一個類別內 `this.findById()` 不會經過 Spring 的 proxy，快取註解不會生效
+- **TTL 是最後防線**：即使漏清快取，資料最多也只會舊 TTL 那麼久
+- **快取的 key 要能唯一識別結果**：`findAll()` 沒有參數，本模組指定 `key = "'all'"`，比預設的 `SimpleKey []` 好讀
+
+---
+
+## 現代化紀錄
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | 補上 Testcontainers 測試，證明快取不一致、查無資料 500、快取污染、key 前綴無效等問題 |
+| 2 | Java 17 → 21、Spring Boot 3.5.3 → 3.5.16、Gradle 8.14.2 → 8.14.3 |
+| 3 | Spring Boot → 4.1.1（Spring Data Redis 4）、Gradle → 9.8.0、Testcontainers 2.0；Jackson 2 serializer 改為 Jackson 3 |
+| 4 | **安全性**：移除可寫入任意 key 的 API；快取 DTO 並綁定明確型別；`immediateWrites()` 修正非同步清除 |
+| 5 | 修正快取不一致、查無資料 404、`transactionAware()`、清除無效設定、REST 語意；port → 8090 |
+| 6 | 新增 Dockerfile 與 docker-compose（PostgreSQL + Redis + RedisInsight） |
+
+### 行為變更
+
+| 項目 | 修改前 | 修改後 |
+|---|---|---|
+| Port | 設定 8015，因大小寫錯誤實際為 8080 | `8090` |
+| 查無使用者 | `500` | `404` |
+| 修改 / 刪除後依 email 查詢 | 舊資料 | 最新資料 |
+| 新增 / 修改 / 刪除後查詢全部 | 舊列表 | 最新列表 |
+| 修改 / 刪除不存在的使用者 | 500 / 204 | `404` |
+| 新增 | `200` | `201` + `Location` |
+| 清除快取 | `POST /api/users/cache/clear` | `DELETE /api/users/cache` |
+| 讀寫任意 Redis key | `POST` / `GET /api/users/cache/{key}` | 移除 |
+| Redis 中的快取 key | `users::1` | `app-cache::users::1` |
+| Redis 中的快取內容 | JSON 帶 `@class` | 一般 JSON |
+
+> 升級後第一次啟動時，Redis 中舊格式的快取（`users::1`）不會被讀取，等 TTL 到期自動消失；也可以直接清空 Redis。
