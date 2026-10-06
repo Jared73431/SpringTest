@@ -1,79 +1,72 @@
 package com.example.demo.service;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.dto.UserDto;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+	private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+	private final UserRepository userRepository;
 
-    public User createUser(User user) {
-        System.out.println("創建新用戶: " + user.getName());
-        return userRepository.save(user);
-    }
+	public UserService(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
 
-    // @Cacheable：查詢時使用快取
-    @Cacheable(value = "users", key = "#id")
-    public User findById(Long id) {
-        System.out.println("從資料庫查詢用戶 ID: " + id);
-        return userRepository.findById(id).orElse(null);
-    }
+	public UserDto createUser(User user) {
+		log.info("創建新用戶: {}", user.getName());
+		return UserDto.from(userRepository.save(user));
+	}
 
-    // @Cacheable：根據 email 查詢並快取
-    @Cacheable(value = "users", key = "'email:' + #email")
-    public User findByEmail(String email) {
-        System.out.println("從資料庫查詢用戶 Email: " + email);
-        return userRepository.findByEmail(email).orElse(null);
-    }
+	// @Cacheable：查詢時使用快取
+	@Cacheable(value = "users", key = "#id")
+	public UserDto findById(Long id) {
+		log.info("從資料庫查詢用戶 ID: {}", id);
+		return userRepository.findById(id).map(UserDto::from).orElse(null);
+	}
 
-    // @CachePut：更新資料時同步更新快取
-    @CachePut(value = "users", key = "#user.id")
-    public User updateUser(User user) {
-        System.out.println("更新用戶並刷新快取: " + user.getId());
-        return userRepository.save(user);
-    }
+	// @Cacheable：根據 email 查詢並快取
+	@Cacheable(value = "users", key = "'email:' + #email")
+	public UserDto findByEmail(String email) {
+		log.info("從資料庫查詢用戶 Email: {}", email);
+		return userRepository.findByEmail(email).map(UserDto::from).orElse(null);
+	}
 
-    // @CacheEvict：刪除資料時清除快取
-    @CacheEvict(value = "users", key = "#id")
-    public void deleteUser(Long id) {
-        System.out.println("刪除用戶並清除快取: " + id);
-        userRepository.deleteById(id);
-    }
+	// @CachePut：更新資料時同步更新快取
+	@CachePut(value = "users", key = "#user.id")
+	public UserDto updateUser(User user) {
+		log.info("更新用戶並刷新快取: {}", user.getId());
+		return UserDto.from(userRepository.save(user));
+	}
 
-    // @CacheEvict：清除所有用戶快取
-    @CacheEvict(value = "users", allEntries = true)
-    public void clearAllCache() {
-        System.out.println("清除所有用戶快取");
-    }
+	// @CacheEvict：刪除資料時清除快取
+	@CacheEvict(value = "users", key = "#id")
+	public void deleteUser(Long id) {
+		log.info("刪除用戶並清除快取: {}", id);
+		userRepository.deleteById(id);
+	}
 
-    // 手動操作 Redis 快取的範例
-    public void setCustomCache(String key, Object value, long timeout) {
-        redisTemplate.opsForValue().set(key, value, timeout, TimeUnit.SECONDS);
-    }
+	// @CacheEvict：清除所有用戶快取
+	@CacheEvict(value = "users", allEntries = true)
+	public void clearAllCache() {
+		log.info("清除所有用戶快取");
+	}
 
-    public Object getCustomCache(String key) {
-        return redisTemplate.opsForValue().get(key);
-    }
-
-    // 查詢所有用戶並快取結果
-    @Cacheable(value = "allUsers")
-    public List<User> findAllUsers() {
-        System.out.println("從資料庫查詢所有用戶");
-        return userRepository.findAll();
-    }
+	// 查詢所有用戶並快取結果
+	@Cacheable(value = "allUsers")
+	public List<UserDto> findAllUsers() {
+		log.info("從資料庫查詢所有用戶");
+		return userRepository.findAll().stream().map(UserDto::from).toList();
+	}
 }

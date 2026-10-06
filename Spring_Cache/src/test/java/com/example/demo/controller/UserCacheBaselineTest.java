@@ -145,18 +145,31 @@ class UserCacheBaselineTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	// [Critical] 任何人都能寫入任意 key，包括快取使用的 key（快取污染）
+	// 修正前：POST /api/users/cache/{key} 可寫入任意 key（例如 users::1），竄改快取內容（快取污染），已移除
 	@Test
-	void customCache_shouldAllowOverwritingCacheEntries() {
+	void customCacheEndpoint_shouldBeRemoved() {
 		Long id = idOf(create("Amy", "amy@example.com"));
 		restTemplate.getForObject("/api/users/{id}", Map.class, id);
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.TEXT_PLAIN);
-		restTemplate.postForEntity("/api/users/cache/users::" + id, new HttpEntity<>("hacked", headers), String.class);
+		ResponseEntity<String> write = restTemplate.postForEntity("/api/users/cache/users::" + id,
+				new HttpEntity<>("hacked", headers), String.class);
 
-		assertThat(restTemplate.getForEntity("/api/users/{id}", String.class, id).getStatusCode())
-				.isNotEqualTo(HttpStatus.OK);
+		assertThat(write.getStatusCode().is4xxClientError()).isTrue();
+		assertThat(restTemplate.getForObject("/api/users/{id}", Map.class, id).get("name")).isEqualTo("Amy");
+	}
+
+	// 安全性：每個快取綁定明確型別，Redis 中只存放一般的 JSON，不帶類別名稱（@class）
+	@Test
+	void cachedValue_shouldBePlainJsonWithoutTypeInfo() {
+		Long id = idOf(create("Amy", "amy@example.com"));
+		restTemplate.getForObject("/api/users/{id}", Map.class, id);
+		restTemplate.getForObject("/api/users", List.class);
+
+		assertThat(redis.opsForValue().get("users::" + id)).contains("\"name\":\"Amy\"").doesNotContain("@class");
+		assertThat(redis.opsForValue().get("allUsers::SimpleKey []")).contains("\"name\":\"Amy\"")
+				.doesNotContain("@class");
 	}
 
 	@Test
