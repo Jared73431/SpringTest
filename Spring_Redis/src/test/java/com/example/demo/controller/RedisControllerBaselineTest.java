@@ -73,12 +73,13 @@ class RedisControllerBaselineTest {
 		assertThat(user.get("id")).isEqualTo(1);
 	}
 
-	// [Critical] 目前使用 LaissezFaireSubTypeValidator 的 default typing：Redis 中的 JSON 帶有任意類別名稱（@class）
+	// 修正前使用 LaissezFaireSubTypeValidator 的 default typing：JSON 帶有任意類別名稱（@class），有反序列化漏洞風險。
+	// 修正後明確指定型別為 User，Redis 中只存放一般的 JSON
 	@Test
-	void user_shouldBeStoredWithClassNameTypeInfo() {
+	void user_shouldBeStoredAsPlainJsonWithoutTypeInfo() {
 		restTemplate.postForEntity("/redis/user/1", Map.of("name", "Amy"), String.class);
 
-		assertThat(stringRedisTemplate.opsForValue().get("user:1")).contains("\"@class\":\"com.example.demo.entity.User\"");
+		assertThat(stringRedisTemplate.opsForValue().get("user:1")).contains("\"name\":\"Amy\"").doesNotContain("@class");
 	}
 
 	@Test

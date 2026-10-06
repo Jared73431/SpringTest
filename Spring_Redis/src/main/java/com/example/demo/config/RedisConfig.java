@@ -1,68 +1,46 @@
 package com.example.demo.config;
 
-import java.util.TimeZone;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.example.demo.entity.User;
 
-@Configuration
+import tools.jackson.databind.json.JsonMapper;
+
+/**
+ * Redis 序列化設定。
+ *
+ * <ul>
+ * <li>字串、Hash、List、Set、ZSet：使用 Spring Boot 自動建立的 StringRedisTemplate，key 與 value 都以純文字存放，
+ * 用 redis-cli 或 RedisInsight 也能直接看懂</li>
+ * <li>User 物件：專用的 RedisTemplate&lt;String, User&gt;，以 JSON 存放，並<b>明確指定型別</b></li>
+ * </ul>
+ *
+ * 修正前的寫法（已移除）：
+ * <pre>
+ * objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, DefaultTyping.NON_FINAL, ...)
+ * </pre>
+ * 會把類別名稱寫進 JSON（"@class": "com.example..."），讀取時依這個欄位建立<b>任意類別</b>的物件。
+ * LaissezFaire 代表不做任何限制，是 Jackson 反序列化漏洞（gadget chain）的典型成因：
+ * 只要有人能寫入 Redis，就可能讓應用程式建立危險的物件。明確指定型別就不需要在 JSON 中帶類別名稱。
+ */
+@Configuration(proxyBeanMethods = false)
 public class RedisConfig {
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-
-        // 创建 ObjectMapper 并配置 Java 8 时间支持
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        // 注册 JavaTimeModule 以支持 Java 8 时间类型
-        objectMapper.registerModule(new JavaTimeModule());
-
-        // 禁用时间戳格式，使用 ISO 格式
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        // 设置时区
-        objectMapper.setTimeZone(TimeZone.getTimeZone("Asia/Taipei"));
-
-        // 配置其他属性
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-
-        // 启用默认类型信息以支持多态
-        objectMapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
-
-        // 创建 Jackson2JsonRedisSerializer 并设置 ObjectMapper
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
-
-        // 设置序列化器
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(serializer);
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(serializer);
-
-        template.afterPropertiesSet();
-        return template;
-    }
-
-    @Bean
-    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
-        return new StringRedisTemplate(connectionFactory);
-    }
+	/**
+	 * 存放 User 的 RedisTemplate：value 一律反序列化成 User，不讀取 JSON 中的型別資訊。
+	 * JsonMapper 使用 Spring Boot 已設定好的 Jackson 3（內建 java.time 支援，不需要另外註冊 JavaTimeModule）。
+	 */
+	@Bean
+	RedisTemplate<String, User> userRedisTemplate(RedisConnectionFactory connectionFactory, JsonMapper jsonMapper) {
+		RedisTemplate<String, User> template = new RedisTemplate<>();
+		template.setConnectionFactory(connectionFactory);
+		template.setKeySerializer(RedisSerializer.string());
+		template.setValueSerializer(new JacksonJsonRedisSerializer<>(jsonMapper, User.class));
+		return template;
+	}
 }

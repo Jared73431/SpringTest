@@ -1,11 +1,11 @@
 package com.example.demo.controller;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,7 +44,7 @@ public class RedisController {
     public String setStringWithExpire(@PathVariable String key,
                                       @RequestParam String value,
                                       @RequestParam long seconds) {
-        redisService.setString(key, value, seconds, TimeUnit.SECONDS);
+        redisService.setString(key, value, Duration.ofSeconds(seconds));
         return "設置成功並設置過期時間: " + key + " = " + value + " (過期時間: " + seconds + "秒)";
     }
 
@@ -56,13 +56,13 @@ public class RedisController {
         LocalDateTime now = LocalDateTime.now();
         user.setCreateTime(now);
         user.setUpdateTime(now);
-        redisService.setObject("user:" + id, user);
+        redisService.setUser("user:" + id, user);
         return "用戶保存成功: " + user.toString();
     }
 
     @GetMapping("/user/{id}")
-    public Object getUser(@PathVariable Long id) {
-        return redisService.getObject("user:" + id);
+    public User getUser(@PathVariable Long id) {
+        return redisService.getUser("user:" + id);
     }
 
     // ========== Hash 操作測試 ==========
@@ -110,7 +110,7 @@ public class RedisController {
     }
 
     @GetMapping("/list/{key}")
-    public List<Object> getList(@PathVariable String key) {
+    public List<String> getList(@PathVariable String key) {
         return redisService.getListRange(key, 0, -1);
     }
 
@@ -118,12 +118,12 @@ public class RedisController {
 
     @PostMapping("/set/{key}")
     public String addToSet(@PathVariable String key, @RequestBody String[] values) {
-        redisService.addToSet(key, (Object[]) values);
+        redisService.addToSet(key, values);
         return "添加到集合成功: " + key;
     }
 
     @GetMapping("/set/{key}")
-    public Set<Object> getSet(@PathVariable String key) {
+    public Set<String> getSet(@PathVariable String key) {
         return redisService.getSetMembers(key);
     }
 
@@ -143,7 +143,7 @@ public class RedisController {
     }
 
     @GetMapping("/zset/{key}")
-    public Set<Object> getZSet(@PathVariable String key) {
+    public Set<String> getZSet(@PathVariable String key) {
         return redisService.getZSetRange(key, 0, -1);
     }
 
@@ -156,7 +156,7 @@ public class RedisController {
 
     @PostMapping("/expire/{key}")
     public String setExpire(@PathVariable String key, @RequestParam long seconds) {
-        redisService.expire(key, seconds, TimeUnit.SECONDS);
+        redisService.expire(key, Duration.ofSeconds(seconds));
         return "設置過期時間成功: " + key + " (過期時間: " + seconds + "秒)";
     }
 
@@ -188,7 +188,7 @@ public class RedisController {
 
         // 初始化用戶數據
         User user = new User(1L, "張三", "zhangsan@example.com", 25);
-        redisService.setObject("user:1", user);
+        redisService.setUser("user:1", user);
         result.put("user", "user:1 = " + user.toString());
 
         // 初始化 Hash 數據

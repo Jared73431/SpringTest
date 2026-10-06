@@ -26,14 +26,6 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-starter-json'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-
-	// Lettuce Redis client (預設)
-	implementation 'io.lettuce:lettuce-core'
-
-	// Jackson for JSON serialization
-	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
 	// Lombok (可選，用於減少 boilerplate code)
 	compileOnly 'org.projectlombok:lombok'

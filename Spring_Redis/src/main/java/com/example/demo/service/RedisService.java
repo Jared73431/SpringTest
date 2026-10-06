@@ -1,215 +1,136 @@
 package com.example.demo.service;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.entity.User;
+
+/**
+ * Redis 五種資料結構的基本操作。
+ * 純文字資料使用 StringRedisTemplate；User 物件使用專用的 RedisTemplate&lt;String, User&gt;（見 RedisConfig）。
+ */
 @Service
 public class RedisService {
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+	private final StringRedisTemplate stringRedisTemplate;
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+	private final RedisTemplate<String, User> userRedisTemplate;
 
-    // ========== String 操作 ==========
+	public RedisService(StringRedisTemplate stringRedisTemplate, RedisTemplate<String, User> userRedisTemplate) {
+		this.stringRedisTemplate = stringRedisTemplate;
+		this.userRedisTemplate = userRedisTemplate;
+	}
 
-    /**
-     * 設置字符串值
-     */
-    public void setString(String key, String value) {
-        stringRedisTemplate.opsForValue().set(key, value);
-    }
+	// ========== String ==========
 
-    /**
-     * 設置字符串值並設置過期時間
-     */
-    public void setString(String key, String value, long timeout, TimeUnit unit) {
-        stringRedisTemplate.opsForValue().set(key, value, timeout, unit);
-    }
+	public void setString(String key, String value) {
+		stringRedisTemplate.opsForValue().set(key, value);
+	}
 
-    /**
-     * 獲取字符串值
-     */
-    public String getString(String key) {
-        return stringRedisTemplate.opsForValue().get(key);
-    }
+	// Spring Data Redis 4：改用 Duration 版本（set(key, value, long, TimeUnit) 已 deprecated）
+	public void setString(String key, String value, Duration timeout) {
+		stringRedisTemplate.opsForValue().set(key, value, timeout);
+	}
 
-    /**
-     * 設置對象
-     */
-    public void setObject(String key, Object value) {
-        redisTemplate.opsForValue().set(key, value);
-    }
+	public String getString(String key) {
+		return stringRedisTemplate.opsForValue().get(key);
+	}
 
-    /**
-     * 設置對象並設置過期時間
-     */
-    public void setObject(String key, Object value, long timeout, TimeUnit unit) {
-        redisTemplate.opsForValue().set(key, value, timeout, unit);
-    }
+	// ========== User 物件 ==========
 
-    /**
-     * 獲取對象
-     */
-    public Object getObject(String key) {
-        return redisTemplate.opsForValue().get(key);
-    }
+	public void setUser(String key, User user) {
+		userRedisTemplate.opsForValue().set(key, user);
+	}
 
-    // ========== Hash 操作 ==========
+	public User getUser(String key) {
+		return userRedisTemplate.opsForValue().get(key);
+	}
 
-    /**
-     * 設置 Hash 值
-     */
-    public void setHash(String key, String field, Object value) {
-        redisTemplate.opsForHash().put(key, field, value);
-    }
+	// ========== Hash ==========
 
-    /**
-     * 獲取 Hash 值
-     */
-    public Object getHash(String key, String field) {
-        return redisTemplate.opsForHash().get(key, field);
-    }
+	public void setHash(String key, String field, String value) {
+		stringRedisTemplate.opsForHash().put(key, field, value);
+	}
 
-    /**
-     * 獲取所有 Hash 值
-     */
-    public Map<Object, Object> getAllHash(String key) {
-        return redisTemplate.opsForHash().entries(key);
-    }
+	public Object getHash(String key, String field) {
+		return stringRedisTemplate.opsForHash().get(key, field);
+	}
 
-    /**
-     * 刪除 Hash 字段
-     */
-    public void deleteHash(String key, Object... fields) {
-        redisTemplate.opsForHash().delete(key, fields);
-    }
+	public Map<Object, Object> getAllHash(String key) {
+		return stringRedisTemplate.opsForHash().entries(key);
+	}
 
-    // ========== List 操作 ==========
+	// ========== List ==========
 
-    /**
-     * 從左邊添加到列表
-     */
-    public void leftPushList(String key, Object value) {
-        redisTemplate.opsForList().leftPush(key, value);
-    }
+	public void leftPushList(String key, String value) {
+		stringRedisTemplate.opsForList().leftPush(key, value);
+	}
 
-    /**
-     * 從右邊添加到列表
-     */
-    public void rightPushList(String key, Object value) {
-        redisTemplate.opsForList().rightPush(key, value);
-    }
+	public void rightPushList(String key, String value) {
+		stringRedisTemplate.opsForList().rightPush(key, value);
+	}
 
-    /**
-     * 從左邊彈出列表元素
-     */
-    public Object leftPopList(String key) {
-        return redisTemplate.opsForList().leftPop(key);
-    }
+	public String leftPopList(String key) {
+		return stringRedisTemplate.opsForList().leftPop(key);
+	}
 
-    /**
-     * 從右邊彈出列表元素
-     */
-    public Object rightPopList(String key) {
-        return redisTemplate.opsForList().rightPop(key);
-    }
+	public String rightPopList(String key) {
+		return stringRedisTemplate.opsForList().rightPop(key);
+	}
 
-    /**
-     * 獲取列表範圍內的元素
-     */
-    public List<Object> getListRange(String key, long start, long end) {
-        return redisTemplate.opsForList().range(key, start, end);
-    }
+	public List<String> getListRange(String key, long start, long end) {
+		return stringRedisTemplate.opsForList().range(key, start, end);
+	}
 
-    // ========== Set 操作 ==========
+	// ========== Set ==========
 
-    /**
-     * 添加到集合
-     */
-    public void addToSet(String key, Object... values) {
-        redisTemplate.opsForSet().add(key, values);
-    }
+	public void addToSet(String key, String... values) {
+		stringRedisTemplate.opsForSet().add(key, values);
+	}
 
-    /**
-     * 獲取集合所有成員
-     */
-    public Set<Object> getSetMembers(String key) {
-        return redisTemplate.opsForSet().members(key);
-    }
+	public Set<String> getSetMembers(String key) {
+		return stringRedisTemplate.opsForSet().members(key);
+	}
 
-    /**
-     * 檢查是否是集合成員
-     */
-    public boolean isSetMember(String key, Object value) {
-        return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, value));
-    }
+	public boolean isSetMember(String key, String value) {
+		return Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, value));
+	}
 
-    /**
-     * 從集合中移除元素
-     */
-    public void removeFromSet(String key, Object... values) {
-        redisTemplate.opsForSet().remove(key, values);
-    }
+	// ========== ZSet（有序集合） ==========
 
-    // ========== ZSet (Sorted Set) 操作 ==========
+	public void addToZSet(String key, String value, double score) {
+		stringRedisTemplate.opsForZSet().add(key, value, score);
+	}
 
-    /**
-     * 添加到有序集合
-     */
-    public void addToZSet(String key, Object value, double score) {
-        redisTemplate.opsForZSet().add(key, value, score);
-    }
+	public Set<String> getZSetRange(String key, long start, long end) {
+		return stringRedisTemplate.opsForZSet().range(key, start, end);
+	}
 
-    /**
-     * 獲取有序集合範圍內的元素
-     */
-    public Set<Object> getZSetRange(String key, long start, long end) {
-        return redisTemplate.opsForZSet().range(key, start, end);
-    }
+	public Double getZSetScore(String key, String value) {
+		return stringRedisTemplate.opsForZSet().score(key, value);
+	}
 
-    /**
-     * 獲取有序集合元素的分數
-     */
-    public Double getZSetScore(String key, Object value) {
-        return redisTemplate.opsForZSet().score(key, value);
-    }
+	// ========== 通用 ==========
 
-    // ========== 通用操作 ==========
+	public void expire(String key, Duration timeout) {
+		stringRedisTemplate.expire(key, timeout);
+	}
 
-    /**
-     * 設置過期時間
-     */
-    public void expire(String key, long timeout, TimeUnit unit) {
-        redisTemplate.expire(key, timeout, unit);
-    }
+	public boolean hasKey(String key) {
+		return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
+	}
 
-    /**
-     * 檢查鍵是否存在
-     */
-    public boolean hasKey(String key) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
-    }
+	public void delete(String key) {
+		stringRedisTemplate.delete(key);
+	}
 
-    /**
-     * 刪除鍵
-     */
-    public void delete(String key) {
-        redisTemplate.delete(key);
-    }
-
-    /**
-     * 獲取鍵的剩餘過期時間
-     */
-    public Long getExpire(String key) {
-        return redisTemplate.getExpire(key);
-    }
+	public Long getExpire(String key) {
+		return stringRedisTemplate.getExpire(key);
+	}
 }
