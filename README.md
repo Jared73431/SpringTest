@@ -52,7 +52,7 @@
 | [Spring_HelloWorld](Spring_HelloWorld) 📘 | 入門 | 最小 REST Controller（`GET /api/hello`）、`@WebMvcTest` 測試 ✅ 已現代化 | — |
 | [Spring_Thymeleaf](Spring_Thymeleaf) | 模板引擎 | Thymeleaf 頁面渲染 | — |
 | [Spring_Swagger](Spring_Swagger) 📘 | API 文件 | springdoc-openapi、統一回應格式、全域例外處理 | 🐘 |
-| [Spring_Webflux](Spring_Webflux) 📘 | Reactive 程式設計 | 依「反直覺的地方」分成 10 課：Flow 規範、延遲執行、忽略回傳值的 Bug、flatMap 順序、錯誤與空值、Scheduler、背壓、Context；Annotated vs Functional、JSON / NDJSON / SSE、阻塞呼叫 ✅ 已現代化 | — |
+| [Spring_Webflux](Spring_Webflux) 📘 | Reactive 程式設計 | 依「反直覺的地方」分成 12 課：Flow 規範、延遲執行、Hot / Cold、忽略回傳值的 Bug、flatMap 順序、錯誤與空值、Scheduler、背壓、generate / create、Context；Annotated vs Functional、JSON / NDJSON / SSE、Sinks 廣播、阻塞呼叫 ✅ 已現代化 | — |
 | [Spring_HttpClient](Spring_HttpClient) 📘 | 呼叫外部 API | RestClient（同步）與 WebClient（Reactive）對照、逾時、錯誤對應、WireMock 契約測試 ✅ 已現代化 | — |
 | [Spring_Okhttp](Spring_Okhttp) 📘 | 呼叫外部 API | OkHttp 5：同步與非同步（Callback → CompletableFuture）、自訂 Interceptor、日誌遮蔽 Authorization、MockWebServer 測試 ✅ 已現代化 | — |
 
