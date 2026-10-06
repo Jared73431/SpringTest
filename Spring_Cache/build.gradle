@@ -19,6 +19,9 @@ configurations {
 	}
 }
 
+// Boot 3.5.3 管理的 Testcontainers 1.21.2 無法連線到 Docker 29，暫時指定 1.21.4（升級 Boot 後移除）
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
 	mavenCentral()
 }
@@ -34,6 +37,9 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
