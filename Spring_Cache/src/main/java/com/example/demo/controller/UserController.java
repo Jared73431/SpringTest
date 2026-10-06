@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.UserDto;
-import com.example.demo.entity.User;
+import com.example.demo.dto.UserRequest;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.service.UserService;
 
+import jakarta.validation.Valid;
+
+/**
+ * 使用者 API（/api/users）。快取行為全部宣告在 UserService，Controller 不需要知道資料來自快取還是資料庫。
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -27,46 +34,41 @@ public class UserController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
-		UserDto user = userService.findById(id);
-		return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+	public UserDto findById(@PathVariable Long id) {
+		return userService.findById(id).orElseThrow(() -> new UserNotFoundException(id));
 	}
 
 	@GetMapping("/email/{email}")
-	public ResponseEntity<UserDto> getUserByEmail(@PathVariable String email) {
-		UserDto user = userService.findByEmail(email);
-		return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+	public UserDto findByEmail(@PathVariable String email) {
+		return userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
 	}
 
 	@GetMapping
-	public List<UserDto> getAllUsers() {
-		return userService.findAllUsers();
+	public List<UserDto> findAll() {
+		return userService.findAll();
+	}
+
+	@PostMapping
+	public ResponseEntity<UserDto> create(@Valid @RequestBody UserRequest request) {
+		UserDto created = userService.create(request);
+		return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody User user) {
-		user.setId(id);
-		return ResponseEntity.ok(userService.updateUser(user));
+	public UserDto update(@PathVariable Long id, @Valid @RequestBody UserRequest request) {
+		return userService.update(id, request);
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-		userService.deleteUser(id);
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		userService.delete(id);
 		return ResponseEntity.noContent().build();
 	}
 
-	@PostMapping("/cache/clear")
-	public ResponseEntity<String> clearCache() {
-		userService.clearAllCache();
-		return ResponseEntity.ok("快取已清除");
-	}
-
-	// 修正前的 POST / GET /api/users/cache/{key}（手動讀寫任意 Redis key）已移除：
-	// 任何人都能寫入任意 key，包括快取使用的 key（例如 users::1），可以竄改快取內容（快取污染）。
-	// 手動操作 Redis 的示範請見 Spring_Redis 模組。
-
-	@PostMapping
-	public ResponseEntity<UserDto> createUser(@RequestBody User user) {
-		return ResponseEntity.ok(userService.createUser(user));
+	/** 清除三個使用者快取（下一次查詢會重新讀取資料庫） */
+	@DeleteMapping("/cache")
+	public ResponseEntity<Void> clearCaches() {
+		userService.clearAllCaches();
+		return ResponseEntity.noContent().build();
 	}
 }
