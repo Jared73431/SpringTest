@@ -13,31 +13,39 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// JDBC（DataSource、JdbcTemplate）；本模組沒有 Entity，不需要 JPA
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	// Boot 4：Flyway 的自動設定移到獨立模組，必須使用 starter；只引入 flyway-core 時遷移不會自動執行（也沒有任何錯誤）
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	// Flyway 10 起，各資料庫的支援拆成獨立模組
 	implementation 'org.flywaydb:flyway-database-postgresql'
-	compileOnly 'org.projectlombok:lombok'
+	// Actuator + Web：以 HTTP 提供 /actuator/flyway（修正前沒有 Web，應用程式執行完遷移就結束）
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.postgresql:postgresql'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+	testImplementation 'org.springframework.boot:spring-boot-restclient'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 編譯時顯示 deprecation 警告，升級時能及早發現即將移除的 API
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs += ['-Xlint:deprecation']
 }

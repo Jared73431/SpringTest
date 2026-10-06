@@ -1,98 +1,65 @@
 package db.migration;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
-import lombok.Getter;
-import lombok.Setter;
-
+/**
+ * Java 遷移：需要依現有資料逐筆計算、SQL 不好表達的資料轉換時使用。
+ *
+ * <ul>
+ * <li>類別名稱就是版本與描述：V1_0_5__ComplexMigration → 版本 1.0.5（Java 類別名稱不能有點，用底線代替）</li>
+ * <li>放在 db.migration package，對應 spring.flyway.locations 的 classpath:db/migration</li>
+ * <li>與 SQL 遷移在同一個交易中執行，失敗時整個遷移 rollback</li>
+ * <li>Java 遷移預設<b>不計算 checksum</b>：修改註解或 log 不會讓驗證失敗（SQL 遷移檔則連一個字都不能改）</li>
+ * </ul>
+ *
+ * 注意：之後的可重複遷移 R__update_javastack.sql 會把 note 全部覆蓋，這個遷移的結果最後看不到，說明見 readme。
+ */
 public class V1_0_5__ComplexMigration extends BaseJavaMigration {
-    @Override
-    public void migrate(Context context) throws Exception {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(
-                new SingleConnectionDataSource(context.getConnection(), true));
 
-        // 复杂的数据迁移示例：根据现有数据进行条件更新
+	private static final Logger log = LoggerFactory.getLogger(V1_0_5__ComplexMigration.class);
 
-        // 1. 查询所有记录
-        List<JavaStackRecord> records = jdbcTemplate.query(
-                "SELECT id, title, content, note FROM t_javastack",
-                new JavaStackRowMapper()
-        );
+	/** 查詢結果（record 取代修正前用 Lombok 的內部類別） */
+	private record JavaStackRecord(Long id, String title, String content, String note) {
+	}
 
-        System.out.println("找到 " + records.size() + " 条记录需要处理");
+	@Override
+	public void migrate(Context context) {
+		// 使用 Flyway 提供的連線（同一個交易）；suppressClose = true：不要在這裡關閉 Flyway 的連線
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(context.getConnection(), true));
 
-        // 2. 根据业务逻辑处理每条记录
-        for (JavaStackRecord record : records) {
-            String newNote = generateNote(record);
+		// 1. 查詢所有資料
+		List<JavaStackRecord> records = jdbcTemplate.query("SELECT id, title, content, note FROM t_javastack",
+				(rs, rowNum) -> new JavaStackRecord(rs.getLong("id"), rs.getString("title"),
+						rs.getString("content"), rs.getString("note")));
+		log.info("找到 {} 筆資料需要處理", records.size());
 
-            // 3. 更新特定记录
-            jdbcTemplate.update(
-                    "UPDATE t_javastack SET note = ? WHERE id = ?",
-                    newNote, record.getId()
-            );
-        }
+		// 2. 依資料內容計算新的 note 並逐筆更新
+		for (JavaStackRecord record : records) {
+			jdbcTemplate.update("UPDATE t_javastack SET note = ? WHERE id = ?", generateNote(record), record.id());
+		}
 
-        System.out.println("复杂数据迁移完成");
+		// 3. 驗證結果
+		Integer specialCount = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM t_javastack WHERE note LIKE '特殊%'", Integer.class);
+		Integer contentCount = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM t_javastack WHERE note = '包含内容关键字'", Integer.class);
+		log.info("資料遷移完成：特殊標題 {} 筆、包含內容關鍵字 {} 筆", specialCount, contentCount);
+	}
 
-        // 4. 验证迁移结果
-        validateMigration(jdbcTemplate);
-    }
-
-    private String generateNote(JavaStackRecord record) {
-        // 根据业务逻辑生成note
-        if (record.getTitle().contains("标题1")) {
-            return "特殊标题1";
-        } else if (record.getContent().contains("内容")) {
-            return "包含内容关键字";
-        } else {
-            return "默认备注";
-        }
-    }
-
-    private void validateMigration(JdbcTemplate jdbcTemplate) {
-        Integer specialCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM t_javastack WHERE note LIKE '特殊%'",
-                Integer.class);
-        Integer contentCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM t_javastack WHERE note = '包含内容关键字'",
-                Integer.class);
-
-        System.out.println("特殊标题记录数: " + specialCount);
-        System.out.println("包含内容关键字记录数: " + contentCount);
-    }
-
-    // 内部类用于映射查询结果
-    @Getter
-    @Setter
-    private static class JavaStackRecord {
-        private Long id;
-        private String title;
-        private String content;
-        private String note;
-
-        // 构造函数、getter和setter
-        public JavaStackRecord() {}
-    }
-
-    // RowMapper实现
-    private static class JavaStackRowMapper implements RowMapper<JavaStackRecord> {
-
-        @Override
-        public JavaStackRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
-            JavaStackRecord record = new JavaStackRecord();
-            record.setId(rs.getLong("id"));
-            record.setTitle(rs.getString("title"));
-            record.setContent(rs.getString("content"));
-            record.setNote(rs.getString("note"));
-            return record;
-        }
-    }
+	// 比對的字串（标题1、内容）與 V1.0.1 新增的資料相同，維持簡體字：已執行的 SQL 遷移檔不能修改
+	private static String generateNote(JavaStackRecord record) {
+		if (record.title().contains("标题1")) {
+			return "特殊标题1";
+		} else if (record.content().contains("内容")) {
+			return "包含内容关键字";
+		}
+		return "默认备注";
+	}
 }
