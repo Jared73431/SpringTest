@@ -41,7 +41,7 @@ src/main/java/db/migration/                  ← 第二個位置（Java）
 | 7 | — | javastack summary view | SQL（可重複） |
 | 8 | — | update javastack | SQL（可重複） |
 
-> 遷移檔中的資料是簡體中文（`标题1`），而且**刻意保留**：已執行過的遷移檔不能修改，見「[checksum](#3-已執行的遷移檔一個字都不能改)」。
+> 遷移檔中的資料原本是簡體中文，現代化時刻意修改了已執行過的 `V1.0.1`，作為 checksum 不符的實際案例，見「[實際案例：把簡體中文改成繁體](#實際案例把簡體中文改成繁體)」。
 
 ## 執行方式
 
@@ -143,7 +143,28 @@ Migration checksum mismatch for migration version 1.0.0
 | 只在本機開發、還沒有人執行過 | 可以修改，再清空本機資料庫重新執行 |
 | 真的必須接受修改（例如只改了註解） | `flyway repair` 重新計算 checksum（要了解後果才使用） |
 
-> 這也是本模組保留簡體中文資料的原因：把 `标题1` 改成 `標題1`，所有已經執行過的資料庫都會無法啟動。
+
+#### 實際案例：把簡體中文改成繁體
+
+現代化時把已執行過的 `V1.0.1` 從 `标题1` 改成 `標題1`（Java 遷移中比對的字串也一併修改）。這正是「不能修改已執行的遷移檔」的情況，判斷是否可以這樣做：
+
+| 環境 | 影響 | 處理方式 |
+|---|---|---|
+| 測試、Docker | 每次都是全新的資料庫，從頭執行 | 不受影響 |
+| 開發者本機已執行過的資料庫 | 啟動時 `checksum mismatch for migration version 1.0.1`，**應用程式無法啟動** | 刪除資料庫重建（資料也會變成繁體），或 `flyway repair`（只更新 checksum，**資料仍是簡體**） |
+| 正式環境 | 同上，而且資料不能隨便刪除 | **不可以這樣做**，應新增 `V1.0.6__xxx.sql` 用 `UPDATE` 轉換資料 |
+
+這個練習專案只有本機與測試環境，所以選擇直接修改檔案；正式專案請一律用新增遷移的方式。
+
+本機資料庫重建方式：
+
+```sql
+-- 在其他資料庫（例如 postgres）中執行
+DROP DATABASE "Flyway";
+CREATE DATABASE "Flyway";
+```
+
+之後重新啟動應用程式，Flyway 會從頭執行所有遷移。
 >
 > Java 遷移預設**不計算 checksum**，所以可以安全地修改註解或 log（本模組就是這樣做的）；也因此修改 Java 遷移的邏輯不會被偵測到，要特別小心。
 >
@@ -170,7 +191,7 @@ UPDATE t_javastack SET note = 'flyway repeated ok5', time = NOW();
 | 問題 | 說明 |
 |---|---|
 | 每次修改都會再更新一次資料 | `ok5` 看起來是為了讓它重新執行而改了 5 次 |
-| **覆蓋了 Java 遷移的結果** | R__ 一定在所有 V 之後執行，`V1_0_5` 依資料計算出的 note（`特殊标题1`、`包含内容关键字`）**全部被覆蓋成固定值**，最後完全看不到 Java 遷移的效果 |
+| **覆蓋了 Java 遷移的結果** | R__ 一定在所有 V 之後執行，`V1_0_5` 依資料計算出的 note（`特殊標題1`、`包含內容關鍵字`）**全部被覆蓋成固定值**，最後完全看不到 Java 遷移的效果 |
 
 > 為什麼不直接刪除或改名這個檔案：已執行過的可重複遷移從本機消失，Flyway 驗證時會回報「已執行但找不到」，所有已經執行過的資料庫都會驗證失敗。
 
@@ -250,6 +271,7 @@ public class V1_0_5__ComplexMigration extends BaseJavaMigration {
 | 3 | Spring Boot → 4.1.1（Flyway 12）、Gradle → 9.8.0；`flyway-core` → `spring-boot-starter-flyway` |
 | 4 | 設定整理、移除未使用的 JPA、`/actuator/flyway`、Java 遷移改用 logger 與 record；port → 8093 |
 | 5 | 新增正確用法的可重複遷移（view），以及 checksum 驗證的測試 |
+| 5-1 | 遷移資料與 Java 遷移的簡體中文改為繁體（修改已執行的 `V1.0.1`，見實際案例） |
 | 6 | 新增 Dockerfile 與 docker-compose |
 
 ### 行為變更
@@ -260,10 +282,11 @@ public class V1_0_5__ComplexMigration extends BaseJavaMigration {
 | Port | 設定 8015，因大小寫錯誤（`Server.port`）不生效；實際上也沒有 Web | `8093` |
 | `out-of-order` | `true` | `false`（預設） |
 | `baseline-on-migrate` | `true`（`baseline-version=1.0`） | `false`（預設） |
-| 遷移 | 7 個 | 8 個（新增 `R__javastack_summary_view.sql`）；原本的 7 個**完全沒有修改** |
+| 遷移 | 7 個 | 8 個（新增 `R__javastack_summary_view.sql`） |
+| 資料 | 簡體中文（`标题1`、`内容1`） | 繁體中文（`標題1`、`內容1`）；**修改了已執行的 `V1.0.1`**，本機資料庫需要重建 |
 | log | 整個應用程式 DEBUG | 預設 INFO |
 
-> 已經在本機執行過的資料庫，下次啟動時只會新增執行 `R__javastack_summary_view.sql`。
+> ⚠️ 已經在本機執行過遷移的資料庫，下次啟動時會因 `V1.0.1` 的 checksum 不符而失敗，請依「[實際案例](#實際案例把簡體中文改成繁體)」重建資料庫。
 
 ### 升級時學到的事
 

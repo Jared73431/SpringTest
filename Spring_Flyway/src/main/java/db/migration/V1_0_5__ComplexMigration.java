@@ -49,17 +49,17 @@ public class V1_0_5__ComplexMigration extends BaseJavaMigration {
 		Integer specialCount = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM t_javastack WHERE note LIKE '特殊%'", Integer.class);
 		Integer contentCount = jdbcTemplate.queryForObject(
-				"SELECT COUNT(*) FROM t_javastack WHERE note = '包含内容关键字'", Integer.class);
+				"SELECT COUNT(*) FROM t_javastack WHERE note = '包含內容關鍵字'", Integer.class);
 		log.info("資料遷移完成：特殊標題 {} 筆、包含內容關鍵字 {} 筆", specialCount, contentCount);
 	}
 
-	// 比對的字串（标题1、内容）與 V1.0.1 新增的資料相同，維持簡體字：已執行的 SQL 遷移檔不能修改
+	// 比對的字串（標題1、內容）必須與 V1.0.1 新增的資料一致
 	private static String generateNote(JavaStackRecord record) {
-		if (record.title().contains("标题1")) {
-			return "特殊标题1";
-		} else if (record.content().contains("内容")) {
-			return "包含内容关键字";
+		if (record.title().contains("標題1")) {
+			return "特殊標題1";
+		} else if (record.content().contains("內容")) {
+			return "包含內容關鍵字";
 		}
-		return "默认备注";
+		return "預設備註";
 	}
 }

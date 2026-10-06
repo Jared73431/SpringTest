@@ -42,7 +42,7 @@ class MigrationBaselineTest extends PostgresContainerTestBase {
 
 		assertThat(columns).containsExactly("id", "title", "content", "note", "time");
 		assertThat(jdbcTemplate.queryForList("SELECT title FROM t_javastack ORDER BY id", String.class))
-				.containsExactly("flyway:标题1", "flyway:标题2", "flyway:标题3", "flyway:标题4", "flyway:标题5");
+				.containsExactly("flyway:標題1", "flyway:標題2", "flyway:標題3", "flyway:標題4", "flyway:標題5");
 	}
 
 	// 可重複遷移（R__update_javastack）在所有版本遷移之後執行，把 V1_0_5（Java）計算出的 note 全部覆蓋
