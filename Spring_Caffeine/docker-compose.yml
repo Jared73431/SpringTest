@@ -1,0 +1,63 @@
+# ============================================================
+# Caffeine 練習環境：PostgreSQL + 兩個應用程式實例（app-a、app-b）
+#
+# 兩個實例共用同一個資料庫，但各自有一份 Caffeine 快取（存在各自的 JVM 記憶體中），
+# 用來示範本機快取的取捨：
+#
+#   docker compose up --build
+#   curl -X POST http://localhost:8091/api/users -H "Content-Type: application/json" \
+#        -d '{"name":"Amy","email":"amy@example.com","age":20}'
+#   curl http://localhost:8091/api/users/1          ← A 快取了 Amy
+#   curl http://localhost:8092/api/users/1          ← B 也快取了 Amy
+#   curl -X PUT http://localhost:8091/api/users/1 -H "Content-Type: application/json" \
+#        -d '{"name":"Amy Lin","email":"amy@example.com","age":21}'
+#   curl http://localhost:8091/api/users/1          ← A：Amy Lin（A 的快取已更新）
+#   curl http://localhost:8092/api/users/1          ← B：仍是 Amy！B 的快取不知道資料被改了，要等過期（10 分鐘）
+#
+#   命中率：curl "http://localhost:8091/actuator/metrics/cache.gets?tag=name:users&tag=result:hit"
+#   停止：docker compose down               （加上 -v 會一併刪除資料）
+#
+# 對照 Spring_Cache（Redis）：多台共用同一份快取，不會有這個問題，但每次讀取都要經過網路
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=test2
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test2"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app-a:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    environment: &app-env
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+
+  # 同一個 image 的第二個實例：容器內同樣是 8091，對主機開放成 8092
+  app-b:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8092:8091"
+    environment: *app-env
+
+volumes:
+  postgres-data:
