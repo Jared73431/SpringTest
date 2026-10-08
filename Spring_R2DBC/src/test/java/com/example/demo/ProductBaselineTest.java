@@ -15,12 +15,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.context.WebApplicationContext;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Baseline：鎖定重構前的行為（包含 [Potential Bug]），之後的修改都要對照這份測試說明行為變更。
@@ -28,20 +23,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-@Testcontainers
-class ProductBaselineTest {
-
-	@Container
-	static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:15-alpine")
-			.withInitScript("baseline-schema.sql");
-
-	@DynamicPropertySource
-	static void r2dbcProperties(DynamicPropertyRegistry registry) {
-		registry.add("spring.r2dbc.url", () -> "r2dbc:postgresql://" + postgres.getHost() + ":"
-				+ postgres.getMappedPort(5432) + "/" + postgres.getDatabaseName());
-		registry.add("spring.r2dbc.username", postgres::getUsername);
-		registry.add("spring.r2dbc.password", postgres::getPassword);
-	}
+class ProductBaselineTest extends PostgresContainerTestBase {
 
 	@Autowired
 	private TestRestTemplate rest;
