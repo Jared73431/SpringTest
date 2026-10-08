@@ -20,6 +20,7 @@ import com.example.demo.dto.UserResponse;
 import com.example.demo.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
@@ -52,6 +53,8 @@ public class UserController {
 
 	@PostMapping
 	@Operation(summary = "新增使用者")
+	// 回傳 ResponseEntity 時 springdoc 推導不出狀態碼（會寫成 200），要明確標註實際的 201
+	@ApiResponse(responseCode = "201", description = "已建立，Location 標頭是新資源的網址")
 	public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
 		UserResponse created = userService.createUser(request);
 		return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);

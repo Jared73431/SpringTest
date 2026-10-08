@@ -18,5 +18,7 @@ spring:
 
 # springdoc：使用預設路徑 /v3/api-docs 與 /swagger-ui.html（修正前把 api-docs 改成 /api-docs）
 springdoc:
+  # 回應的 content type 預設寫成 application/json（否則文件上是 */*）
+  default-produces-media-type: application/json
   swagger-ui:
     operations-sorter: method

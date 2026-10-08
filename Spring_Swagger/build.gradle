@@ -50,3 +50,17 @@ tasks.named('test') {
 tasks.named('jar') {
 	enabled = false
 }
+
+// 匯出 OpenAPI 規格檔：./gradlew exportOpenApi → build/openapi/openapi.json、openapi.yaml
+// （透過測試啟動應用程式與 Testcontainers 的 PostgreSQL，不需要另外準備資料庫）
+tasks.register('exportOpenApi', Test) {
+	description = 'Exports the OpenAPI spec to build/openapi'
+	group = 'documentation'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching '*OpenApiContractTest.exportSpec'
+	}
+	outputs.upToDateWhen { false }
+}

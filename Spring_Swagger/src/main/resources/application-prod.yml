@@ -1,0 +1,7 @@
+# 正式環境：關閉 OpenAPI 文件與 Swagger UI（SPRING_PROFILES_ACTIVE=prod）
+# API 文件會暴露所有端點、參數與資料結構，正式環境通常關閉，或放在需要登入的內部網路
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
