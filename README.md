@@ -40,7 +40,7 @@
 | [Spring_Batch-4](Spring_Batch-4) 📘 | 多 Job | 自訂 Reader / Writer、多 Job 執行、非同步啟動 | 🐘 |
 | [Spring_Batch-5](Spring_Batch-5) 📘 | 多 Job 整理版 | 延續 Batch-4 的結構整理 | 🐘 |
 | [Spring_Batch-6](Spring_Batch-6) | Reader 比較 | `RepositoryItemReader` / `JpaPagingItemReader` / `JdbcCursorItemReader`、REST 觸發 Job、輸出 CSV | 🐘 |
-| [Spring_Scheduleing](Spring_Scheduleing) | Spring 排程 | `@Scheduled` 的 fixedRate / fixedDelay / cron | — |
+| [Spring_Scheduling](Spring_Scheduling) | Spring 排程 | `@Scheduled` 的 fixedRate / fixedDelay / cron | — |
 | [Spring_Quartz](Spring_Quartz) | Quartz 入門 | JobDetail / Trigger 基本設定 | — |
 | [Spring_Quartz-2](Spring_Quartz-2) | Quartz 多任務 | 多個 Job 設定 | — |
 | [Spring_Quartz-3](Spring_Quartz-3) | Quartz 持久化 | JDBC JobStore、REST API 動態新增 / 刪除 Job、JobFactory 注入 Spring Bean | 🐘 |
@@ -103,7 +103,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 |---|---|---|
 | **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅ |
 | 2.7.x | 11 / 17 | Security3 |
-| 3.0.x | 17 | Quartz 1~3、Scheduleing、Security、Security2 |
+| 3.0.x | 17 | Quartz 1~3、Scheduling、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）

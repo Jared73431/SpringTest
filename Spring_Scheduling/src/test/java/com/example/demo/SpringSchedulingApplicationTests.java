@@ -18,7 +18,7 @@ import org.springframework.scheduling.config.ScheduledTaskHolder;
  * Baseline：鎖定重構前註冊的排程。
  */
 @SpringBootTest
-class SpringScheduleingApplicationTests {
+class SpringSchedulingApplicationTests {
 
 	@Autowired
 	private ScheduledTaskHolder scheduledTaskHolder;
