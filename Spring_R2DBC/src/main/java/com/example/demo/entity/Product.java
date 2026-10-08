@@ -16,13 +16,13 @@ import lombok.ToString;
 public class Product implements Persistable {
 
 	@Id
-	@Column("ID")
+	@Column("id")
     private Integer id;
 	
-	@Column("DESCRIPTION")
+	@Column("description")
     private String description;
 	
-	@Column("PRICE")
+	@Column("price")
     private Double price;
 
     @Transient
