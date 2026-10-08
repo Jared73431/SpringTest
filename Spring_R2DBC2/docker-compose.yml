@@ -1,0 +1,55 @@
+# ============================================================
+# R2DBC2 練習環境（汽車管理 API）：PostgreSQL + 應用程式（+ 選用的 pgAdmin）
+#
+#   啟動：docker compose up --build              （應用程式啟動時由 Flyway 建表）
+#   測試：curl http://localhost:8096/api/cars
+#   管理：docker compose --profile tools up -d   → http://localhost:5050
+#         （帳號 admin@example.com，密碼見 PGADMIN_PASSWORD；新增 Server 時主機填 postgres）
+#   停止：docker compose down                     （加上 -v 會刪除資料庫）
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=R2DBC2
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d R2DBC2"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # 主機的 port 可以用 APP_PORT 覆蓋（例如 Windows 保留了 8096 時：APP_PORT=8300 docker compose up）
+      - "${APP_PORT:-8096}:8096"
+    environment:
+      # 對應 application.properties 的 ${DB_HOST:localhost}（R2DBC 與 Flyway 共用）
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+
+  # 選用：只有加上 --profile tools 才會啟動
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    profiles: ["tools"]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
