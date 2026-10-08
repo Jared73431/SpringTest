@@ -1,8 +1,11 @@
 package com.example.demo.lesson;
 
+import static org.springframework.data.relational.core.query.Criteria.where;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.relational.core.query.Query;
 
 import com.example.demo.lesson.LessonCategories.Category;
 
@@ -54,9 +57,7 @@ class L05_ConverterTest extends LessonTestBase {
 		template.insert(new Category("LEGACY", "舊型設備", CategoryStatus.SUSPENDED)).block();
 
 		StepVerifier.create(template.select(Category.class)
-				.matching(org.springframework.data.relational.core.query.Query
-						.query(org.springframework.data.relational.core.query.Criteria.where("status")
-								.is(CategoryStatus.SUSPENDED)))
+				.matching(Query.query(where("status").is(CategoryStatus.SUSPENDED)))
 				.all()
 				.map(Category::code))
 				.expectNext("LEGACY")
