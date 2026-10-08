@@ -1,9 +1,13 @@
+server:
+  port: 8098
+
 spring:
   application:
-    name : Spring_Thymeleaf
-thymeleaf:
-  cache: false
-  prefix: classpath:/templates/    # \u8A2D\u5B9A\u53BBtemplates\u8CC7\u6599\u593E\u627Ehtml\u6A94\u6848
-  suffix: .html
-  encoding: UTF-8
-  mode: HTML5
+    name: Spring_Thymeleaf
+
+# 修正前在最外層寫了 thymeleaf:（cache、prefix、suffix、encoding、mode），不是 spring.thymeleaf.*，完全沒有作用。
+# 那些值剛好都是預設值（templates/ 底下的 .html、UTF-8、HTML 模式），開發時 devtools 也會自動關閉快取，所以全部刪除。
+# 需要修改時要寫在 spring.thymeleaf 底下，例如：
+#spring:
+#  thymeleaf:
+#    cache: false

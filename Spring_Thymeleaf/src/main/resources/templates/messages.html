@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>留言板</title>
+    <style>
+        body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        .notice { background: #e6f4ea; padding: .5rem; }
+        .error { color: #c5221f; font-size: .9rem; }
+        li { border-bottom: 1px solid #ddd; padding: .5rem 0; list-style: none; }
+    </style>
+</head>
+<body>
+<h1>留言板</h1>
+
+<!-- flash attribute：只在 PRG 重新導向後的這一次顯示 -->
+<p class="notice" th:if="${notice}" th:text="${notice}">已送出留言</p>
+
+<!-- th:object 綁定表單物件，th:field 同時產生 name、id、value；驗證失敗回到頁面時會填回使用者輸入的內容 -->
+<form th:action="@{/messages}" th:object="${form}" method="post">
+    <p>
+        <label for="author">名稱</label><br>
+        <input type="text" th:field="*{author}">
+        <span class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">錯誤訊息</span>
+    </p>
+    <p>
+        <label for="content">留言</label><br>
+        <textarea th:field="*{content}" rows="3" cols="50"></textarea>
+        <span class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}">錯誤訊息</span>
+    </p>
+    <button type="submit">送出</button>
+</form>
+
+<h2>留言（<span th:text="${#lists.size(messages)}">0</span>）</h2>
+<p th:if="${#lists.isEmpty(messages)}">目前沒有留言</p>
+<ul>
+    <!-- th:text 會跳脫 HTML：留言內容是 <script> 也只會顯示成文字，不會被執行（th:utext 不會跳脫，不要用在使用者輸入上） -->
+    <li th:each="message : ${messages}">
+        <strong th:text="${message.author}">名稱</strong>
+        <small th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 09:00</small>
+        <div th:text="${message.content}">留言內容</div>
+    </li>
+</ul>
+</body>
+</html>
