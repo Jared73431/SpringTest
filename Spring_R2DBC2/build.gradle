@@ -37,8 +37,13 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+// Baseline: Boot 3.5.3 manages Testcontainers 1.21.2, which cannot talk to Docker 29; 1.21.4 can
+ext['testcontainers.version'] = '1.21.4'
 
 tasks.named('test') {
 	useJUnitPlatform()
