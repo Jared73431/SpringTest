@@ -3,11 +3,10 @@ package com.example.demo.controller;
 import com.example.demo.dto.CarDto;
 import com.example.demo.entity.Car;
 import com.example.demo.service.CarService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -41,9 +40,6 @@ public class CarControllerTest {
 
     @Autowired
     private CarService carService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private Car testCar;
     private CarDto testCarDto;
