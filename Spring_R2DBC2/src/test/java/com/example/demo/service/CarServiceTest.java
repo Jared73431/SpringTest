@@ -1,270 +1,146 @@
 package com.example.demo.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.example.demo.entity.Car;
-import com.example.demo.exception.CarNotFoundException;
-import com.example.demo.dto.CarDto;
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 
+import com.example.demo.dto.CarRequest;
+import com.example.demo.entity.Car;
+import com.example.demo.exception.CarNotFoundException;
 import com.example.demo.repository.CarRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+/**
+ * Service 的單元測試：Repository 用 mock 取代，驗證商業邏輯（查不到時的錯誤、請求如何套用到 Entity）。
+ *
+ * <p>
+ * 搜尋的 SQL 與 Auditing 的時間戳記需要真的資料庫，由 CarApiTest 驗證。修正前的 createCar_ShouldSetTimestamps
+ * 讓 mock 回傳已經有時間的物件，再斷言時間不是 null —— 測到的是 mock，不是 Service。
+ */
 @ExtendWith(MockitoExtension.class)
-public class CarServiceTest {
+class CarServiceTest {
 
-    @Mock
-    private CarRepository carRepository;
+	private static final CarRequest REQUEST = new CarRequest("Honda", "Accord", 2023, "Blue",
+			new BigDecimal("28000.00"));
 
-    @Mock
-    private R2dbcEntityTemplate template;
+	@Mock
+	private CarRepository carRepository;
 
-    @InjectMocks
-    private CarService carService;
+	@Mock
+	private R2dbcEntityTemplate template;
 
-    private Car testCar;
-    private CarDto testCarDto;
+	@InjectMocks
+	private CarService carService;
 
-    @BeforeEach
-    void setUp() {
-        testCar = new Car();
-        testCar.setId(1L);
-        testCar.setMake("Toyota");
-        testCar.setModel("Camry");
-        testCar.setYear(2022);
-        testCar.setColor("White");
-        testCar.setPrice(new BigDecimal("25000.00"));
-        testCar.setCreatedAt(LocalDateTime.now());
-        testCar.setUpdatedAt(LocalDateTime.now());
+	@Captor
+	private ArgumentCaptor<Car> savedCar;
 
-        testCarDto = new CarDto();
-        testCarDto.setMake("Toyota");
-        testCarDto.setModel("Camry");
-        testCarDto.setYear(2022);
-        testCarDto.setColor("White");
-        testCarDto.setPrice(new BigDecimal("25000.00"));
-    }
+	private Car camry;
 
-    @Test
-    void getAllCars_ShouldReturnAllCars() {
-        // Given
-        Car car1 = new Car();
-        car1.setId(1L);
-        car1.setMake("Toyota");
-        car1.setModel("Camry");
+	@BeforeEach
+	void setUp() {
+		camry = new Car();
+		camry.setId(1L);
+		camry.setMake("Toyota");
+		camry.setModel("Camry");
+		camry.setYear(2022);
+		camry.setColor("White");
+		camry.setPrice(new BigDecimal("25000.00"));
+	}
 
-        Car car2 = new Car();
-        car2.setId(2L);
-        car2.setMake("Honda");
-        car2.setModel("Civic");
+	@Test
+	void getAllCars_shouldMapEntitiesToResponses() {
+		when(carRepository.findAll()).thenReturn(Flux.just(camry));
 
-        when(carRepository.findAll()).thenReturn(Flux.just(car1, car2));
+		StepVerifier.create(carService.getAllCars())
+				.assertNext(car -> assertThat(car.make()).isEqualTo("Toyota"))
+				.verifyComplete();
+	}
 
-        // When & Then
-        StepVerifier.create(carService.getAllCars())
-                .expectNext(car1)
-                .expectNext(car2)
-                .verifyComplete();
+	@Test
+	void getCarById_shouldReturnCar_whenExists() {
+		when(carRepository.findById(1L)).thenReturn(Mono.just(camry));
 
-        verify(carRepository, times(1)).findAll();
-    }
+		StepVerifier.create(carService.getCarById(1L))
+				.assertNext(car -> assertThat(car.id()).isEqualTo(1L))
+				.verifyComplete();
+	}
 
-    @Test
-    void getCarById_WhenCarExists_ShouldReturnCar() {
-        // Given
-        when(carRepository.findById(1L)).thenReturn(Mono.just(testCar));
+	@Test
+	void getCarById_shouldFailWithNotFound_whenMissing() {
+		when(carRepository.findById(1L)).thenReturn(Mono.empty());
 
-        // When & Then
-        StepVerifier.create(carService.getCarById(1L))
-                .expectNext(testCar)
-                .verifyComplete();
+		StepVerifier.create(carService.getCarById(1L)).expectError(CarNotFoundException.class).verify();
+	}
 
-        verify(carRepository, times(1)).findById(1L);
-    }
+	@Test
+	void createCar_shouldSaveEntityBuiltFromRequest() {
+		when(carRepository.save(any(Car.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-    @Test
-    void getCarById_WhenCarNotExists_ShouldFailWithNotFound() {
-        // Given
-        when(carRepository.findById(1L)).thenReturn(Mono.empty());
+		StepVerifier.create(carService.createCar(REQUEST)).expectNextCount(1).verifyComplete();
 
-        // When & Then
-        StepVerifier.create(carService.getCarById(1L))
-                .expectError(CarNotFoundException.class)
-                .verify();
+		verify(carRepository).save(savedCar.capture());
+		assertThat(savedCar.getValue().getId()).isNull(); // id 是 null → INSERT（由資料庫產生）
+		assertThat(savedCar.getValue().getMake()).isEqualTo("Honda");
+		assertThat(savedCar.getValue().getPrice()).isEqualByComparingTo("28000.00");
+	}
 
-        verify(carRepository, times(1)).findById(1L);
-    }
+	@Test
+	void updateCar_shouldApplyRequestToLoadedEntityAndSave_whenExists() {
+		when(carRepository.findById(1L)).thenReturn(Mono.just(camry));
+		when(carRepository.save(any(Car.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-    @Test
-    void createCar_ShouldCreateAndReturnCar() {
-        // Given
-        Car savedCar = new Car();
-        savedCar.setId(1L);
-        savedCar.setMake(testCarDto.getMake());
-        savedCar.setModel(testCarDto.getModel());
-        savedCar.setYear(testCarDto.getYear());
-        savedCar.setColor(testCarDto.getColor());
-        savedCar.setPrice(testCarDto.getPrice());
-        savedCar.setCreatedAt(LocalDateTime.now());
-        savedCar.setUpdatedAt(LocalDateTime.now());
+		StepVerifier.create(carService.updateCar(1L, REQUEST))
+				.assertNext(car -> assertThat(car.model()).isEqualTo("Accord"))
+				.verifyComplete();
 
-        when(carRepository.save(any(Car.class))).thenReturn(Mono.just(savedCar));
+		verify(carRepository).save(savedCar.capture());
+		assertThat(savedCar.getValue()).isSameAs(camry); // 修改查出來的 Entity（保留 id），再 save → UPDATE
+		assertThat(camry.getMake()).isEqualTo("Honda");
+	}
 
-        // When & Then
-        StepVerifier.create(carService.createCar(testCarDto))
-                .expectNextMatches(car ->
-                        car.getMake().equals("Toyota") &&
-                                car.getModel().equals("Camry") &&
-                                car.getYear().equals(2022) &&
-                                car.getColor().equals("White") &&
-                                car.getPrice().compareTo(new BigDecimal("25000.00")) == 0
-                )
-                .verifyComplete();
+	@Test
+	void updateCar_shouldFailWithNotFound_whenMissing() {
+		when(carRepository.findById(1L)).thenReturn(Mono.empty());
 
-        verify(carRepository, times(1)).save(any(Car.class));
-    }
+		StepVerifier.create(carService.updateCar(1L, REQUEST)).expectError(CarNotFoundException.class).verify();
 
-    @Test
-    void updateCar_WhenCarExists_ShouldUpdateAndReturnCar() {
-        // Given
-        CarDto updateDto = new CarDto();
-        updateDto.setMake("Honda");
-        updateDto.setModel("Accord");
-        updateDto.setYear(2023);
-        updateDto.setColor("Blue");
-        updateDto.setPrice(new BigDecimal("28000.00"));
+		verify(carRepository, never()).save(any(Car.class));
+	}
 
-        Car updatedCar = new Car();
-        updatedCar.setId(1L);
-        updatedCar.setMake("Honda");
-        updatedCar.setModel("Accord");
-        updatedCar.setYear(2023);
-        updatedCar.setColor("Blue");
-        updatedCar.setPrice(new BigDecimal("28000.00"));
+	@Test
+	void deleteCar_shouldDeleteLoadedEntity_whenExists() {
+		when(carRepository.findById(1L)).thenReturn(Mono.just(camry));
+		when(carRepository.delete(camry)).thenReturn(Mono.empty());
 
-        when(carRepository.findById(1L)).thenReturn(Mono.just(testCar));
-        when(carRepository.save(any(Car.class))).thenReturn(Mono.just(updatedCar));
+		StepVerifier.create(carService.deleteCar(1L)).verifyComplete();
 
-        // When & Then
-        StepVerifier.create(carService.updateCar(1L, updateDto))
-                .expectNextMatches(car ->
-                        car.getMake().equals("Honda") &&
-                                car.getModel().equals("Accord") &&
-                                car.getYear().equals(2023) &&
-                                car.getColor().equals("Blue") &&
-                                car.getPrice().compareTo(new BigDecimal("28000.00")) == 0
-                )
-                .verifyComplete();
+		verify(carRepository).delete(camry);
+	}
 
-        verify(carRepository, times(1)).findById(1L);
-        verify(carRepository, times(1)).save(any(Car.class));
-    }
+	@Test
+	void deleteCar_shouldFailWithNotFound_whenMissing() {
+		when(carRepository.findById(1L)).thenReturn(Mono.empty());
 
-    @Test
-    void updateCar_WhenCarNotExists_ShouldFailWithNotFound() {
-        // Given
-        when(carRepository.findById(1L)).thenReturn(Mono.empty());
+		StepVerifier.create(carService.deleteCar(1L)).expectError(CarNotFoundException.class).verify();
 
-        // When & Then
-        StepVerifier.create(carService.updateCar(1L, testCarDto))
-                .expectError(CarNotFoundException.class)
-                .verify();
-
-        verify(carRepository, times(1)).findById(1L);
-        verify(carRepository, never()).save(any(Car.class));
-    }
-
-    @Test
-    void deleteCar_ShouldDeleteCar() {
-        // Given
-        when(carRepository.findById(1L)).thenReturn(Mono.just(testCar));
-        when(carRepository.delete(testCar)).thenReturn(Mono.empty());
-
-        // When & Then
-        StepVerifier.create(carService.deleteCar(1L))
-                .verifyComplete();
-
-        verify(carRepository, times(1)).delete(testCar);
-    }
-
-    @Test
-    void deleteCar_WhenCarNotExists_ShouldFailWithNotFound() {
-        // Given
-        when(carRepository.findById(1L)).thenReturn(Mono.empty());
-
-        // When & Then
-        StepVerifier.create(carService.deleteCar(1L))
-                .expectError(CarNotFoundException.class)
-                .verify();
-
-        verify(carRepository, never()).delete(any(Car.class));
-    }
-
-    @Test
-    void createCar_ShouldSetTimestamps() {
-        // Given
-        Car carWithTimestamps = new Car();
-        carWithTimestamps.setId(1L);
-        carWithTimestamps.setMake("Toyota");
-        carWithTimestamps.setModel("Camry");
-        carWithTimestamps.setYear(2022);
-        carWithTimestamps.setColor("White");
-        carWithTimestamps.setPrice(new BigDecimal("25000.00"));
-        carWithTimestamps.setCreatedAt(LocalDateTime.now());
-        carWithTimestamps.setUpdatedAt(LocalDateTime.now());
-
-        when(carRepository.save(any(Car.class))).thenReturn(Mono.just(carWithTimestamps));
-
-        // When & Then
-        StepVerifier.create(carService.createCar(testCarDto))
-                .expectNextMatches(car ->
-                        car.getCreatedAt() != null &&
-                                car.getUpdatedAt() != null
-                )
-                .verifyComplete();
-    }
-
-    @Test
-    void updateCar_ShouldUpdateTimestamp() {
-        // Given
-        LocalDateTime originalCreatedAt = LocalDateTime.now().minusDays(1);
-        testCar.setCreatedAt(originalCreatedAt);
-
-        Car updatedCar = new Car();
-        updatedCar.setId(1L);
-        updatedCar.setMake("Honda");
-        updatedCar.setModel("Accord");
-        updatedCar.setYear(2023);
-        updatedCar.setColor("Blue");
-        updatedCar.setPrice(new BigDecimal("28000.00"));
-        updatedCar.setCreatedAt(originalCreatedAt);
-        updatedCar.setUpdatedAt(LocalDateTime.now());
-
-        when(carRepository.findById(1L)).thenReturn(Mono.just(testCar));
-        when(carRepository.save(any(Car.class))).thenReturn(Mono.just(updatedCar));
-
-        // When & Then
-        StepVerifier.create(carService.updateCar(1L, testCarDto))
-                .expectNextMatches(car ->
-                        car.getUpdatedAt() != null &&
-                                car.getCreatedAt().equals(originalCreatedAt)
-                )
-                .verifyComplete();
-    }
+		verify(carRepository, never()).delete(any(Car.class));
+	}
 }

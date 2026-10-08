@@ -2,6 +2,8 @@ package com.example.demo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import com.example.demo.dto.CarRequest;
+import com.example.demo.dto.CarResponse;
 
 /**
  * /api/cars 的 API 測試（由 baseline 演變而來：修正一個問題，就把對應的測試改成新的行為，註解保留修正前的行為）。
@@ -169,5 +174,42 @@ class CarApiTest extends PostgresContainerTestBase {
 	@Test
 	void delete_shouldReturn404_whenMissing() {
 		webTestClient.delete().uri("/api/cars/999").exchange().expectStatus().isNotFound();
+	}
+
+	// ---- R2DBC Auditing（修正前由 Service 手動設定 LocalDateTime.now()） ----
+
+	private CarResponse create(String make) {
+		return webTestClient.post().uri("/api/cars")
+				.bodyValue(new CarRequest(make, "Model", 2024, "Gray", new BigDecimal("30000")))
+				.exchange()
+				.expectStatus().isCreated()
+				.expectHeader().value("Location", location -> assertThat(location).matches("/api/cars/\\d+"))
+				.expectBody(CarResponse.class).returnResult().getResponseBody();
+	}
+
+	@Test
+	void create_shouldFillBothTimestamps() {
+		CarResponse created = create("Lexus");
+
+		assertThat(created.createdAt()).isNotNull();
+		assertThat(created.updatedAt()).isEqualTo(created.createdAt());
+	}
+
+	@Test
+	void update_shouldRefreshUpdatedAtButKeepCreatedAt() {
+		CarResponse created = create("Lexus");
+
+		// 新增時回應的時間要和資料庫存的一致（Auditing 截到微秒，見 R2dbcConfig）
+		webTestClient.get().uri("/api/cars/{id}", created.id()).exchange()
+				.expectBody(CarResponse.class).isEqualTo(created);
+
+		CarResponse updated = webTestClient.put().uri("/api/cars/{id}", created.id())
+				.bodyValue(new CarRequest("Lexus", "RX", 2025, "White", new BigDecimal("52000")))
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody(CarResponse.class).returnResult().getResponseBody();
+
+		assertThat(updated.createdAt()).isEqualTo(created.createdAt());
+		assertThat(updated.updatedAt()).isAfter(created.updatedAt());
 	}
 }
