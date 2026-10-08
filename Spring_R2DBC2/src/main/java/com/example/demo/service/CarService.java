@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.CarDto;
 import com.example.demo.entity.Car;
+import com.example.demo.exception.CarNotFoundException;
 import com.example.demo.repository.CarRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class CarService {
 
     public Mono<Car> getCarById(Long id) {
         log.info("Fetching car with id: {}", id);
-        return carRepository.findById(id);
+        return findCar(id);
     }
 
     public Mono<Car> createCar(CarDto carDto) {
@@ -41,7 +42,7 @@ public class CarService {
 
     public Mono<Car> updateCar(Long id, CarDto carDto) {
         log.info("Updating car with id: {}", id);
-        return carRepository.findById(id)
+        return findCar(id)
                 .flatMap(existingCar -> {
                     existingCar.setMake(carDto.getMake());
                     existingCar.setModel(carDto.getModel());
@@ -55,7 +56,12 @@ public class CarService {
 
     public Mono<Void> deleteCar(Long id) {
         log.info("Deleting car with id: {}", id);
-        return carRepository.deleteById(id);
+        return findCar(id).flatMap(carRepository::delete);
+    }
+
+    // 查不到時是空的 Mono；轉成錯誤訊號，Controller 才會回傳 404 ProblemDetail
+    private Mono<Car> findCar(Long id) {
+        return carRepository.findById(id).switchIfEmpty(Mono.error(() -> new CarNotFoundException(id)));
     }
 
     public Flux<Car> getCarsByMake(String make) {

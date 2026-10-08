@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.example.demo.entity.Car;
+import com.example.demo.exception.CarNotFoundException;
 import com.example.demo.dto.CarDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,13 +95,14 @@ public class CarServiceTest {
     }
 
     @Test
-    void getCarById_WhenCarNotExists_ShouldReturnEmpty() {
+    void getCarById_WhenCarNotExists_ShouldFailWithNotFound() {
         // Given
         when(carRepository.findById(1L)).thenReturn(Mono.empty());
 
         // When & Then
         StepVerifier.create(carService.getCarById(1L))
-                .verifyComplete();
+                .expectError(CarNotFoundException.class)
+                .verify();
 
         verify(carRepository, times(1)).findById(1L);
     }
@@ -171,13 +173,14 @@ public class CarServiceTest {
     }
 
     @Test
-    void updateCar_WhenCarNotExists_ShouldReturnEmpty() {
+    void updateCar_WhenCarNotExists_ShouldFailWithNotFound() {
         // Given
         when(carRepository.findById(1L)).thenReturn(Mono.empty());
 
         // When & Then
         StepVerifier.create(carService.updateCar(1L, testCarDto))
-                .verifyComplete();
+                .expectError(CarNotFoundException.class)
+                .verify();
 
         verify(carRepository, times(1)).findById(1L);
         verify(carRepository, never()).save(any(Car.class));
@@ -186,13 +189,27 @@ public class CarServiceTest {
     @Test
     void deleteCar_ShouldDeleteCar() {
         // Given
-        when(carRepository.deleteById(1L)).thenReturn(Mono.empty());
+        when(carRepository.findById(1L)).thenReturn(Mono.just(testCar));
+        when(carRepository.delete(testCar)).thenReturn(Mono.empty());
 
         // When & Then
         StepVerifier.create(carService.deleteCar(1L))
                 .verifyComplete();
 
-        verify(carRepository, times(1)).deleteById(1L);
+        verify(carRepository, times(1)).delete(testCar);
+    }
+
+    @Test
+    void deleteCar_WhenCarNotExists_ShouldFailWithNotFound() {
+        // Given
+        when(carRepository.findById(1L)).thenReturn(Mono.empty());
+
+        // When & Then
+        StepVerifier.create(carService.deleteCar(1L))
+                .expectError(CarNotFoundException.class)
+                .verify();
+
+        verify(carRepository, never()).delete(any(Car.class));
     }
 
     @Test

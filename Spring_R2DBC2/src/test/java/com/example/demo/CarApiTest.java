@@ -7,16 +7,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
- * Baseline：鎖定重構前的行為（包含 [Potential Bug]），之後的修改都要對照這份測試說明行為變更。
+ * /api/cars 的 API 測試（由 baseline 演變而來：修正一個問題，就把對應的測試改成新的行為，註解保留修正前的行為）。
  * 每個測試前重設成 Flyway V1 放入的 5 筆範例資料。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-class CarBaselineTest extends PostgresContainerTestBase {
+class CarApiTest extends PostgresContainerTestBase {
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -73,24 +74,27 @@ class CarBaselineTest extends PostgresContainerTestBase {
 				.expectBody(Long.class).isEqualTo(0L);
 	}
 
-	// [Potential Bug] 驗證允許 1900，資料庫 CHECK 是 year > 1900；錯誤變成 500，而且回傳資料庫的錯誤訊息
+	// [Potential Bug] 驗證允許 1900，資料庫 CHECK 是 year > 1900。
+	// 修正前：500，回應中帶有資料庫的 constraint 名稱（car_year_check）；現在：409，不帶資料庫的訊息
 	@Test
-	void create_shouldReturn500WithDatabaseMessage_whenYearIs1900() {
+	void create_shouldReturn409WithoutDatabaseMessage_whenYearIs1900() {
 		webTestClient.post().uri("/api/cars")
 				.bodyValue("""
 						{"make":"Ford","model":"T","year":1900,"price":850}
 						""")
 				.header("Content-Type", "application/json")
 				.exchange()
-				.expectStatus().is5xxServerError()
+				.expectStatus().isEqualTo(409)
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
 				.expectBody()
-				.jsonPath("$.message").isEqualTo("Internal server error")
-				.jsonPath("$.error").value(error -> assertThat(error.toString()).contains("car_year_check"));
+				.jsonPath("$.detail").isEqualTo("資料違反資料庫的限制條件")
+				.consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
+						.doesNotContain("car_year_check"));
 	}
 
-	// 驗證錯誤：自訂的 Map 格式（不是 ProblemDetail）
+	// 修正前：自訂的 Map 格式（message、errors）；現在：ProblemDetail，保留每個欄位的錯誤訊息
 	@Test
-	void create_shouldReturn400WithFieldErrors_whenInvalid() {
+	void create_shouldReturn400ProblemDetailWithFieldErrors_whenInvalid() {
 		webTestClient.post().uri("/api/cars")
 				.bodyValue("""
 						{"make":"","model":"Camry","year":2022,"price":1}
@@ -98,37 +102,45 @@ class CarBaselineTest extends PostgresContainerTestBase {
 				.header("Content-Type", "application/json")
 				.exchange()
 				.expectStatus().isBadRequest()
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
 				.expectBody()
-				.jsonPath("$.message").isEqualTo("Validation failed")
+				.jsonPath("$.status").isEqualTo(400)
 				.jsonPath("$.errors.make").isEqualTo("Make is required");
 	}
 
-	// [Potential Bug] id 不是數字：catch-all 的 @ExceptionHandler(Exception.class) 把 400 變成 500
+	// 修正前：catch-all 的 @ExceptionHandler(Exception.class) 把它變成 500
 	@Test
-	void findById_shouldReturn500_whenIdIsNotNumeric() {
+	void findById_shouldReturn400_whenIdIsNotNumeric() {
 		webTestClient.get().uri("/api/cars/abc").exchange()
-				.expectStatus().is5xxServerError()
-				.expectBody().jsonPath("$.message").isEqualTo("Internal server error");
+				.expectStatus().isBadRequest()
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON);
 	}
 
-	// [Potential Bug] 缺少必填的 make：同樣被變成 500
+	// 修正前：同樣被變成 500
 	@Test
-	void count_shouldReturn500_whenMakeIsMissing() {
+	void count_shouldReturn400_whenMakeIsMissing() {
 		webTestClient.get().uri("/api/cars/count").exchange()
-				.expectStatus().is5xxServerError();
+				.expectStatus().isBadRequest();
 	}
 
+	// 修正前：404 但沒有內容
 	@Test
-	void findById_shouldReturn404WithoutBody_whenMissing() {
+	void findById_shouldReturn404ProblemDetail_whenMissing() {
 		webTestClient.get().uri("/api/cars/999").exchange()
 				.expectStatus().isNotFound()
-				.expectBody().isEmpty();
+				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
+				.expectBody().jsonPath("$.detail").isEqualTo("找不到汽車：999");
 	}
 
-	// 刪除成功回傳 200（慣例是 204）
+	// 修正前：200
 	@Test
-	void delete_shouldReturn200() {
-		webTestClient.delete().uri("/api/cars/1").exchange().expectStatus().isOk();
+	void delete_shouldReturn204() {
+		webTestClient.delete().uri("/api/cars/1").exchange().expectStatus().isNoContent();
 		webTestClient.get().uri("/api/cars/1").exchange().expectStatus().isNotFound();
+	}
+
+	@Test
+	void delete_shouldReturn404_whenMissing() {
+		webTestClient.delete().uri("/api/cars/999").exchange().expectStatus().isNotFound();
 	}
 }

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.CarDto;
 import com.example.demo.entity.Car;
+import com.example.demo.exception.CarNotFoundException;
 import com.example.demo.service.CarService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,7 +109,7 @@ public class CarControllerTest {
     @Test
     void getCarById_WhenCarNotExists_ShouldReturnNotFound() {
         // Given
-        when(carService.getCarById(1L)).thenReturn(Mono.empty());
+        when(carService.getCarById(1L)).thenReturn(Mono.error(new CarNotFoundException(1L)));
 
         // When & Then
         webTestClient.get()
@@ -180,7 +181,7 @@ public class CarControllerTest {
     @Test
     void updateCar_WhenCarNotExists_ShouldReturnNotFound() {
         // Given
-        when(carService.updateCar(anyLong(), any(CarDto.class))).thenReturn(Mono.empty());
+        when(carService.updateCar(anyLong(), any(CarDto.class))).thenReturn(Mono.error(new CarNotFoundException(999L)));
 
         // When & Then
         webTestClient.put()
@@ -192,22 +193,21 @@ public class CarControllerTest {
     }
 
     @Test
-    void deleteCar_WhenCarExists_ShouldDeleteCar() {
+    void deleteCar_WhenCarExists_ShouldReturnNoContent() {
         // Given
-        when(carService.getCarById(1L)).thenReturn(Mono.just(testCar));
         when(carService.deleteCar(1L)).thenReturn(Mono.empty());
 
         // When & Then
         webTestClient.delete()
                 .uri("/api/cars/1")
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus().isNoContent();
     }
 
     @Test
     void deleteCar_WhenCarNotExists_ShouldReturnNotFound() {
         // Given
-        when(carService.getCarById(1L)).thenReturn(Mono.empty());
+        when(carService.deleteCar(1L)).thenReturn(Mono.error(new CarNotFoundException(1L)));
 
         // When & Then
         webTestClient.delete()

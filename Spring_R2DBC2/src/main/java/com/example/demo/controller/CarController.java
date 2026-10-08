@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.CarDto;
@@ -41,10 +42,8 @@ public class CarController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Car>> getCarById(@PathVariable Long id) {
-        return carService.getCarById(id)
-                .map(car -> ResponseEntity.ok(car))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    public Mono<Car> getCarById(@PathVariable Long id) {
+        return carService.getCarById(id);
     }
 
     @PostMapping
@@ -54,19 +53,14 @@ public class CarController {
     }
 
     @PutMapping("/{id}")
-    public Mono<ResponseEntity<Car>> updateCar(@PathVariable Long id,
-                                               @Valid @RequestBody CarDto carDto) {
-        return carService.updateCar(id, carDto)
-                .map(car -> ResponseEntity.ok(car))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    public Mono<Car> updateCar(@PathVariable Long id, @Valid @RequestBody CarDto carDto) {
+        return carService.updateCar(id, carDto);
     }
 
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Void>> deleteCar(@PathVariable Long id) {
-        return carService.getCarById(id)
-                .flatMap(car -> carService.deleteCar(id)
-                        .then(Mono.just(ResponseEntity.ok().<Void>build())))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> deleteCar(@PathVariable Long id) {
+        return carService.deleteCar(id);
     }
 
     @GetMapping("/search")
