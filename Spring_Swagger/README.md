@@ -1,449 +1,335 @@
-# Spring Boot + Swagger UI 用戶管理系統
+# Spring Swagger - OpenAPI 文件
 
-這是一個使用 Spring Boot 2.7+ 和 SpringDoc OpenAPI 3 構建的 RESTful API 項目，提供完整的用戶管理功能和自動生成的 API 文檔。
+以 springdoc-openapi 為一個使用者管理 API 自動產生 OpenAPI 3.1 文件與 Swagger UI，並整理實務上常用的做法：
 
-## 🚀 功能特性
+- 錯誤回應（ProblemDetail）的文件化
+- 哪些內容會自動推導、哪些才需要註解
+- 依環境關閉文件
+- 把規格當成契約來測試
+- 匯出規格檔
 
-- ✅ 完整的用戶 CRUD 操作
-- ✅ 自動生成 Swagger UI 文檔
-- ✅ PostgreSQL 數據庫集成
-- ✅ 數據驗證和異常處理
-- ✅ 響應統一封裝
-- ✅ 中文化 API 文檔
-- ✅ 交互式 API 測試界面
-- ✅ Lombok 代碼簡化
-- ✅ 多環境配置支持
-- ✅ 日誌記錄和監控
-- ✅ 連線池優化
+這是本 Repo 的練習專案，已完成現代化（Spring Boot 3.2 → 4.1、springdoc 2.2 → 3.1），詳見「[現代化紀錄](#現代化紀錄)」。
 
-## 📋 技術棧
+## 技術版本
 
-- **框架**: Spring Boot 2.7+
-- **數據庫**: PostgreSQL / H2 (測試)
-- **ORM**: Spring Data JPA + Hibernate
-- **API 文檔**: SpringDoc OpenAPI 3
-- **代碼簡化**: Lombok
-- **構建工具**: Maven / Gradle
-- **Java 版本**: JDK 8+
+| 項目 | 版本 |
+|---|---|
+| Java | 21 |
+| Spring Boot | 4.1.1（Spring MVC、Spring Data JPA、Validation） |
+| springdoc-openapi | 3.1.1（`springdoc-openapi-starter-webmvc-ui`，產生 OpenAPI 3.1） |
+| 資料庫 | PostgreSQL（資料庫名稱 `Swagger`），Flyway 管理資料表 |
+| Build Tool | Gradle 9.8.0（使用 Gradle Wrapper） |
+| 測試 | JUnit 5、Testcontainers 2.0（PostgreSQL）、JsonPath |
 
-## 🛠️ 環境要求
+> springdoc 的版本要對應 Spring Boot：Boot 3.x 用 springdoc 2.x，Boot 4 用 springdoc 3.x。
 
-### 必需軟件
-- JDK 8 或更高版本
-- Maven 3.6+ 或 Gradle 7.0+
-- PostgreSQL 12+ （生產環境）
-- IDE（推薦 IntelliJ IDEA 或 Eclipse）
+## 架構
 
-### IDE 配置（Lombok 支持）
-#### IntelliJ IDEA
-1. 安裝 Lombok Plugin：`Settings` → `Plugins` → 搜索 `Lombok`
-2. 啟用 Annotation Processing：`Settings` → `Build, Execution, Deployment` → `Compiler` → `Annotation Processors` → ✅ `Enable annotation processing`
+```text
+Client / Swagger UI
+  ↓
+UserController       @RestController + @Operation（只寫摘要）
+  ↓
+UserService          重複檢查、交易
+  ↓
+UserRepository       JpaRepository
+  ↓
+PostgreSQL           users 表由 Flyway 建立
 
-#### Eclipse
-1. 下載 lombok.jar
-2. 運行：`java -jar lombok.jar`
-3. 選擇 Eclipse 安裝路徑並安裝
+OpenApiConfig        文件資訊、錯誤回應與 ProblemDetail schema（OpenApiCustomizer）
+```
 
-### 數據庫設置
-1. 安裝並啟動 PostgreSQL
-2. 創建數據庫：
+```text
+src/main/java/com/example/demo/
+├── config/OpenApiConfig
+├── controller/UserController
+├── service/UserService
+├── repository/UserRepository
+├── entity/User
+├── dto/UserRequest、UserResponse（record）
+└── exception/GlobalExceptionHandler、UserNotFoundException、DuplicateUserException
+
+src/main/resources/
+├── application.yml
+├── application-prod.yml           關閉 /v3/api-docs 與 Swagger UI
+└── db/migration/V1__create_users.sql
+```
+
+## 執行方式
+
+### Docker Compose（建議）
+
+```bash
+docker compose up --build
+```
+
+- Swagger UI：http://localhost:8097/swagger-ui.html
+- OpenAPI 規格：http://localhost:8097/v3/api-docs（YAML：`/v3/api-docs.yaml`）
+
+```bash
+SPRING_PROFILES_ACTIVE=prod docker compose up    # 正式環境設定：文件與 Swagger UI 都是 404
+docker compose --profile tools up -d             # 另外啟動 pgAdmin：http://localhost:5050
+docker compose down -v                           # 停止並刪除資料庫
+```
+
+> Windows 上 port 無法綁定時（Hyper-V / WSL 動態保留了 port），改用其他主機 port：`APP_PORT=8300 docker compose up --build`。
+
+### 本機執行
+
+需要本機的 PostgreSQL，並先建立資料庫：
+
 ```sql
-CREATE DATABASE test;
-CREATE USER postgres WITH PASSWORD 'postgres';
-GRANT ALL PRIVILEGES ON DATABASE test TO postgres;
+CREATE DATABASE "Swagger";
 ```
 
-## 🚀 快速開始
-
-### 1. 克隆項目
 ```bash
-git clone <your-repo-url>
-cd spring-swagger-demo
+./gradlew bootRun                                          # Windows：gradlew.bat bootRun
+./gradlew bootRun --args='--spring.profiles.active=prod'   # 正式環境設定
 ```
 
-### 2. 配置數據庫
-編輯 `src/main/resources/application.yml`：
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/test
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-```
+### 測試與匯出規格
 
-### 3. 構建項目
+需要 Docker（Testcontainers 會自動啟動 PostgreSQL，不會連到本機的資料庫）。
+
 ```bash
-# 使用 Maven
-mvn clean install
-
-# 使用 Gradle
-./gradlew build
+./gradlew test             # 全部測試
+./gradlew exportOpenApi    # 匯出 build/openapi/openapi.json、openapi.yaml
 ```
 
-### 4. 運行應用
-```bash
-# 使用 Maven
-mvn spring-boot:run
+| 測試類別 | 內容 |
+|---|---|
+| `UserApiTest` | API 行為：201 / 204、驗證錯誤、404、409 |
+| `OpenApiContractTest` | OpenAPI 規格的契約測試，並匯出規格檔 |
+| `ProdProfileTest` | prod profile 下文件與 Swagger UI 關閉，API 照常運作 |
 
-# 使用 Gradle  
-./gradlew bootRun
+### IDE
 
-# 或者先打包再運行
-mvn clean package
-java -jar target/spring-swagger-demo-1.0.0.jar
-```
+在 IntelliJ IDEA 開啟 `Spring_Swagger` 資料夾（或 `build.gradle`），選擇 **Open as Project**，IDE 會透過 Gradle 匯入。Gradle JVM 與 Project SDK 都使用 **JDK 21**。這個專案不使用 Lombok，不需要安裝外掛。
 
-### 5. 訪問應用
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **API 文檔 JSON**: http://localhost:8080/api-docs
-- **健康檢查**: http://localhost:8080/actuator/health
-- **應用資訊**: http://localhost:8080/actuator/info
+## API
 
-## 📖 API 文檔
+| 方法 | URL | 成功 | 錯誤 |
+|---|---|---|---|
+| GET | `/api/users` | 200 | |
+| GET | `/api/users/{id}` | 200 | 400、404 |
+| POST | `/api/users` | 201 + `Location` | 400、409 |
+| PUT | `/api/users/{id}` | 200 | 400、404、409 |
+| DELETE | `/api/users/{id}` | 204 | 400、404 |
 
-### 用戶管理 API
-
-| 方法 | 端點 | 描述 | 請求體 |
-|------|------|------|--------|
-| GET | `/api/users` | 獲取所有用戶 | - |
-| GET | `/api/users/{id}` | 根據ID獲取用戶 | - |
-| POST | `/api/users` | 創建新用戶 | CreateUserRequest |
-| PUT | `/api/users/{id}` | 更新用戶信息 | UpdateUserRequest |
-| DELETE | `/api/users/{id}` | 刪除用戶 | - |
-
-### 響應格式
-所有 API 響應都遵循統一格式：
 ```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": { ... },
-  "timestamp": "2024-01-01T12:00:00"
-}
+{ "username": "john_doe", "name": "John Doe", "email": "john@example.com", "age": 25 }
 ```
 
-### 示例請求
+| 欄位 | 驗證 | 資料表 |
+|---|---|---|
+| `username` | 必填，最多 50 字，不可重複 | `VARCHAR(50) NOT NULL UNIQUE` |
+| `name` | 必填，最多 100 字 | `VARCHAR(100) NOT NULL` |
+| `email` | 必填，Email 格式，最多 255 字，不可重複 | `VARCHAR(255) NOT NULL UNIQUE` |
+| `age` | 必填，0～150 | `CHECK (age BETWEEN 0 AND 150)` |
 
-#### 創建用戶
-```bash
-curl -X POST "http://localhost:8080/api/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "john_doe",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "age": 25
-  }'
+錯誤一律使用 ProblemDetail（`application/problem+json`），驗證失敗時以 `errors` 列出每個欄位的錯誤：
+
+```json
+{ "status": 400, "title": "Bad Request", "detail": "Invalid request content.",
+  "errors": { "email": "電子郵件格式不正確", "age": "年齡不可大於 150" } }
 ```
 
-#### 獲取所有用戶
-```bash
-curl -X GET "http://localhost:8080/api/users"
-```
+## 設定
 
-#### 更新用戶
-```bash
-curl -X PUT "http://localhost:8080/api/users/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe Updated",
-    "age": 26
-  }'
-```
-
-## 🏗️ 項目結構
-
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/example/demo/
-│   │       ├── SwaggerDemoApplication.java     # 主應用類
-│   │       ├── config/
-│   │       │   └── OpenApiConfig.java          # OpenAPI 配置
-│   │       ├── controller/
-│   │       │   └── UserController.java         # REST 控制器
-│   │       ├── dto/
-│   │       │   ├── ApiResponse.java            # 統一響應格式
-│   │       │   ├── CreateUserRequest.java      # 創建用戶請求
-│   │       │   ├── UpdateUserRequest.java      # 更新用戶請求
-│   │       │   └── UserResponse.java           # 用戶響應
-│   │       ├── entity/
-│   │       │   └── User.java                   # 用戶實體
-│   │       ├── exception/
-│   │       │   └── GlobalExceptionHandler.java # 全局異常處理
-│   │       ├── repository/
-│   │       │   └── UserRepository.java         # 數據訪問層
-│   │       └── service/
-│   │           └── UserService.java            # 業務邏輯層
-│   └── resources/
-│       ├── application.yml                     # 主配置文件
-│       ├── application-dev.yml                 # 開發環境配置
-│       ├── application-prod.yml                # 生產環境配置
-│       └── application-test.yml                # 測試環境配置
-└── test/
-    └── java/                                   # 測試代碼
-        └── com/example/demo/
-            ├── UserControllerTest.java         # 控制器測試
-            ├── UserServiceTest.java            # 服務測試
-            └── UserRepositoryTest.java         # 資料庫測試
-```
-
-## 🔧 配置說明
-
-### 資料來源配置 (DataSourceAutoConfiguration & DataSourceProperties)
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/test    # 數據庫連接地址
-    username: ${DB_USERNAME:postgres}                            # 數據庫用戶名
-    password: ${DB_PASSWORD:postgres}                            # 數據庫密碼
-    driver-class-name: org.postgresql.Driver      # 數據庫驅動
-    hikari:                                       # HikariCP 連線池配置
-      maximum-pool-size: 20                      # 最大連線數
-      minimum-idle: 5                            # 最小空閒連線數
-      connection-timeout: 30000                  # 連線超時時間 (ms)
-      idle-timeout: 600000                       # 空閒超時時間 (ms)
-      max-lifetime: 1800000                      # 連線最大生存時間 (ms)
-```
-
-### JPA 配置
-```yaml
-spring:
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: update                            # 自動更新表結構
-    show-sql: true                                # 顯示 SQL
-    properties:
-      hibernate:
-        format_sql: true                          # 格式化 SQL
-        jdbc:
-          batch_size: 20                          # 批次處理大小
-```
-
-### Swagger 配置
-```yaml
-springdoc:
-  api-docs:
-    path: /api-docs                               # API 文檔 JSON 端點
-  swagger-ui:
-    path: /swagger-ui.html                        # Swagger UI 訪問路徑
-    operations-sorter: method                     # 按方法排序
-    tags-sorter: alpha                            # 按標籤字母排序
-```
-
-## 🧪 測試
-
-### 運行所有測試
-```bash
-# Maven
-mvn test
-
-# Gradle
-./gradlew test
-```
-
-### 運行特定測試
-```bash
-# Maven
-mvn test -Dtest=UserControllerTest
-
-# Gradle
-./gradlew test --tests UserControllerTest
-```
-
-### 測試覆蓋率報告
-```bash
-# Maven (需要 JaCoCo plugin)
-mvn jacoco:report
-
-# Gradle
-./gradlew jacocoTestReport
-```
-
-### 測試環境配置
-項目包含測試專用的配置文件 `application-test.yml`，使用 H2 內存數據庫：
-```bash
-mvn test -Dspring.profiles.active=test
-```
-
-## 🌍 多環境部署
-
-### 開發環境
-```bash
-java -jar app.jar --spring.profiles.active=dev
-```
-
-### 生產環境
-```bash
-java -jar app.jar --spring.profiles.active=prod \
-  --DB_HOST=prod-db-host \
-  --DB_PASSWORD=secure-password
-```
-
-### 使用 Docker
-```dockerfile
-FROM openjdk:8-jre-slim
-COPY target/spring-swagger-demo-1.0.0.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-```
-
-```bash
-docker build -t spring-swagger-demo .
-docker run -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod spring-swagger-demo
-```
-
-## 📝 開發指南
-
-### Lombok 註解使用
-- `@Data`: 生成 getter/setter/toString/equals/hashCode
-- `@Builder`: 生成建構器模式
-- `@Slf4j`: 生成 log 變量
-- `@RequiredArgsConstructor`: 生成 final 字段的構造函數
-- `@NoArgsConstructor`: 生成無參構造函數
-- `@AllArgsConstructor`: 生成全參構造函數
-
-### 新增 API 端點步驟
-1. 在 `entity` 包中定義實體類
-2. 在 `repository` 包中創建 Repository 接口
-3. 在 `dto` 包中定義請求/響應 DTO
-4. 在 `service` 包中實現業務邏輯
-5. 在 `controller` 包中創建 REST 端點
-6. 添加適當的 Swagger 註解
-7. 編寫單元測試
-
-### 數據庫遷移
-使用 Flyway 進行數據庫版本管理：
-```xml
-<dependency>
-    <groupId>org.flywaydb</groupId>
-    <artifactId>flyway-core</artifactId>
-</dependency>
-```
-
-## 🤝 貢獻指南
-
-1. Fork 本項目
-2. 創建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打開 Pull Request
-
-### 代碼規範
-- 遵循 Google Java Style Guide
-- 使用 Lombok 簡化代碼
-- 編寫完整的 Javadoc
-- 確保測試覆蓋率 > 80%
-- 使用有意義的提交消息
-
-## 📊 性能監控
-
-### Actuator 端點
-- `/actuator/health` - 應用健康狀態
-- `/actuator/info` - 應用資訊
-- `/actuator/metrics` - 性能指標
-- `/actuator/loggers` - 日誌配置
-
-### 數據庫監控
-```yaml
-spring:
-  jpa:
-    properties:
-      hibernate:
-        generate_statistics: true
-        session:
-          events:
-            log:
-              LOG_QUERIES_SLOWER_THAN_MS: 1000
-```
-
-## 🆘 常見問題
-
-### Q: 數據庫連接失敗？
-A: 請確認：
-- PostgreSQL 服務已啟動
-- 數據庫 `test` 已創建
-- 用戶名和密碼正確
-- 防火牆設置允許連接
-- 檢查 `application.yml` 中的連接配置
-
-### Q: Swagger UI 無法訪問？
-A: 請檢查：
-- 應用是否成功啟動
-- 端口 8080 是否被占用
-- 訪問正確的 URL：http://localhost:8080/swagger-ui.html
-- 檢查 `springdoc.swagger-ui.enabled=true`
-
-### Q: Lombok 註解不生效？
-A: 請確認：
-- IDE 已安裝 Lombok 插件
-- 啟用了 Annotation Processing
-- 重新構建項目 (`mvn clean compile`)
-- 檢查 Lombok 版本兼容性
-
-### Q: 如何修改端口？
-A: 在 `application.yml` 中修改：
-```yaml
-server:
-  port: 9090
-```
-
-### Q: 如何啟用 HTTPS？
-A: 配置 SSL：
-```yaml
-server:
-  port: 8443
-  ssl:
-    key-store: classpath:keystore.p12
-    key-store-password: password
-    keyStoreType: PKCS12
-    keyAlias: tomcat
-```
-
-### Q: 如何添加認證？
-A: 添加 Spring Security：
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-```
-
-## 📄 許可證
-
-本項目使用 [MIT License](LICENSE) 許可證。
-
-## 📞 聯系方式
-
-- **作者**: 開發團隊
-- **郵箱**: dev@example.com
-- **項目地址**: https://github.com/your-repo
-- **問題報告**: https://github.com/your-repo/issues
-- **Wiki**: https://github.com/your-repo/wiki
-
-## 📚 相關資源
-
-- [Spring Boot 官方文檔](https://spring.io/projects/spring-boot)
-- [SpringDoc OpenAPI 3](https://springdoc.org/)
-- [Lombok 官方文檔](https://projectlombok.org/)
-- [PostgreSQL 文檔](https://www.postgresql.org/docs/)
-- [Maven 官方文檔](https://maven.apache.org/guides/)
-
-## 🚀 未來計劃
-
-- [ ] 添加用戶認證和授權
-- [ ] 實現分頁和排序
-- [ ] 添加數據庫遷移支持
-- [ ] 集成 Redis 緩存
-- [ ] 實現檔案上傳功能
-- [ ] 添加單元測試和集成測試
-- [ ] Docker 容器化部署
-- [ ] CI/CD 流水線配置
+| 設定 | 值 | 說明 |
+|---|---|---|
+| `server.port` | `8097` | |
+| `spring.datasource.url` | `jdbc:postgresql://${DB_HOST:localhost}:5432/Swagger` | |
+| `spring.jpa.hibernate.ddl-auto` | `validate` | 資料表由 Flyway 建立，Hibernate 只檢查一致性 |
+| `springdoc.default-produces-media-type` | `application/json` | 否則文件上回應的 content type 是 `*/*` |
+| `springdoc.swagger-ui.operations-sorter` | `method` | Swagger UI 依 HTTP 方法排序 |
+| `springdoc.api-docs.enabled` / `swagger-ui.enabled` | `false`（prod） | 見 `application-prod.yml` |
 
 ---
 
-**感謝使用本項目！如果覺得有幫助，請給個 ⭐ Star！**
+## springdoc 教學
 
-**Happy Coding! 🎉**
+### 1. springdoc 會自動推導什麼
+
+只要加入 `springdoc-openapi-starter-webmvc-ui`，springdoc 就會掃描 Controller，產生 `/v3/api-docs` 與 Swagger UI，**大部分內容不需要寫註解**：
+
+| 來源 | 推導出的文件內容 |
+|---|---|
+| `@GetMapping("/{id}")`、`@PathVariable Long id` | 路徑、HTTP 方法、參數（必填、`int64`） |
+| `@RequestBody UserRequest` | request body 的 schema |
+| 方法回傳型別 `UserResponse`、`List<UserResponse>` | 回應的 schema |
+| `@ResponseStatus(HttpStatus.NO_CONTENT)` | 回應狀態碼 204 |
+| `@NotBlank` / `@NotNull` | `required` |
+| `@Size(max = 50)` | `maxLength: 50` |
+| `@Email` | `format: email` |
+| `@Min(0)` / `@Max(150)` | `minimum` / `maximum` |
+| record 的欄位 | schema 的 properties |
+
+**需要補註解的地方：**
+
+| 情況 | 做法 |
+|---|---|
+| 摘要、分組 | `@Operation(summary = ...)`、`@Tag` |
+| 範例值 | `@Schema(example = "john_doe")`。沒有範例時，Swagger UI 的 Try it out 只會顯示 `"string"` |
+| 回傳 `ResponseEntity` 時的狀態碼 | springdoc 推導不出 `ResponseEntity.created(...)` 的 201，會寫成 200，要加 `@ApiResponse(responseCode = "201")` |
+| 錯誤回應 | 推導不出來，見第 2 點 |
+
+> 修正前每個欄位都寫 `@Schema(description = ..., example = ..., required = true)`，Entity 和 DTO 各一份。`required` 已經 deprecated，而且 springdoc 本來就會從 `@NotBlank` 推導出來。
+>
+> 注意：`@NotBlank` 不會變成 `minLength: 1`，文件上看起來可以傳空字串（實際上驗證會擋下）。
+
+### 2. 錯誤回應文件化
+
+錯誤回應寫在 `GlobalExceptionHandler`，springdoc 從 Controller 方法看不出來。逐一在每個方法上寫 `@ApiResponses` 很容易漏寫或寫錯：修正前就寫了「新增成功 200」，實際上是 201。
+
+這裡改用 `OpenApiCustomizer` 依規則統一加上：
+
+| 規則 | 加上的回應 |
+|---|---|
+| 路徑有 `{id}` 或是 POST / PUT | 400 |
+| 路徑有 `{id}` | 404 |
+| POST / PUT | 409 |
+
+```java
+@Bean
+OpenApiCustomizer problemDetailResponses() {
+    return openApi -> {
+        openApi.getComponents().addSchemas("ProblemDetail", problemDetailSchema());
+        addErrorResponses(openApi);   // 依規則加上 application/problem+json 的 400 / 404 / 409
+    };
+}
+```
+
+兩個踩過的坑：
+
+- **ProblemDetail 的 schema 要手寫。**Spring 的 `ProblemDetail` 類別有 `getProperties()`，直接交給 springdoc 推導，會多出一個不存在的 `properties` 欄位。
+- **schema 要在 customizer 裡加入。**寫在 `OpenAPI` bean 的 `components` 中，會被 springdoc 掃描後產生的 components 蓋掉。
+
+### 3. 不要寫死 servers
+
+修正前：
+
+```java
+.servers(List.of(new Server().url("http://localhost:8080"), new Server().url("https://api.example.com")))
+```
+
+應用程式跑在 8020，Swagger UI 的「Try it out」卻打到 8080，**連這個模組自己的主題功能都無法使用**。不設定 servers 時，springdoc 會使用目前請求的網址。在 Docker 中透過 port 對應存取，也會是正確的主機 port。
+
+### 4. 正式環境關閉文件
+
+API 文件列出所有端點、參數與資料結構，正式環境通常會：
+
+- 關閉，見 `application-prod.yml`：
+
+  ```yaml
+  springdoc:
+    api-docs:
+      enabled: false
+    swagger-ui:
+      enabled: false
+  ```
+
+- 或是保留，但放在需要登入的路徑或內部網路（例如搭配 Spring Security 限制 `/v3/api-docs/**`、`/swagger-ui/**`）。
+
+### 5. 規格是契約：用測試鎖定
+
+OpenAPI 規格是給前端、其他團隊或產生 client 的**契約**。改了 Controller 或 DTO，文件會跟著變，但不一定有人注意到。`OpenApiContractTest` 用 JsonPath 鎖定重點：
+
+```java
+assertThat(spec.read("$.paths['/api/users'].post.responses", Map.class)).containsOnlyKeys("201", "400", "409");
+assertThat(spec.read("$.components.schemas.UserRequest.properties.username.maxLength", Integer.class)).isEqualTo(50);
+```
+
+欄位改名、必填改變、狀態碼改變時，測試就會失敗，提醒你確認對 API 使用者的影響。
+
+### 6. 匯出規格檔
+
+```bash
+./gradlew exportOpenApi    # → build/openapi/openapi.json、openapi.yaml
+```
+
+規格檔可以交給前端，或用 [OpenAPI Generator](https://openapi-generator.tech/) 產生 TypeScript、Java、Kotlin… 的 client。這裡透過測試啟動應用程式（Testcontainers 提供資料庫），不需要另外準備環境。
+
+- 匯出檔中的 `servers` 是測試時的隨機 port，產生 client 時請另外指定 base URL。
+- 另一種做法是 [springdoc-openapi-gradle-plugin](https://github.com/springdoc/springdoc-openapi-gradle-plugin)：它會實際啟動應用程式，所以需要可以連線的資料庫。
+
+### 7. Code-first vs Design-first
+
+| | Code-first（本模組） | Design-first |
+|---|---|---|
+| 做法 | 先寫程式，由 springdoc 產生規格 | 先寫 `openapi.yaml`，再產生 server 介面與 client |
+| 優點 | 文件和程式永遠一致，上手快 | 前後端可以先約定 API，平行開發 |
+| 缺點 | 規格的品質取決於程式與註解 | 需要維護規格檔與程式碼產生流程 |
+
+> 單一服務、團隊小時，Code-first 加上契約測試（第 5 點）通常就足夠。
+
+### 8. 其他常用設定
+
+| 需求 | 做法 |
+|---|---|
+| 依模組分組（例如 public / admin） | 定義多個 `GroupedOpenApi` bean（`pathsToMatch("/api/admin/**")`），Swagger UI 右上角可以切換 |
+| 隱藏某個端點 | `@Hidden` |
+| 文件中的 JWT 驗證 | `@SecurityScheme` + `@SecurityRequirement`，Swagger UI 會出現 Authorize 按鈕 |
+| 自訂路徑 | `springdoc.api-docs.path`、`springdoc.swagger-ui.path` |
+
+### 統一回應格式 vs HTTP 狀態碼 + ProblemDetail
+
+修正前用 `ApiResponse<T>`（`code`、`message`、`data`）包裝每個回應，這在很多公司很常見：
+
+| | 統一包裝（修正前） | 資源 + ProblemDetail（本模組） |
+|---|---|---|
+| 成功 | `{"code":200,"message":"取得成功","data":{...}}` | 直接回傳資源，狀態碼表達結果（200、201、204） |
+| 錯誤 | `{"code":400,"message":"參數驗證失敗","data":null}` | RFC 9457 ProblemDetail |
+| 優點 | 前端只要處理一種格式；可以放業務代碼 | 符合 HTTP 語意；Spring 原生支援；監控、閘道、快取都能直接依狀態碼運作 |
+| 常見問題 | `code` 和 HTTP 狀態碼不一致（例如 HTTP 200 但 `code` 是錯誤）；文件要描述泛型包裝 | 需要業務錯誤代碼時，加在 ProblemDetail 的擴充欄位 |
+
+本 Repo 的慣例是資源 + ProblemDetail。如果公司已經規定了統一包裝格式，照規定做即可，重點是**狀態碼要正確，格式要一致**：修正前的 404 就沒有使用包裝格式。
+
+---
+
+## 現代化紀錄
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | Baseline 測試（Testcontainers）：鎖定修正前的行為，取代會連到本機資料庫的 `contextLoads` |
+| 2 | Java 17 → 21、Spring Boot 3.2.10 → 3.5.16、springdoc 2.2.0 → 2.8.17 |
+| 3 | Spring Boot 4.1.1、springdoc 3.1.1、Gradle 8.14.3 → 9.8.0 |
+| 4 | Flyway 取代 `ddl-auto: update`、明確引入 validation、移除 data-jdbc、設定清理、port 8097 |
+| 5 | 修正新增 / 修改使用者的 Bug，改用資源 + ProblemDetail，record，移除 Lombok |
+| 6 | springdoc：錯誤回應文件化、servers、prod profile、契約測試、匯出規格檔 |
+| 7 | Dockerfile、docker compose |
+
+### 修正前發現的問題
+
+| 問題 | 說明 |
+|---|---|
+| **新增 / 修改使用者完全無法使用** | `@RequestBody` import 成 Swagger 的 `io.swagger.v3.oas.annotations.parameters.RequestBody`，Spring 不讀 JSON body；`User(username, name, email, age)` 建構子的內容是空的 |
+| **沒有驗證實作** | 只有 `jakarta.validation-api`，沒有 Hibernate Validator。Boot 3.2 + springdoc 2.2 時 `@Valid` 完全沒有作用：POST 回傳 200 並存入一筆**全部是 null** 的資料，PUT 把既有資料清成 null |
+| 驗證錯誤的明細沒有回傳 | 收集了 `errors` 卻沒有放進回應 |
+| catch-all 例外處理 | 所有錯誤都變成 500（id 不是數字、帳號重複），而且**沒有寫 log** |
+| Swagger UI 的 Try it out 打錯 port | servers 寫死 8080，應用程式在 8020 |
+| `@ApiResponses` 與實際不符 | 新增寫 200，實際上也是 200（應該是 201） |
+| 應用程式名稱沒有設定 | YAML 寫成 `name:Spring_Swagger`，冒號後沒有空格 |
+| YAML 註解看不懂 | 寫成 `連線...`，那是 `.properties` 才需要的跳脫寫法 |
+| 其他 | data-jdbc 沒有使用；`ddl-auto: update`；Entity 直接當成回應；JPA Entity 使用 Lombok `@Data`；Field Injection；用詞是中國大陸用語（用戶、郵箱、獲取）；README 以 Maven 為主，但專案是 Gradle |
+
+### 行為變更
+
+| 項目 | 修改前 | 修改後 |
+|---|---|---|
+| Port | 8020 | 8097 |
+| 本機資料庫 | `test`（與其他模組共用） | `Swagger` |
+| 資料表 | Hibernate `ddl-auto: update` | Flyway |
+| OpenAPI 路徑 | `/api-docs` | `/v3/api-docs`（springdoc 預設） |
+| 回應格式 | `ApiResponse` 包裝（`code`、`message`、`data`） | 直接回傳資源 |
+| 新增 | 讀不到 body：存入空資料 200 → 升級後 400 | 201 + `Location` |
+| 刪除 | 200 + `ApiResponse` | 204 |
+| 錯誤 | `ApiResponse`（404 沒有內容），其他都是 500 | ProblemDetail：400（含 `errors`）、404、409 |
+| prod profile | 無 | 關閉文件與 Swagger UI |
+
+### 升級時學到的事
+
+- **升級依賴可能間接改變行為**：springdoc 2.8 會間接帶入 `spring-boot-starter-validation`，升級後驗證突然生效，baseline 測試因此失敗。程式直接用到的功能（這裡是 Bean Validation），要自己明確宣告依賴，不要依賴其他套件「剛好」帶進來。
+- **同名的註解很容易 import 錯**：Spring 與 Swagger 都有 `@RequestBody`。看到「JSON body 讀不到」時，第一件事是檢查 import。
+- **推論要用測試確認**：分析時推測「POST 會回傳 400」，baseline 測試實際跑出來是 200 並存入空資料，原因是根本沒有驗證實作。
+- **springdoc 3 的 components 會被重建**：在 `OpenAPI` bean 中加入的 schema 不見了，要改在 `OpenApiCustomizer` 中加入。
