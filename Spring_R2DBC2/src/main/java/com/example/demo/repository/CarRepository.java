@@ -1,38 +1,12 @@
 package com.example.demo.repository;
 
-import java.math.BigDecimal;
-
-import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
-import org.springframework.stereotype.Repository;
 
 import com.example.demo.entity.Car;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-@Repository
+/**
+ * 基本的 CRUD 用 Repository；搜尋的條件會依參數變化，改用 R2dbcEntityTemplate + Criteria（見 CarService）。
+ * 修正前為每一種搜尋各寫一個方法（findByMake、findByYearRange…，其中 3 個沒有被使用），也只能一次用一個條件。
+ */
 public interface CarRepository extends ReactiveCrudRepository<Car, Long> {
-
-    Flux<Car> findByMake(String make);
-
-    Flux<Car> findByModel(String model);
-
-    Flux<Car> findByYear(Integer year);
-
-    Flux<Car> findByMakeAndModel(String make, String model);
-
-    Flux<Car> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
-
-    @Query("SELECT * FROM car WHERE make ILIKE :make")
-    Flux<Car> findByMakeIgnoreCase(String make);
-
-    @Query("SELECT * FROM car WHERE year >= :yearFrom AND year <= :yearTo")
-    Flux<Car> findByYearRange(Integer yearFrom, Integer yearTo);
-
-    @Query("SELECT * FROM car WHERE price <= :maxPrice ORDER BY price DESC")
-    Flux<Car> findByPriceLessThanEqualOrderByPriceDesc(BigDecimal maxPrice);
-
-    @Query("SELECT COUNT(*) FROM car WHERE make = :make")
-    Mono<Long> countByMake(String make);
 }

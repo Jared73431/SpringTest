@@ -1,7 +1,5 @@
 package com.example.demo.controller;
 
-import java.math.BigDecimal;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.CarDto;
+import com.example.demo.dto.CarSearchCriteria;
 import com.example.demo.entity.Car;
 import com.example.demo.service.CarService;
 
@@ -63,32 +62,10 @@ public class CarController {
         return carService.deleteCar(id);
     }
 
+    // 查詢參數綁定到 record（沒有 @RequestParam 的物件參數會當成 model attribute）；沒有給任何條件時回傳全部
     @GetMapping("/search")
-    public Flux<Car> searchCars(@RequestParam(required = false) String make,
-                                @RequestParam(required = false) String model,
-                                @RequestParam(required = false) Integer year,
-                                @RequestParam(required = false) BigDecimal minPrice,
-                                @RequestParam(required = false) BigDecimal maxPrice,
-                                @RequestParam(required = false) Integer yearFrom,
-                                @RequestParam(required = false) Integer yearTo) {
-
-        if (make != null) {
-            return carService.getCarsByMake(make);
-        }
-        if (model != null) {
-            return carService.getCarsByModel(model);
-        }
-        if (year != null) {
-            return carService.getCarsByYear(year);
-        }
-        if (minPrice != null && maxPrice != null) {
-            return carService.getCarsByPriceRange(minPrice, maxPrice);
-        }
-        if (yearFrom != null && yearTo != null) {
-            return carService.getCarsByYearRange(yearFrom, yearTo);
-        }
-
-        return carService.getAllCars();
+    public Flux<Car> searchCars(CarSearchCriteria criteria) {
+        return carService.search(criteria);
     }
 
     @GetMapping("/count")

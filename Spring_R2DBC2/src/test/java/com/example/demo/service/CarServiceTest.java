@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 
 import com.example.demo.repository.CarRepository;
 
@@ -30,6 +31,9 @@ public class CarServiceTest {
 
     @Mock
     private CarRepository carRepository;
+
+    @Mock
+    private R2dbcEntityTemplate template;
 
     @InjectMocks
     private CarService carService;
@@ -210,108 +214,6 @@ public class CarServiceTest {
                 .verify();
 
         verify(carRepository, never()).delete(any(Car.class));
-    }
-
-    @Test
-    void getCarsByMake_ShouldReturnCarsOfSpecificMake() {
-        // Given
-        Car car1 = new Car();
-        car1.setMake("Toyota");
-        car1.setModel("Camry");
-
-        Car car2 = new Car();
-        car2.setMake("Toyota");
-        car2.setModel("Corolla");
-
-        when(carRepository.findByMakeIgnoreCase("Toyota")).thenReturn(Flux.just(car1, car2));
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByMake("Toyota"))
-                .expectNext(car1)
-                .expectNext(car2)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByMakeIgnoreCase("Toyota");
-    }
-
-    @Test
-    void getCarsByModel_ShouldReturnCarsOfSpecificModel() {
-        // Given
-        when(carRepository.findByModel("Camry")).thenReturn(Flux.just(testCar));
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByModel("Camry"))
-                .expectNext(testCar)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByModel("Camry");
-    }
-
-    @Test
-    void getCarsByYear_ShouldReturnCarsOfSpecificYear() {
-        // Given
-        when(carRepository.findByYear(2022)).thenReturn(Flux.just(testCar));
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByYear(2022))
-                .expectNext(testCar)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByYear(2022);
-    }
-
-    @Test
-    void getCarsByPriceRange_ShouldReturnCarsInPriceRange() {
-        // Given
-        BigDecimal minPrice = new BigDecimal("20000.00");
-        BigDecimal maxPrice = new BigDecimal("30000.00");
-
-        when(carRepository.findByPriceBetween(minPrice, maxPrice)).thenReturn(Flux.just(testCar));
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByPriceRange(minPrice, maxPrice))
-                .expectNext(testCar)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByPriceBetween(minPrice, maxPrice);
-    }
-
-    @Test
-    void getCarsByYearRange_ShouldReturnCarsInYearRange() {
-        // Given
-        when(carRepository.findByYearRange(2020, 2023)).thenReturn(Flux.just(testCar));
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByYearRange(2020, 2023))
-                .expectNext(testCar)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByYearRange(2020, 2023);
-    }
-
-    @Test
-    void countCarsByMake_ShouldReturnCount() {
-        // Given
-        when(carRepository.countByMake("Toyota")).thenReturn(Mono.just(5L));
-
-        // When & Then
-        StepVerifier.create(carService.countCarsByMake("Toyota"))
-                .expectNext(5L)
-                .verifyComplete();
-
-        verify(carRepository, times(1)).countByMake("Toyota");
-    }
-
-    @Test
-    void getCarsByMake_WhenNoResults_ShouldReturnEmpty() {
-        // Given
-        when(carRepository.findByMakeIgnoreCase("NonExistentMake")).thenReturn(Flux.empty());
-
-        // When & Then
-        StepVerifier.create(carService.getCarsByMake("NonExistentMake"))
-                .verifyComplete();
-
-        verify(carRepository, times(1)).findByMakeIgnoreCase("NonExistentMake");
     }
 
     @Test

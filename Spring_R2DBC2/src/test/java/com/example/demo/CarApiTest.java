@@ -46,50 +46,77 @@ class CarApiTest extends PostgresContainerTestBase {
 				.expectBody().jsonPath("$.length()").isEqualTo(5);
 	}
 
-	// [Potential Bug] 搜尋只看第一個有值的參數：make 和 year 同時給，year 被忽略
+	// 修正前：只看第一個有值的參數，make=Toyota&year=2021 會忽略 year，回傳 2022 年的 Camry
 	@Test
-	void search_shouldIgnoreYear_whenMakeIsAlsoGiven() {
+	void search_shouldCombineMakeAndYear() {
 		webTestClient.get().uri("/api/cars/search?make=Toyota&year=2021").exchange()
 				.expectStatus().isOk()
-				.expectBody().jsonPath("$.length()").isEqualTo(1)
-				.jsonPath("$[0].year").isEqualTo(2022);
+				.expectBody().jsonPath("$.length()").isEqualTo(0);
 	}
 
-	// [Potential Bug] 只給 minPrice、沒有 maxPrice 時，條件被忽略，回傳全部
+	// 修正前：只給 minPrice、沒有 maxPrice 時，條件被忽略，回傳全部 5 台
 	@Test
-	void search_shouldReturnAll_whenOnlyMinPriceIsGiven() {
+	void search_shouldUseMinPriceAlone() {
 		webTestClient.get().uri("/api/cars/search?minPrice=40000").exchange()
+				.expectStatus().isOk()
+				.expectBody().jsonPath("$[*].make").value(makes -> assertThat(makes.toString())
+						.contains("BMW", "Mercedes").doesNotContain("Toyota", "Audi"));
+	}
+
+	@Test
+	void search_shouldCombineYearRangeAndMaxPrice() {
+		webTestClient.get().uri("/api/cars/search?yearFrom=2022&maxPrice=43000").exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.length()").isEqualTo(2)
+				.jsonPath("$[0].make").isEqualTo("Toyota")
+				.jsonPath("$[1].make").isEqualTo("Mercedes");
+	}
+
+	@Test
+	void search_shouldReturnAll_whenNoConditionIsGiven() {
+		webTestClient.get().uri("/api/cars/search").exchange()
 				.expectStatus().isOk()
 				.expectBody().jsonPath("$.length()").isEqualTo(5);
 	}
 
-	// [Potential Bug] 搜尋用 ILIKE（不分大小寫），計數用 =（分大小寫）
+	// 修正前：搜尋用 ILIKE（不分大小寫）找到 1 台，計數用 =（分大小寫）卻是 0
 	@Test
-	void searchAndCount_shouldDisagreeOnCase() {
+	void searchAndCount_shouldAgreeIgnoringCase() {
 		webTestClient.get().uri("/api/cars/search?make=toyota").exchange()
 				.expectStatus().isOk()
 				.expectBody().jsonPath("$.length()").isEqualTo(1);
 		webTestClient.get().uri("/api/cars/count?make=toyota").exchange()
 				.expectStatus().isOk()
-				.expectBody(Long.class).isEqualTo(0L);
+				.expectBody(Long.class).isEqualTo(1L);
 	}
 
-	// [Potential Bug] 驗證允許 1900，資料庫 CHECK 是 year > 1900。
-	// 修正前：500，回應中帶有資料庫的 constraint 名稱（car_year_check）；現在：409，不帶資料庫的訊息
+	// 修正前：驗證是 @Min(1900)，資料庫的 CHECK 是 year > 1900，1900 通過驗證後寫入失敗，回傳 500 並帶出 constraint 名稱。
+	// 現在：驗證改成 @Min(1901)，回傳 400
 	@Test
-	void create_shouldReturn409WithoutDatabaseMessage_whenYearIs1900() {
+	void create_shouldReturn400_whenYearIs1900() {
 		webTestClient.post().uri("/api/cars")
 				.bodyValue("""
 						{"make":"Ford","model":"T","year":1900,"price":850}
 						""")
 				.header("Content-Type", "application/json")
 				.exchange()
-				.expectStatus().isEqualTo(409)
-				.expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
-				.expectBody()
-				.jsonPath("$.detail").isEqualTo("資料違反資料庫的限制條件")
-				.consumeWith(result -> assertThat(new String(result.getResponseBodyContent()))
-						.doesNotContain("car_year_check"));
+				.expectStatus().isBadRequest()
+				.expectBody().jsonPath("$.errors.year").isEqualTo("Year must be greater than 1900");
+	}
+
+	// [Potential Bug] 修正前沒有長度驗證：超過 VARCHAR(50) 的值寫入時才失敗，回傳 500
+	// （PostgreSQL 的 R2DBC 驅動把「value too long」歸類為 BadGrammar，不是 DataIntegrityViolation）
+	@Test
+	void update_shouldReturn400_whenModelIsTooLong() {
+		webTestClient.put().uri("/api/cars/1")
+				.bodyValue("""
+						{"make":"Toyota","model":"%s","year":2022,"price":1}
+						""".formatted("x".repeat(51)))
+				.header("Content-Type", "application/json")
+				.exchange()
+				.expectStatus().isBadRequest()
+				.expectBody().jsonPath("$.errors.model").isEqualTo("Model must be at most 50 characters");
 	}
 
 	// 修正前：自訂的 Map 格式（message、errors）；現在：ProblemDetail，保留每個欄位的錯誤訊息
