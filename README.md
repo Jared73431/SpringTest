@@ -23,7 +23,7 @@
 |---|---|---|---|
 | [Spring_JPA](Spring_JPA) 📘 | JPA 入門 | REST CRUD（`/api/books`）、DTO（Record）、ProblemDetail、Testcontainers 整合測試、Docker ✅ 已現代化 | 🐘 |
 | [Spring_JPA2](Spring_JPA2) 📘 | JPA 進階 | 一對多 / 多對多、複合主鍵、訂單狀態機、`@Version` 樂觀鎖、JPA Auditing、Bean Validation、圖片存 bytea ✅ 已現代化 | 🐘 |
-| [Spring_R2DBC](Spring_R2DBC) | R2DBC 入門 | 響應式資料庫存取 | 🐘 |
+| [Spring_R2DBC](Spring_R2DBC) 📘 | R2DBC 入門 | 三種存取方式（Repository / R2dbcEntityTemplate / DatabaseClient）、主鍵由程式指定時 save() 默默不寫入、自訂 Converter、Reactive 交易、沒有關聯時的 N+1 與 JOIN、Flyway ✅ 已現代化 | 🐘 |
 | [Spring_R2DBC2](Spring_R2DBC2) 📘 | R2DBC + WebFlux | 響應式 CRUD、Validation、全域例外處理、Flyway、Docker Compose | 🐘 |
 | [Spring_Flyway](Spring_Flyway) 📘 | 資料庫版本控管 | SQL / Java Migration、Repeatable Migration 的正確與錯誤用法、checksum 驗證、baseline / out-of-order 陷阱、`/actuator/flyway` ✅ 已現代化 | 🐘 |
 | [Spring_Redis](Spring_Redis) 📘 | Redis 操作 | 五種資料結構、安全的 JSON 序列化、排行榜 / 限流（Lua）/ 分散式鎖、Testcontainers、RedisInsight ✅ 已現代化 | 🟥 |
@@ -101,9 +101,9 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅ |
 | 2.7.x | 11 / 17 | Security3 |
-| 3.0.x | 17 | Quartz 1~3、R2DBC、Scheduleing、Security、Security2 |
+| 3.0.x | 17 | Quartz 1~3、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
