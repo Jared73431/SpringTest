@@ -1,0 +1,55 @@
+# ============================================================
+# Scheduling 練習環境：PostgreSQL + 兩個應用程式實例（觀察 ShedLock）
+#
+#   啟動：docker compose up --build
+#   觀察：docker compose logs -f app app-b
+#         清理排程改成每 10 秒一次（APP_CLEANUP_CRON），兩個實例都會觸發，
+#         但每個時間點只有搶到 shedlock 表那一列鎖的實例會印出「Deleted ... expired sessions」
+#   排程：curl http://localhost:8099/actuator/scheduledtasks
+#   停止：docker compose down                     （加上 -v 會刪除資料庫）
+# ============================================================
+x-app: &app
+  build: .
+  depends_on:
+    postgres:
+      condition: service_healthy
+  environment:
+    # 對應 application.properties 的 ${DB_HOST:localhost}
+    - DB_HOST=postgres
+    - DB_USERNAME=${DB_USERNAME:-postgres}
+    - DB_PASSWORD=${DB_PASSWORD:-postgres}
+    - TZ=Asia/Taipei
+    # 示範用：每 10 秒執行一次（正式設定是每天凌晨 3 點）
+    - APP_CLEANUP_CRON=${APP_CLEANUP_CRON:-*/10 * * * * *}
+    # lockAtLeastFor 必須比間隔短：預設的 30 秒會讓每 10 秒的排程，連續兩次都被所有實例跳過
+    - APP_CLEANUP_LOCK_AT_LEAST_FOR=PT5S
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=Scheduling
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d Scheduling"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    <<: *app
+    ports:
+      # 主機的 port 可以用 APP_PORT 覆蓋（例如 Windows 保留了 8099 時：APP_PORT=8300 docker compose up）
+      - "${APP_PORT:-8099}:8099"
+
+  # 第二個實例：模擬部署兩台主機（不對外開放 port，只用來觀察 log）
+  app-b:
+    <<: *app
+
+volumes:
+  postgres-data:
