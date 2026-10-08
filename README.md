@@ -24,7 +24,7 @@
 | [Spring_JPA](Spring_JPA) 📘 | JPA 入門 | REST CRUD（`/api/books`）、DTO（Record）、ProblemDetail、Testcontainers 整合測試、Docker ✅ 已現代化 | 🐘 |
 | [Spring_JPA2](Spring_JPA2) 📘 | JPA 進階 | 一對多 / 多對多、複合主鍵、訂單狀態機、`@Version` 樂觀鎖、JPA Auditing、Bean Validation、圖片存 bytea ✅ 已現代化 | 🐘 |
 | [Spring_R2DBC](Spring_R2DBC) 📘 | R2DBC 入門 | 三種存取方式（Repository / R2dbcEntityTemplate / DatabaseClient）、主鍵由程式指定時 save() 默默不寫入、自訂 Converter、Reactive 交易、沒有關聯時的 N+1 與 JOIN、Flyway ✅ 已現代化 | 🐘 |
-| [Spring_R2DBC2](Spring_R2DBC2) 📘 | R2DBC + WebFlux | 響應式 CRUD、Validation、全域例外處理、Flyway、Docker Compose | 🐘 |
+| [Spring_R2DBC2](Spring_R2DBC2) 📘 | R2DBC + WebFlux | 完整的 Reactive CRUD（`/api/cars`）：Criteria 多條件搜尋、驗證與資料表一致、ProblemDetail、R2DBC Auditing、Flyway、JPA vs R2DBC 對照 ✅ 已現代化 | 🐘 |
 | [Spring_Flyway](Spring_Flyway) 📘 | 資料庫版本控管 | SQL / Java Migration、Repeatable Migration 的正確與錯誤用法、checksum 驗證、baseline / out-of-order 陷阱、`/actuator/flyway` ✅ 已現代化 | 🐘 |
 | [Spring_Redis](Spring_Redis) 📘 | Redis 操作 | 五種資料結構、安全的 JSON 序列化、排行榜 / 限流（Lua）/ 分散式鎖、Testcontainers、RedisInsight ✅ 已現代化 | 🟥 |
 | [Spring_Cache](Spring_Cache) 📘 | Spring Cache | `@Cacheable` / `@CachePut` / `@CacheEvict` 搭配 Redis、快取一致性、`unless` 與 Optional、型別安全的序列化、`transactionAware` ✅ 已現代化 | 🐘 🟥 |
@@ -101,7 +101,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Quartz 1~3、Scheduleing、Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
@@ -139,7 +139,7 @@ docker run -d --name redis -p 6379:6379 redis:7-alpine
 | `DB_USERNAME` | `postgres` | 資料庫帳號 |
 | `DB_PASSWORD` | `postgres` | 資料庫密碼 |
 | `SECURITY_USER_PASSWORD` | `password` | Spring_Security 的登入密碼 |
-| `PGADMIN_PASSWORD` | `admin` | Spring_R2DBC2 docker compose 的 pgAdmin 密碼 |
+| `PGADMIN_PASSWORD` | `admin` | Spring_R2DBC、Spring_R2DBC2 docker compose 的 pgAdmin 密碼（`--profile tools`） |
 
 設定檔中的寫法：
 
