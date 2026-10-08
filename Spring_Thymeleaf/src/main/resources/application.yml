@@ -1,5 +1,10 @@
 server:
   port: 8098
+  servlet:
+    session:
+      # flash 訊息存在 session 中。不限制時，第一次請求 Tomcat 不知道瀏覽器是否支援 cookie，會把 session id
+      # 寫進網址（/messages;jsessionid=...），可能經由瀏覽器歷史、log、Referer 外洩。只用 cookie 追蹤 session
+      tracking-modes: cookie
 
 spring:
   application:
