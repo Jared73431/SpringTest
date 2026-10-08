@@ -27,7 +27,7 @@ abstract class LessonTestBase extends PostgresContainerTestBase {
 
 	@BeforeEach
 	void resetProducts() {
-		databaseClient.sql("TRUNCATE product RESTART IDENTITY CASCADE").then()
+		databaseClient.sql("TRUNCATE product, category RESTART IDENTITY CASCADE").then()
 				.thenMany(productRepo.saveAll(Flux.just(
 						new Product("Keyboard", new BigDecimal("1200.50")),
 						new Product("Mouse", new BigDecimal("350.00")),

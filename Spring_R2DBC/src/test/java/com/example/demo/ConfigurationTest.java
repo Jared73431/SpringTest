@@ -42,13 +42,14 @@ class ConfigurationTest extends PostgresContainerTestBase {
 
 	// 資料表由 Flyway 建立（修正前沒有 schema 檔，要在本機手動建表）
 	@Test
-	void flyway_shouldCreateProductTable() {
+	void flyway_shouldCreateTables() {
 		Long versions = databaseClient.sql("SELECT COUNT(*) FROM flyway_schema_history WHERE success")
 				.map(row -> row.get(0, Long.class)).one().block();
-		Long products = databaseClient.sql("SELECT COUNT(*) FROM product").map(row -> row.get(0, Long.class)).one()
-				.block();
+		// 只檢查資料表存在：其他測試會放入資料，這裡不能假設資料表是空的（否則結果會依測試執行順序而不同）
+		var tables = databaseClient.sql("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+				.map(row -> row.get("table_name", String.class)).all().collectList().block();
 
-		assertThat(versions).isEqualTo(2);
-		assertThat(products).isZero();
+		assertThat(versions).isEqualTo(3);
+		assertThat(tables).contains("product", "category");
 	}
 }
