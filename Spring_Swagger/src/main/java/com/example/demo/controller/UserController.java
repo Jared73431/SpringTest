@@ -1,141 +1,72 @@
 package com.example.demo.controller;
 
+import java.net.URI;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.ApiResponse;
-import com.example.demo.dto.CreateUserRequest;
-import com.example.demo.entity.User;
+import com.example.demo.dto.UserRequest;
+import com.example.demo.dto.UserResponse;
 import com.example.demo.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+/**
+ * 修正前：@RequestBody import 成 Swagger 的 io.swagger.v3.oas.annotations.parameters.RequestBody（只用來產生文件），
+ * Spring 不認得它，把參數當成 query 參數綁定，JSON body 完全被忽略。兩個註解同名，IDE 自動 import 時很容易選錯。
+ */
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "用戶管理", description = "用戶相關的 CRUD 操作")
+@Tag(name = "使用者管理", description = "使用者的新增、查詢、修改與刪除")
 public class UserController {
-    @Autowired
-    private UserService userService;
 
-    @GetMapping
-    @Operation(
-            summary = "獲取所有用戶",
-            description = "返回系統中所有用戶的列表"
-    )
-    @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
-                    description = "成功獲取用戶列表",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
-            )
-    })
-    public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(ApiResponse.success("獲取用戶列表成功", users));
-    }
+	private final UserService userService;
 
-    @GetMapping("/{id}")
-    @Operation(
-            summary = "根據ID獲取用戶",
-            description = "通過用戶ID獲取特定用戶的詳細信息"
-    )
-    @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
-                    description = "成功獲取用戶信息"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                    description = "用戶不存在"
-            )
-    })
-    public ResponseEntity<ApiResponse<User>> getUserById(
-            @Parameter(description = "用戶ID", example = "1", required = true)
-            @PathVariable Long id) {
+	public UserController(UserService userService) {
+		this.userService = userService;
+	}
 
-        return userService.getUserById(id)
-                .map(user -> ResponseEntity.ok(ApiResponse.success("獲取用戶成功", user)))
-                .orElse(ResponseEntity.notFound().build());
-    }
+	@GetMapping
+	@Operation(summary = "取得所有使用者")
+	public List<UserResponse> getAllUsers() {
+		return userService.getAllUsers();
+	}
 
-    @PostMapping
-    @Operation(
-            summary = "創建新用戶",
-            description = "創建一個新的用戶記錄"
-    )
-    @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
-                    description = "用戶創建成功"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400",
-                    description = "請求參數無效"
-            )
-    })
-    public ResponseEntity<ApiResponse<User>> createUser(
-            @Parameter(description = "用戶創建請求", required = true)
-            @Valid @RequestBody CreateUserRequest request) {
+	@GetMapping("/{id}")
+	@Operation(summary = "依 ID 取得使用者")
+	public UserResponse getUserById(@PathVariable Long id) {
+		return userService.getUserById(id);
+	}
 
-        User createdUser = userService.createUser(request);
-        return ResponseEntity.ok(ApiResponse.success("用戶創建成功", createdUser));
-    }
+	@PostMapping
+	@Operation(summary = "新增使用者")
+	public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
+		UserResponse created = userService.createUser(request);
+		return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
+	}
 
-    @PutMapping("/{id}")
-    @Operation(
-            summary = "更新用戶信息",
-            description = "根據用戶ID更新用戶的詳細信息"
-    )
-    public ResponseEntity<ApiResponse<User>> updateUser(
-            @Parameter(description = "用戶ID", example = "1", required = true)
-            @PathVariable Long id,
-            @Parameter(description = "用戶更新請求", required = true)
-            @Valid @RequestBody CreateUserRequest request) {
+	@PutMapping("/{id}")
+	@Operation(summary = "修改使用者")
+	public UserResponse updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest request) {
+		return userService.updateUser(id, request);
+	}
 
-        return userService.updateUser(id, request)
-                .map(user -> ResponseEntity.ok(ApiResponse.success("用戶更新成功", user)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(
-            summary = "刪除用戶",
-            description = "根據用戶ID刪除指定用戶"
-    )
-    @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
-                    description = "用戶刪除成功"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                    description = "用戶不存在"
-            )
-    })
-    public ResponseEntity<ApiResponse<Void>> deleteUser(
-            @Parameter(description = "用戶ID", example = "1", required = true)
-            @PathVariable Long id) {
-
-        if (userService.deleteUser(id)) {
-            return ResponseEntity.ok(ApiResponse.success("用戶刪除成功", null));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "刪除使用者")
+	public void deleteUser(@PathVariable Long id) {
+		userService.deleteUser(id);
+	}
 }

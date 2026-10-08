@@ -13,12 +13,6 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
@@ -37,8 +31,6 @@ dependencies {
 	// springdoc 3.x 對應 Spring Boot 4：產生 /v3/api-docs 與 Swagger UI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
