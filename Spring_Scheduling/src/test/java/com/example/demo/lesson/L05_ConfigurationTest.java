@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.lesson;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,10 +15,24 @@ import org.springframework.scheduling.config.CronTask;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.example.demo.PostgresContainerTestBase;
+
 /**
- * 應用程式實際註冊了哪些排程（取代修正前的 baseline：3 個只會印字的示範任務）。
+ * 第 5 課：排程的設定外部化（以本模組實際的 SessionCleanupTask 為例）。
+ *
+ * <pre>
+ * @Scheduled(cron = "${app.cleanup.cron}", zone = "${app.cleanup.zone}")
+ * </pre>
+ *
+ * <ul>
+ * <li>cron 與時區寫在設定檔，不同環境可以不同；設成 - 就停用這個排程</li>
+ * <li>執行緒池大小：spring.task.scheduling.pool.size（第 3 課）</li>
+ * <li>/actuator/scheduledtasks 列出目前所有排程，部署後可以確認設定是否生效</li>
+ * </ul>
+ *
+ * 修正前的 3 個示範任務只會印字，已由這個實際的清理排程取代。
  */
-class ScheduledTasksTest {
+class L05_ConfigurationTest {
 
 	@Nested
 	@SpringBootTest
