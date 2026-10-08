@@ -1,41 +1,61 @@
 package com.example.demo.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.net.URI;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.entity.Product;
+import com.example.demo.dto.ProductRequest;
+import com.example.demo.dto.ProductResponse;
 import com.example.demo.service.ProductService;
 
+import jakarta.validation.Valid;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
+@RequestMapping("/api/products")
 public class ProductController {
 
-	@Autowired
-	private ProductService productService;
-	
-	@GetMapping("/findAll")
-	public Flux<Product> findall(){
-		
-		return productService.findall();
+	private final ProductService productService;
+
+	public ProductController(ProductService productService) {
+		this.productService = productService;
 	}
-	
-	@PostMapping("/SaveProduct")
-	public void saveProduct(@RequestParam(value = "description", required = true) String description,
-			@RequestParam(value = "price", required = true) Double price) {
-		
-		Product product = new Product();
-		product.setDescription(description);
-		product.setPrice(price);
-		productService.save(product);
+
+	@GetMapping
+	public Flux<ProductResponse> findAll() {
+		return productService.findAll();
 	}
-	
-	@GetMapping("/getbyId/{Id}")
-	public Product getbyId(@PathVariable(value = "Id") int Id) {
-		return productService.getone(Id);
+
+	@GetMapping("/{id}")
+	public Mono<ProductResponse> findById(@PathVariable Integer id) {
+		return productService.findById(id);
+	}
+
+	@PostMapping
+	public Mono<ResponseEntity<ProductResponse>> create(@Valid @RequestBody ProductRequest request) {
+		return productService.create(request)
+				.map(product -> ResponseEntity.created(URI.create("/api/products/" + product.id())).body(product));
+	}
+
+	@PutMapping("/{id}")
+	public Mono<ProductResponse> update(@PathVariable Integer id, @Valid @RequestBody ProductRequest request) {
+		return productService.update(id, request);
+	}
+
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public Mono<Void> delete(@PathVariable Integer id) {
+		return productService.delete(id);
 	}
 }

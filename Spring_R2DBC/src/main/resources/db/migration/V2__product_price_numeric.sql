@@ -1,0 +1,4 @@
+-- 金額不適合用 DOUBLE（浮點數有誤差，例如 0.1 + 0.2 = 0.30000000000000004），改成 NUMERIC；Java 端對應 BigDecimal
+ALTER TABLE product ALTER COLUMN price TYPE NUMERIC(10, 2);
+ALTER TABLE product ALTER COLUMN price SET NOT NULL;
+ALTER TABLE product ALTER COLUMN description SET NOT NULL;

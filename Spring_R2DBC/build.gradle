@@ -13,18 +13,13 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	runtimeOnly 'org.postgresql:r2dbc-postgresql'
 
@@ -35,14 +30,9 @@ dependencies {
 	implementation 'org.springframework:spring-jdbc'
 	runtimeOnly 'org.postgresql:postgresql'
 
-	annotationProcessor 'org.projectlombok:lombok'
-	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
-	testImplementation 'org.springframework.boot:spring-boot-restclient'
-	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.r2dbc.autoconfigure.R2dbcProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.context.reactive.ReactiveWebApplicationContext;
+import org.springframework.context.ApplicationContext;
 import org.springframework.r2dbc.core.DatabaseClient;
 
 @SpringBootTest
@@ -18,6 +20,15 @@ class ConfigurationTest extends PostgresContainerTestBase {
 
 	@Autowired
 	private DatabaseClient databaseClient;
+
+	@Autowired
+	private ApplicationContext context;
+
+	// 修正前以 Spring MVC 執行，Service 內用 block() 等待 R2DBC 的結果；現在只有 WebFlux
+	@Test
+	void context_shouldBeReactive() {
+		assertThat(context).isInstanceOf(ReactiveWebApplicationContext.class);
+	}
 
 	// 修正前寫成 spring.pool.*，沒有綁定到任何設定；改成 spring.r2dbc.pool.* 後才生效
 	@Test
@@ -37,7 +48,7 @@ class ConfigurationTest extends PostgresContainerTestBase {
 		Long products = databaseClient.sql("SELECT COUNT(*) FROM product").map(row -> row.get(0, Long.class)).one()
 				.block();
 
-		assertThat(versions).isEqualTo(1);
+		assertThat(versions).isEqualTo(2);
 		assertThat(products).isZero();
 	}
 }
