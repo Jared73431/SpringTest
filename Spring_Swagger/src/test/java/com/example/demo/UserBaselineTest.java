@@ -56,54 +56,44 @@ class UserBaselineTest {
 		return userRepository.save(User.builder().username("jane").name("Jane").email("jane@example.com").age(30).build());
 	}
 
-	// [Potential Bug] 三個問題疊在一起：
+	// [Potential Bug] 問題疊在一起：
 	// 1. @RequestBody 是 Swagger 的註解（io.swagger.v3.oas.annotations.parameters.RequestBody），Spring 不讀 JSON body
-	// 2. 沒有驗證實作（只有 jakarta.validation-api，沒有 Hibernate Validator），@Valid / @NotBlank 全部沒有作用
-	// 3. User(username, name, email, age) 建構子是空的
-	// 結果：回傳 200「用戶創建成功」，實際存入一筆欄位全部是 null 的資料
+	// 2. User(username, name, email, age) 建構子是空的
+	// 3. 驗證錯誤的明細（errors）沒有放進回應
+	//
+	// Boot 3.2 + springdoc 2.2.0 時專案沒有 Bean Validation 實作，@Valid 沒有作用，結果是回傳 200 並存入一筆全部是 null 的資料
+	// （PUT 會把既有資料清成 null）。升級到 springdoc 2.8 後，它間接帶入 spring-boot-starter-validation，驗證開始生效，行為變成下面這樣
 	@Test
-	void create_shouldSaveEmptyUserAndReturn200_whenSendingJson() {
+	void create_shouldReturn400WithoutFieldErrors_whenSendingJson() {
 		ResponseEntity<Map> response = rest.postForEntity("/api/users", JOHN, Map.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(response.getBody()).containsEntry("message", "用戶創建成功");
-		Map data = (Map) response.getBody().get("data");
-		assertThat(data.get("id")).isNotNull();
-		assertThat(data).containsEntry("username", null).containsEntry("email", null).containsEntry("age", null);
-		assertThat(userRepository.findAll()).singleElement()
-				.satisfies(user -> assertThat(user.getUsername()).isNull());
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(response.getBody()).containsEntry("code", 400).containsEntry("message", "參數驗證失敗")
+				.containsEntry("data", null);
+		assertThat(userRepository.count()).isZero();
 	}
 
-	// 改用 query 參數雖然綁定得到，但空的建構子仍然丟掉所有欄位
+	// 改用 query 參數雖然綁定得到、也通過驗證，但空的建構子丟掉所有欄位，寫入前 Entity 的驗證失敗 → catch-all 回傳 500
 	@Test
-	void create_shouldStillSaveEmptyUser_whenSendingQueryParameters() {
+	void create_shouldReturn500_whenSendingQueryParameters() {
 		ResponseEntity<Map> response = rest.postForEntity(
 				"/api/users?username=john_doe&name=John&email=john@example.com&age=25", null, Map.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat((Map) response.getBody().get("data")).containsEntry("username", null);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getBody()).containsEntry("message", "系統內部錯誤");
+		assertThat(userRepository.count()).isZero();
 	}
 
-	// 沒有驗證：空白的請求也會被接受
+	// [Potential Bug] PUT 同樣讀不到 JSON body
 	@Test
-	void create_shouldAcceptEmptyRequest_becauseValidationIsNotActive() {
-		ResponseEntity<Map> response = rest.postForEntity("/api/users", Map.of(), Map.class);
-
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-	}
-
-	// [Potential Bug] PUT 同樣讀不到 JSON body：既有資料的欄位全部被改成 null
-	@Test
-	void update_shouldWipeExistingUser_whenSendingJson() {
+	void update_shouldReturn400_whenSendingJson() {
 		User jane = saveDirectly();
 
 		ResponseEntity<Map> response = rest.exchange("/api/users/" + jane.getId(), HttpMethod.PUT,
 				new HttpEntity<>(JOHN), Map.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-		User reloaded = userRepository.findById(jane.getId()).orElseThrow();
-		assertThat(reloaded.getUsername()).isNull();
-		assertThat(reloaded.getEmail()).isNull();
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(userRepository.findById(jane.getId()).orElseThrow().getUsername()).isEqualTo("jane");
 	}
 
 	@Test
