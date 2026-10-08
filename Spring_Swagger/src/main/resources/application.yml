@@ -1,29 +1,22 @@
+# YAML 是 UTF-8，註解可以直接寫中文（修正前寫成 連線... 的跳脫字元，那是 .properties 才需要的寫法）
 server:
-  port: 8020
+  port: 8097
 
 spring:
   application:
-    name:Spring_Swagger
+    # 修正前寫成「name:Spring_Swagger」：冒號後面沒有空格，YAML 會把整串當成一個字串，應用程式名稱根本沒有設定
+    name: Spring_Swagger
   datasource:
-    url: jdbc:postgresql://localhost:5432/test
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/Swagger
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-    # HikariCP \u9023\u7DDA\u6C60\u512A\u5316
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      # 資料表由 Flyway 建立；Hibernate 只檢查 Entity 與資料表是否一致（修正前是 update：由 Hibernate 自動改資料表）
+      ddl-auto: validate
+    open-in-view: false
 
-# Swagger/OpenAPI \u914D\u7F6E
+# springdoc：使用預設路徑 /v3/api-docs 與 /swagger-ui.html（修正前把 api-docs 改成 /api-docs）
 springdoc:
-  api-docs:
-    path: /api-docs
   swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
-    disable-swagger-default-url: true
+    operations-sorter: method

@@ -147,19 +147,20 @@ class UserBaselineTest {
 		assertThat(missing.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
-	// [Potential Bug] OpenAPI 的 server 寫死 http://localhost:8080，但應用程式在 8020：Swagger UI 的 Try it out 會打錯 port
+	// [Potential Bug] OpenAPI 的 server 寫死 http://localhost:8080，和應用程式的 port 不同：Swagger UI 的 Try it out 會打錯 port
+	//（api-docs 的路徑已改回 springdoc 預設的 /v3/api-docs）
 	@Test
 	void apiDocs_shouldDeclareHardCodedServerOnWrongPort() {
-		ResponseEntity<Map> response = rest.getForEntity("/api-docs", Map.class);
+		ResponseEntity<Map> response = rest.getForEntity("/v3/api-docs", Map.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		Map firstServer = (Map) ((java.util.List) response.getBody().get("servers")).get(0);
-		assertThat(firstServer).containsEntry("url", "http://localhost:8080"); // application.yml 的 server.port 是 8020
+		assertThat(firstServer).containsEntry("url", "http://localhost:8080");
 	}
 
-	// [Potential Bug] application.yml 寫成 name:Spring_Swagger（冒號後沒有空格），應用程式名稱沒有設定
+	// 修正前 application.yml 寫成 name:Spring_Swagger（冒號後沒有空格），應用程式名稱沒有設定
 	@Test
-	void applicationName_shouldNotBeSet() {
-		assertThat(environment.getProperty("spring.application.name")).isNull();
+	void applicationName_shouldBeSet() {
+		assertThat(environment.getProperty("spring.application.name")).isEqualTo("Spring_Swagger");
 	}
 }
