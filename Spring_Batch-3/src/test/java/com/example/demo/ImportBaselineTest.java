@@ -7,13 +7,13 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import com.example.demo.batch.Scheduled.BatchScheduler;
 
@@ -28,7 +28,7 @@ import com.example.demo.batch.Scheduled.BatchScheduler;
 class ImportBaselineTest {
 
 	@ServiceConnection
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:15-alpine")
 			.withInitScript("org/springframework/batch/core/schema-postgresql.sql");
 
 	static {
@@ -42,7 +42,7 @@ class ImportBaselineTest {
 	private BatchScheduler scheduler;
 
 	@Autowired
-	private JobExplorer jobExplorer;
+	private JobRepository jobRepository;
 
 	private int persons() {
 		return jdbc.queryForObject("select count(*) from person", Integer.class);
@@ -59,9 +59,9 @@ class ImportBaselineTest {
 		scheduler.perform();
 
 		assertThat(persons()).isEqualTo(8);
-		var instances = jobExplorer.getJobInstances("importUserJob4", 0, 10);
+		var instances = jobRepository.getJobInstances("importUserJob4", 0, 10);
 		assertThat(instances).hasSize(2);
-		assertThat(instances).allSatisfy(instance -> assertThat(jobExplorer.getJobExecutions(instance))
+		assertThat(instances).allSatisfy(instance -> assertThat(jobRepository.getJobExecutions(instance))
 				.singleElement().satisfies(execution -> {
 					assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
 					assertThat(execution.getStepExecutions()).singleElement().satisfies(step -> {
