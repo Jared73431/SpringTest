@@ -19,6 +19,9 @@ configurations {
 	}
 }
 
+// Baseline：Docker 29 需要 Testcontainers 1.21.4 以上，覆蓋 Boot 3.5.3 BOM 的版本
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
 	mavenCentral()
 }
@@ -34,6 +37,9 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.batch:spring-batch-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.awaitility:awaitility'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
