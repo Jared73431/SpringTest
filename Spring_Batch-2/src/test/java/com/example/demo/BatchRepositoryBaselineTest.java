@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.regex.Pattern;
 
@@ -8,12 +9,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.batch.core.launch.JobInstanceAlreadyCompleteException;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Baseline：鎖定重構前的行為。
@@ -25,7 +27,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @ExtendWith(OutputCaptureExtension.class)
 class BatchRepositoryBaselineTest {
 
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine");
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:15-alpine");
 
 	static JdbcTemplate jdbc;
 
@@ -53,8 +55,10 @@ class BatchRepositoryBaselineTest {
 		return (int) Pattern.compile(Pattern.quote(word)).matcher(text).results().count();
 	}
 
+	// Boot 3.5（Spring Batch 5）時：第 2 次啟動新增一筆 exit code 為 NOOP 的 JobExecution，Step 不執行，程式正常啟動。
+	// Boot 4（Spring Batch 6）改成拋出 JobInstanceAlreadyCompleteException，程式啟動失敗。
 	@Test
-	void secondStart_shouldReuseCompletedJobInstanceAndSkipTheStep(CapturedOutput output) {
+	void secondStart_shouldFail_whenJobInstanceAlreadyCompleted(CapturedOutput output) {
 		// 第 1 次啟動
 		startApplication();
 
@@ -67,17 +71,14 @@ class BatchRepositoryBaselineTest {
 		assertThat(jdbc.queryForList("select step_name from batch_step_execution", String.class))
 				.containsExactly("helloStep8");
 
-		// 第 2 次啟動，同一個資料庫
-		// initialize-schema=always：BATCH_* 表已經存在，但啟動沒有失敗
-		startApplication();
+		// 第 2 次啟動，同一個資料庫。initialize-schema=always：BATCH_* 表已經存在，建表不會讓啟動失敗；
+		// 失敗的是執行 Job：沒有 JobParameters → 同一個 JobInstance，而它已經 COMPLETED
+		assertThatThrownBy(BatchRepositoryBaselineTest::startApplication)
+				.hasRootCauseInstanceOf(JobInstanceAlreadyCompleteException.class);
 
-		// 沒有 JobParameters → 同一個 JobInstance；已經 COMPLETED，所以 Step 不再執行
 		assertThat(count(output.getOut(), "Hello world2!")).isEqualTo(1);
-		assertThat(output.getOut()).contains("Step already complete or not restartable");
 		assertThat(jdbc.queryForObject("select count(*) from batch_job_instance", Integer.class)).isEqualTo(1);
-		// 但仍然新增一筆 JobExecution，exit code 是 NOOP（沒有做事）
-		assertThat(jdbc.queryForList("select exit_code from batch_job_execution order by job_execution_id",
-				String.class)).containsExactly("COMPLETED", "NOOP");
+		assertThat(jdbc.queryForObject("select count(*) from batch_job_execution", Integer.class)).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select count(*) from batch_step_execution", Integer.class)).isEqualTo(1);
 	}
 }
