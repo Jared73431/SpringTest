@@ -1,124 +1,193 @@
-# Spring Batch 基礎範例專案
+# Spring Batch - 最簡單的批次
 
-## 專案簡介
+用最少的程式碼觀察 Spring Batch 的基本結構：**一個 Job、一個 Step、一個 Tasklet**，啟動後印出 `Hello world!`，做完程式就結束。
 
-這是一個基於 Spring Boot 3.4.4 的 Spring Batch 基礎範例專案。由於網路上大部分的教學資源都是針對舊版本的 Spring Batch，此專案提供了最新版本的實作範例，展示了如何建立一個簡單的批次處理作業。
+```text
+Job（HelloJob）
+ └─ Step（helloStep2）
+     └─ Tasklet：做一件事，回傳 RepeatStatus.FINISHED 表示做完了
+```
 
-## 專案特色
+這是 Batch 系列的第一個模組，刻意只保留最小的設定。讀檔、寫資料庫、多個 Job 等主題放在後面的模組：
 
-- 使用最新的 Spring Boot 3.4.4 版本
-- 採用 Java 17 語言版本
-- 示範基本的 Spring Batch Job 和 Step 設定
-- 使用 H2 記憶體資料庫作為作業執行的 JobRepository
-- 提供簡潔易懂的程式碼結構
+| 模組 | 觀察的主題 |
+|---|---|
+| **Spring_Batch**（本模組） | 最簡單的 Job / Step / Tasklet、批次是「做完就結束」的程式 |
+| [Spring_Batch-2](../Spring_Batch-2) | JobRepository 存進資料庫後，`BATCH_*` 表如何記錄執行 |
+| [Spring_Batch-3](../Spring_Batch-3) | Chunk：讀 CSV → 處理 → 寫進資料庫 |
+| [Spring_Batch-4](../Spring_Batch-4) | 多個 Job、Reader / Processor / Writer 的寫法 |
 
-## 技術堆疊
+## 技術版本
 
-- **Java**: 17
-- **Spring Boot**: 3.4.4
-- **Spring Batch**: 最新版本（透過 Spring Boot Starter 管理）
-- **資料庫**: H2（記憶體資料庫）
-- **建構工具**: Gradle
-- **其他工具**: Lombok
+| 項目 | 版本 |
+|---|---|
+| Java | 21 |
+| Spring Boot | 4.1.1（`spring-boot-starter-batch-jdbc`） |
+| Spring Batch | 6.0（Spring Boot 管理） |
+| 資料庫 | H2 記憶體資料庫（只用來存 JobRepository 的執行紀錄） |
+| Gradle | 9.8.0（使用 Gradle Wrapper） |
+| 測試 | JUnit 5、Spring Boot Test |
 
 ## 專案結構
 
-```
-src/
-├── main/
-│   └── java/
-│       └── com/example/demo/
-│           └── SpringBatchApplication.java    # 主要應用程式類別
-└── test/
-    └── java/
-        └── com/example/demo/
-            └── ...                           # 測試檔案
+```text
+src/main/java/com/example/demo/
+└── SpringBatchApplication      Step + Job 的 Bean 定義、main
+
+src/test/java/com/example/demo/
+└── SpringBatchApplicationTests  啟動時執行 HelloJob、exit code、不是 web 應用程式
 ```
 
-## 核心組件說明
+## 執行方式
 
-### SpringBatchApplication.java
+### 測試
 
-主要的應用程式類別，包含以下重要組件：
+不需要 Docker，也不需要資料庫。
 
-1. **Step (sampleStep)**
-   - 定義了一個名為 "helloStep2" 的步驟
-   - 使用 Tasklet 模式執行簡單的 "Hello world!" 輸出
-   - 執行完成後回傳 `RepeatStatus.FINISHED`
-
-2. **Job (sampleJob)**
-   - 定義了一個名為 "HelloJob" 的作業
-   - 包含單一步驟 `sampleStep`
-
-3. **配置**
-   - 使用 `@Configuration` 和 `@Bean` 註解進行 Spring 配置
-   - 自動注入 `JobRepository` 和 `DataSourceTransactionManager`
-
-## 執行環境需求
-
-- Java 17 或更高版本
-- Gradle 7.0 或更高版本
-
-## 如何執行
-
-### 1. 複製專案
 ```bash
-git clone [repository-url]
-cd spring-batch-basic-example
+./gradlew test
 ```
 
-### 2. 執行專案
+### 本機執行
+
 ```bash
 ./gradlew bootRun
 ```
 
-或者使用 IDE 直接執行 `SpringBatchApplication` 的 main 方法。
+輸出（節錄）：
 
-### 3. 預期輸出
-程式執行後會在控制台看到：
-```
+```text
 Hello world!
+Job: [SimpleJob: [name=HelloJob]] completed with the following parameters: [{}] and the following status: [COMPLETED]
 ```
 
-## 重要依賴項目
+印完之後程式就**結束**，不會一直停在那裡。
 
-```gradle
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-batch'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    runtimeOnly 'com.h2database:h2'
-    // ... 其他依賴
+### Docker
+
+沒有資料庫（H2 在記憶體）、沒有 port，所以只有 Dockerfile，不需要 compose。
+
+```bash
+docker build -t spring-batch .
+docker run --rm spring-batch
+echo $?        # Job COMPLETED 為 0
+```
+
+## 批次教學
+
+### 1. Job、Step、Tasklet
+
+```java
+@Bean
+public Step sampleStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    return new StepBuilder("helloStep2", jobRepository).tasklet((contribution, chunkContext) -> {
+        System.out.println("Hello world!");
+        return RepeatStatus.FINISHED;
+    }, transactionManager).build();
+}
+
+@Bean
+public Job sampleJob(JobRepository jobRepository, Step sampleStep) {
+    return new JobBuilder("HelloJob", jobRepository).start(sampleStep).build();
 }
 ```
 
-## 與舊版本的差異
+| 名詞 | 意義 |
+|---|---|
+| Job | 一個完整的批次工作，由一個或多個 Step 組成 |
+| Step | Job 裡的一個階段；有 **Tasklet**（做一件事）和 **Chunk**（讀 → 處理 → 寫，見 Spring_Batch-3）兩種 |
+| Tasklet | 回傳 `FINISHED` 表示做完；回傳 `CONTINUABLE` 會再被呼叫一次 |
+| JobRepository | 記錄每次執行的結果（成功、失敗、執行到哪裡），所以 Spring Batch 一定要有資料庫 |
+| TransactionManager | 每次呼叫 Tasklet 都包在一個交易裡 |
 
-相較於舊版本的 Spring Batch 教學，此專案採用了：
+**[Learning] Bean 名稱和 Step / Job 名稱是兩回事**：`sampleStep` 是 Spring 容器裡的 Bean 名稱，`helloStep2` 是 Spring Batch 存進 JobRepository 的名稱。兩者不一致不是錯誤，但容易混淆；Batch-2 之後的模組會讓它們一致。這裡維持原本的名稱，是為了不改變執行紀錄裡的名稱。
 
-1. **新的建構器 API**：使用 `JobBuilder` 和 `StepBuilder` 替代舊版的 Factory 類別
-2. **依賴注入改進**：直接注入 `JobRepository` 和 `DataSourceTransactionManager`
-3. **Spring Boot 3.x 相容性**：確保與最新的 Spring 生態系統相容
+### 2. 誰執行了 Job？
 
-## 後續學習路徑
+程式裡沒有任何一行「執行 HelloJob」：Spring Boot 的 `JobLauncherApplicationRunner` 在啟動完成後，自動執行容器裡的 Job（`spring.batch.job.enabled` 預設為 `true`）。
 
-這是一個系列專案的第一個範例，後續將包含更多進階情境：
+容器裡有多個 Job 時，Spring Boot 3 之後必須用 `spring.batch.job.name` 指定要執行哪一個（Boot 2 會全部執行），這個主題在 Spring_Batch-4。
 
-- 檔案讀取和寫入範例
-- 資料庫批次處理
-- 條件式流程控制
-- 平行處理和分片
-- 異常處理和重試機制
-- 監控和日誌記錄
+### 3. 批次是「做完就結束」的程式
 
-## 常見問題
+和 web 應用程式不同，批次通常由外部排程（cron、Kubernetes CronJob、Jenkins）啟動，做完就結束，**exit code** 告訴排程這次成功還是失敗：
 
-### Q: 為什麼使用 H2 資料庫？
-A: H2 是一個輕量級的記憶體資料庫，適合用於開發和測試環境。Spring Batch 需要資料庫來儲存作業執行的中繼資料。
+```java
+public static void main(String[] args) {
+    System.exit(SpringApplication.exit(SpringApplication.run(SpringBatchApplication.class, args)));
+}
+```
 
-### Q: 如何查看作業執行歷史？
-A: 可以透過 H2 Console 或者 Spring Boot Actuator 來查看作業執行狀態和歷史記錄。
+`SpringApplication.exit` 會詢問容器裡所有的 `ExitCodeGenerator`。Spring Boot 的 `JobExecutionExitCodeGenerator` 依照 Job 的結果回傳：
 
-### Q: 如何修改為使用其他資料庫？
-A: 修改 `build.gradle` 中的資料庫依賴，並在 `application.properties` 中設定相對應的資料庫連線資訊。
+| Job 狀態 | exit code |
+|---|---|
+| COMPLETED | 0 |
+| FAILED | 5 |
 
-**注意**: 此專案僅供學習和參考使用，實際專案中請根據具體需求進行適當的調整和優化。
+實測：讓 Tasklet 拋出例外，`java -jar` 的 exit code 是 5，剛好是 `BatchStatus.FAILED` 在 enum 中的位置（COMPLETED=0、STARTING=1、STARTED=2、STOPPING=3、STOPPED=4、FAILED=5）。
+
+如果 main 只寫 `SpringApplication.run(...)`，Job 失敗時程式仍然以 0 結束，排程會以為成功。
+
+### 4. 為什麼移除 web？
+
+原本加了 `spring-boot-starter-web`，但沒有任何 Controller。web server 會讓程式一直執行，看不出批次「做完就結束」的特性，還佔用一個 port。
+
+classpath 上沒有 web 時，Spring Boot 判斷為 `WebApplicationType.NONE`，不啟動 web server。
+
+需要 REST API 觸發 Job 的情境，見 Spring_Batch-4。
+
+### 5. 注入介面，不要注入實作
+
+```java
+// 舊寫法：指定具體類別
+public Step sampleStep(JobRepository jobRepository, DataSourceTransactionManager transactionManager)
+
+// 新寫法：只要求「一個 TransactionManager」
+public Step sampleStep(JobRepository jobRepository, PlatformTransactionManager transactionManager)
+```
+
+Spring Boot 建立的是 `JdbcTransactionManager`（`DataSourceTransactionManager` 的子類別），所以舊寫法剛好可以執行。但如果之後加上 JPA，Boot 建立的會變成 `JpaTransactionManager`，舊寫法就找不到 Bean。注入介面可以不受實作變動影響。
+
+## 現代化紀錄
+
+| 步驟 | 內容 |
+|---|---|
+| 1 | baseline 測試：啟動時執行 HelloJob、Job 與 Step 的名稱 |
+| 2 | Java 17 → 21、Spring Boot 3.4.4 → 3.5.16、Gradle 8.13 → 8.14.3 |
+| 3 | Spring Boot 3.5.16 → 4.1.1、Gradle 8.14.3 → 9.8.0 |
+| 4 | 重構：移除 web 與 Lombok、exit code、注入介面 |
+| 5 | Docker |
+
+### 修正前發現的問題
+
+| 問題 | 說明 |
+|---|---|
+| Job 失敗時 exit code 仍然是 0 | main 沒有使用 `SpringApplication.exit`，排程無法判斷失敗 |
+| 沒有使用的依賴 | `spring-boot-starter-web`（沒有 Controller）、Lombok（沒有使用） |
+| 注入具體類別 | `DataSourceTransactionManager`，見上方第 5 點 |
+| 多餘的 `@Configuration` | `@SpringBootApplication` 已經包含 `@Configuration` |
+
+### 行為變更
+
+| 項目 | 修改前 | 修改後 |
+|---|---|---|
+| 執行後 | 印出 Hello world! 後，web server 持續執行 | 印出 Hello world! 後**程式結束** |
+| Port | 8888 | 無 |
+| Job 失敗時的 exit code | 0 | 5 |
+
+### 升級時學到的事
+
+- **Boot 4 的 `starter-batch` 不含 JDBC**：要改用 `spring-boot-starter-batch-jdbc`。實測只用 `starter-batch` 時，容器裡沒有任何 `PlatformTransactionManager`，Step 無法建立，程式無法啟動。
+- **Spring Batch 6 搬移了 package**：
+
+  | 類別 | Spring Batch 5 | Spring Batch 6 |
+  |---|---|---|
+  | `Job` | `org.springframework.batch.core` | `org.springframework.batch.core.job` |
+  | `Step` | `org.springframework.batch.core` | `org.springframework.batch.core.step` |
+  | `JobParameters` | `org.springframework.batch.core` | `org.springframework.batch.core.job.parameters` |
+  | `RepeatStatus` | `org.springframework.batch.repeat` | `org.springframework.batch.infrastructure.repeat` |
+  | `ItemReader` / `ItemWriter` | `org.springframework.batch.item` | `org.springframework.batch.infrastructure.item` |
+
+- **`JobExplorer` 已標記為將移除**：查詢執行紀錄改用 `JobRepository`（`getJobInstances`、`getJobExecutions`）。
+- **推論要用測試確認**：原本的設定檔寫成 `Server.port:8888`（大寫 S），分析時推測沒有作用；baseline 測試證明 port 確實是 8888，因為 Spring Boot 的 relaxed binding 比對屬性名稱時**不分大小寫**。Spring_Cache、Spring_Flyway 的 README 因此一併更正。
