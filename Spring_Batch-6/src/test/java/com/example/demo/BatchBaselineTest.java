@@ -13,12 +13,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.FileSystemUtils;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Baseline：鎖定合併前 Spring_Batch-6（包含 Batch-4、5 的全部內容）的行為。
@@ -28,10 +29,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * （專案設定 initialize-schema=never）；book 表沒有任何建立資料的機制，用 baseline-books.sql 建立 6 本書。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class BatchBaselineTest {
 
 	@ServiceConnection
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:15-alpine")
 			.withInitScripts("org/springframework/batch/core/schema-postgresql.sql", "baseline-books.sql");
 
 	static {

@@ -3,11 +3,11 @@ package com.example.demo.batch.Scheduled;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobExecutionException;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.job.JobExecutionException;
+import org.springframework.batch.core.job.parameters.JobParameters;
+import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -66,7 +66,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookRepositoryJob, params);
 
             log.info("📊 Repository Job Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ Repository Job execution failed: {}", e.getMessage(), e);
@@ -86,7 +86,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookJpaJob, params);
 
             log.info("📊 JPA Job Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ JPA Job execution failed: {}", e.getMessage(), e);
@@ -106,7 +106,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookJdbcJob, params);
 
             log.info("📊 JDBC Job Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ JDBC Job execution failed: {}", e.getMessage(), e);
@@ -126,7 +126,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookComprehensiveJob, params);
 
             log.info("📊 Comprehensive Job Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ Comprehensive Job execution failed: {}", e.getMessage(), e);
@@ -146,7 +146,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookConditionalJob, params);
 
             log.info("📊 Conditional Job Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ Conditional Job execution failed: {}", e.getMessage(), e);
@@ -198,7 +198,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(bookComprehensiveJob, params);
 
             log.info("🧹 Weekly Maintenance Result: {} (ID: {})",
-                    jobExecution.getStatus(), jobExecution.getJobId());
+                    jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ Weekly Maintenance Job execution failed: {}", e.getMessage(), e);
@@ -240,7 +240,7 @@ public class BookBatchScheduler {
             JobExecution jobExecution = jobLauncher.run(jobToRun, params);
 
             return String.format("✅ Job %s triggered successfully. Status: %s, ID: %d",
-                    jobType, jobExecution.getStatus(), jobExecution.getJobId());
+                    jobType, jobExecution.getStatus(), jobExecution.getJobInstance().getId());
 
         } catch (JobExecutionException e) {
             log.error("❌ Manual job trigger failed: {}", e.getMessage(), e);

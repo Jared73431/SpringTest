@@ -4,9 +4,9 @@ import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobExecutionListener;
-import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.listener.JobExecutionListener;
+import org.springframework.batch.core.step.StepExecution;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.batch.repository.BookRepository;
@@ -40,7 +40,7 @@ public class BookJobCompletionListener implements JobExecutionListener {
         log.info("=".repeat(60));
         log.info("📚 BOOK BATCH JOB STARTED");
         log.info("Job Name: {}", jobExecution.getJobInstance().getJobName());
-        log.info("Job ID: {}", jobExecution.getJobId());
+        log.info("Job ID: {}", jobExecution.getJobInstance().getId());
         log.info("Start Time: {}", jobExecution.getStartTime().format(formatter));
         log.info("Parameters: {}", jobExecution.getJobParameters());
 

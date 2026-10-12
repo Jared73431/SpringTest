@@ -3,8 +3,8 @@ package com.example.demo.batch.reader;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.infrastructure.item.file.FlatFileItemReader;
+import org.springframework.batch.infrastructure.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 

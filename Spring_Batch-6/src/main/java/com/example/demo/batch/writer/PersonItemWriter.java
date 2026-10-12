@@ -1,7 +1,7 @@
 package com.example.demo.batch.writer;
 
-import org.springframework.batch.item.data.RepositoryItemWriter;
-import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
+import org.springframework.batch.infrastructure.item.data.RepositoryItemWriter;
+import org.springframework.batch.infrastructure.item.data.builder.RepositoryItemWriterBuilder;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.batch.entity.Person;

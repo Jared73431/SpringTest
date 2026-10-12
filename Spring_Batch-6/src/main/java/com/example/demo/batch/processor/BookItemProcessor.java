@@ -1,6 +1,6 @@
 package com.example.demo.batch.processor;
 
-import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.batch.dto.BookDTO;
