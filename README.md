@@ -41,7 +41,7 @@
 | [Spring_Batch-5](Spring_Batch-5) 📘 | 多 Job 整理版 | 延續 Batch-4 的結構整理 | 🐘 |
 | [Spring_Batch-6](Spring_Batch-6) | Reader 比較 | `RepositoryItemReader` / `JpaPagingItemReader` / `JdbcCursorItemReader`、REST 觸發 Job、輸出 CSV | 🐘 |
 | [Spring_Scheduling](Spring_Scheduling) 📘 | Spring 排程 | `@Scheduled` 6 課：fixedRate vs fixedDelay、cron 與時區（夏令時間會跳過或重複執行）、單一執行緒的陷阱、例外處理、ShedLock 多台主機只執行一次 ✅ 已現代化 | 🐘 |
-| [Spring_Quartz](Spring_Quartz) | Quartz 入門 | JobDetail / Trigger 基本設定 | — |
+| [Spring_Quartz](Spring_Quartz) 📘 | Quartz 排程 | 由原本 3 個模組合併：動態排程 API、JDBC JobStore、misfire 補做策略、`@DisallowConcurrentExecution`、叢集（一台停止另一台接手）、Quartz 與 Spring cron 的差異 ✅ 已現代化 | 🐘 |
 
 ### Web / API
 
@@ -99,7 +99,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
