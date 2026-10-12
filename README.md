@@ -36,7 +36,7 @@
 |---|---|---|---|
 | [Spring_Batch](Spring_Batch) 📘 | Batch 入門 | 最小的 Job / Step / Tasklet、批次是「做完就結束」的程式、用 exit code 回報 Job 成功或失敗、Boot 4 改用 `starter-batch-jdbc` ✅ 已現代化 | — |
 | [Spring_Batch-2](Spring_Batch-2) 📘 | 批次的資料庫 | 3 課：6 張 `BATCH_*` 表、JobInstance 與識別參數（同一天不能處理兩次）、失敗後從失敗的 Step 重新執行；Flyway 建表（`initialize-schema` 升級 Batch 6 時 duplicate key） ✅ 已現代化 | 🐘 |
-| [Spring_Batch-3](Spring_Batch-3) 📘 | Chunk 處理 | CSV → Processor → DB、JobListener、排程觸發 | 🐘 |
+| [Spring_Batch-3](Spring_Batch-3) 📘 | Chunk：CSV 匯入 | 官方教學的 CSV → 轉大寫 → DB：chunk 大小與 commit 次數、失敗只 rollback 當下的 chunk、`JdbcBatchItemWriter` vs JPA、為什麼不能重新執行（時間戳 vs 業務參數） ✅ 已現代化 | 🐘 |
 | [Spring_Batch-4](Spring_Batch-4) 📘 | 多 Job | 自訂 Reader / Writer、多 Job 執行、非同步啟動 | 🐘 |
 | [Spring_Batch-5](Spring_Batch-5) 📘 | 多 Job 整理版 | 延續 Batch-4 的結構整理 | 🐘 |
 | [Spring_Batch-6](Spring_Batch-6) | Reader 比較 | `RepositoryItemReader` / `JpaPagingItemReader` / `JdbcCursorItemReader`、REST 觸發 Job、輸出 CSV | 🐘 |
@@ -99,7 +99,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
