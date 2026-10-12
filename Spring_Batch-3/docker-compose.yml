@@ -1,0 +1,53 @@
+# ============================================================
+# Batch-3 練習環境：PostgreSQL + CSV 匯入（做完就結束）
+#
+#   執行：docker compose run --rm app
+#         （沒有 JobParameters：只能成功執行一次，再執行會被拒絕，exit code 不為 0）
+#   觀察：docker compose exec postgres psql -U postgres -d Batch3 -c "select * from person"
+#   pgAdmin：docker compose --profile tools up -d pgadmin   （http://localhost:5050）
+#   重來：docker compose down -v                  （刪除資料庫：person 與執行紀錄一起清空）
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=Batch3
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d Batch3"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 沒有 ports：批次不提供網路服務，執行完容器就結束
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # 對應 application.properties 的 ${DB_HOST:localhost}
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+
+  # 選用：只有加上 --profile tools 才會啟動
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    profiles: ["tools"]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
