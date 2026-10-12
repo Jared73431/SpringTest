@@ -19,6 +19,10 @@ configurations {
 	}
 }
 
+// Baseline：Boot 3.4 管理的 Testcontainers 1.20 不支援 Docker 29；只在依賴寫 1.21.4 時，核心模組仍會被 BOM 降回 1.20.6，
+// 所以覆蓋 BOM 的版本屬性
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
 	mavenCentral()
 }
@@ -34,6 +38,8 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.batch:spring-batch-test'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
