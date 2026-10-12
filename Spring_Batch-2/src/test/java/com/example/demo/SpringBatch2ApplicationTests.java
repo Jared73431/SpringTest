@@ -71,4 +71,17 @@ class SpringBatch2ApplicationTests extends PostgresContainerTestBase {
 
 		assertThat(jdbc.queryForObject("select count(*) from batch_job_instance", Integer.class)).isEqualTo(2);
 	}
+
+	// 命令列的 date=2026-10-12 是 String；要指定型別或「不參與識別」，使用 Spring Batch 5 之後的格式：
+	// name=value,type,identifying
+	@Test
+	void run_shouldParseTypeAndIdentifyingFlag_fromCommandLine() {
+		run("date=2026-10-12,java.time.LocalDate", "triggeredBy=manual,java.lang.String,false");
+
+		assertThat(jdbc.queryForList("""
+				select parameter_name || ':' || parameter_type || ':' || identifying
+				from batch_job_execution_params order by parameter_name
+				""", String.class))
+				.containsExactly("date:java.time.LocalDate:Y", "triggeredBy:java.lang.String:N");
+	}
 }
