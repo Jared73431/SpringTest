@@ -1,0 +1,10 @@
+# 不送進 Docker build context 的檔案：加快 build，也避免把本機產物打包進 image
+build/
+.gradle/
+bin/
+out/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
