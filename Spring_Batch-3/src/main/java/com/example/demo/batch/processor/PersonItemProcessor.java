@@ -1,29 +1,27 @@
 package com.example.demo.batch.processor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 
 import com.example.demo.batch.dto.PersonDTO;
-import com.example.demo.batch.entity.Person;
-
-import lombok.extern.log4j.Log4j2;
+import com.example.demo.batch.model.Person;
 
 /**
- * 功能：实现了ItemProcessor接口，定义数据处理逻辑
- * 处理内容：将人名转换为大写形式
- * 日志：记录转换前后的数据对比
+ * Processor：把姓名轉成大寫。
+ *
+ * <p>
+ * 輸入（PersonDTO，CSV 的一行）和輸出（Person，資料庫的一列）型別可以不同。回傳 null 表示「略過這一筆」，不會傳給 Writer。
  */
-@Log4j2
-public class PersonItemProcessor implements ItemProcessor<PersonDTO,Person> {
-    @Override
-    public Person process(final PersonDTO person) throws Exception {
-        final String firstName = person.firstName().toUpperCase();
-        final String lastName = person.lastName().toUpperCase();
+public class PersonItemProcessor implements ItemProcessor<PersonDTO, Person> {
 
-        final Person transformedPerson = new Person(firstName, lastName);
+	private static final Logger log = LoggerFactory.getLogger(PersonItemProcessor.class);
 
-        log.info("Converting ("+ person + ") into (" + transformedPerson + ")");
-
-        return transformedPerson;
-    }
+	@Override
+	public Person process(PersonDTO person) {
+		Person transformed = new Person(person.firstName().toUpperCase(), person.lastName().toUpperCase());
+		log.info("Converting ({}) into ({})", person, transformed);
+		return transformed;
+	}
 
 }
