@@ -3,7 +3,7 @@
 從 Spring Boot 2.7 / Java 11 開始，一路練習到 Spring Boot 3.5 / Java 17 的 Spring 生態系範例集合。
 
 每個資料夾都是**可以獨立執行的 Spring Boot 專案**，一個資料夾聚焦一個技術主題。
-部分主題（Batch、WebSocket、Quartz、Security）保留了多個版本，可以看出同一個技術從入門到較完整實作的演進過程。
+部分主題（Batch、WebSocket、Security）保留了多個版本，可以看出同一個技術從入門到較完整實作的演進過程。
 
 這個 Repo 的用途：
 
@@ -42,8 +42,6 @@
 | [Spring_Batch-6](Spring_Batch-6) | Reader 比較 | `RepositoryItemReader` / `JpaPagingItemReader` / `JdbcCursorItemReader`、REST 觸發 Job、輸出 CSV | 🐘 |
 | [Spring_Scheduling](Spring_Scheduling) 📘 | Spring 排程 | `@Scheduled` 6 課：fixedRate vs fixedDelay、cron 與時區（夏令時間會跳過或重複執行）、單一執行緒的陷阱、例外處理、ShedLock 多台主機只執行一次 ✅ 已現代化 | 🐘 |
 | [Spring_Quartz](Spring_Quartz) | Quartz 入門 | JobDetail / Trigger 基本設定 | — |
-| [Spring_Quartz-2](Spring_Quartz-2) | Quartz 多任務 | 多個 Job 設定 | — |
-| [Spring_Quartz-3](Spring_Quartz-3) | Quartz 持久化 | JDBC JobStore、REST API 動態新增 / 刪除 Job、JobFactory 注入 Spring Bean | 🐘 |
 
 ### Web / API
 
@@ -103,7 +101,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 |---|---|---|
 | **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅ |
 | 2.7.x | 11 / 17 | Security3 |
-| 3.0.x | 17 | Quartz 1~3、Security、Security2 |
+| 3.0.x | 17 | Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
