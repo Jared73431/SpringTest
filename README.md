@@ -37,9 +37,7 @@
 | [Spring_Batch](Spring_Batch) 📘 | Batch 入門 | 最小的 Job / Step / Tasklet、批次是「做完就結束」的程式、用 exit code 回報 Job 成功或失敗、Boot 4 改用 `starter-batch-jdbc` ✅ 已現代化 | — |
 | [Spring_Batch-2](Spring_Batch-2) 📘 | 批次的資料庫 | 3 課：6 張 `BATCH_*` 表、JobInstance 與識別參數（同一天不能處理兩次）、失敗後從失敗的 Step 重新執行；Flyway 建表（`initialize-schema` 升級 Batch 6 時 duplicate key） ✅ 已現代化 | 🐘 |
 | [Spring_Batch-3](Spring_Batch-3) 📘 | Chunk：CSV 匯入 | 官方教學的 CSV → 轉大寫 → DB：chunk 大小與 commit 次數、失敗只 rollback 當下的 chunk、`JdbcBatchItemWriter` vs JPA、為什麼不能重新執行（時間戳 vs 業務參數） ✅ 已現代化 | 🐘 |
-| [Spring_Batch-4](Spring_Batch-4) 📘 | 多 Job | 自訂 Reader / Writer、多 Job 執行、非同步啟動 | 🐘 |
-| [Spring_Batch-5](Spring_Batch-5) 📘 | 多 Job 整理版 | 延續 Batch-4 的結構整理 | 🐘 |
-| [Spring_Batch-6](Spring_Batch-6) | Reader 比較 | `RepositoryItemReader` / `JpaPagingItemReader` / `JdbcCursorItemReader`、REST 觸發 Job、輸出 CSV | 🐘 |
+| [Spring_Batch-4](Spring_Batch-4) 📘 | 多 Job、Reader / Writer | 由 Batch-4、5、6 合併的書店批次，6 課：五種 Reader 比較、`@StepScope` Writer、多個 Job 用名稱區分與條件流程、Skip / Retry、從中斷處繼續、狀態欄位 + 時間戳（OFFSET 分頁會漏資料）；REST 在背景啟動 Job ✅ 已現代化 | 🐘 |
 | [Spring_Scheduling](Spring_Scheduling) 📘 | Spring 排程 | `@Scheduled` 6 課：fixedRate vs fixedDelay、cron 與時區（夏令時間會跳過或重複執行）、單一執行緒的陷阱、例外處理、ShedLock 多台主機只執行一次 ✅ 已現代化 | 🐘 |
 | [Spring_Quartz](Spring_Quartz) 📘 | Quartz 排程 | 由原本 3 個模組合併：動態排程 API、JDBC JobStore、misfire 補做策略、`@DisallowConcurrentExecution`、叢集（一台停止另一台接手）、Quartz 與 Spring cron 的差異 ✅ 已現代化 | 🐘 |
 
@@ -99,7 +97,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅ |
 | 2.7.x | 11 / 17 | Security3 |
 | 3.0.x | 17 | Security、Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
