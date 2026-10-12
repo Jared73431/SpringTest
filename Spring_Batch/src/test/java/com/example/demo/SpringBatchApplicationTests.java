@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -20,7 +20,7 @@ import org.springframework.core.env.Environment;
 class SpringBatchApplicationTests {
 
 	@Autowired
-	private JobExplorer jobExplorer;
+	private JobRepository jobRepository;
 
 	@Autowired
 	private Environment environment;
@@ -30,9 +30,9 @@ class SpringBatchApplicationTests {
 	void helloJob_shouldRunOnStartup(CapturedOutput output) {
 		assertThat(output.getOut()).contains("Hello world!");
 
-		var instances = jobExplorer.getJobInstances("HelloJob", 0, 10);
+		var instances = jobRepository.getJobInstances("HelloJob", 0, 10);
 		assertThat(instances).hasSize(1);
-		var executions = jobExplorer.getJobExecutions(instances.get(0));
+		var executions = jobRepository.getJobExecutions(instances.get(0));
 		assertThat(executions).singleElement().satisfies(execution -> {
 			assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
 			assertThat(execution.getStepExecutions()).singleElement()

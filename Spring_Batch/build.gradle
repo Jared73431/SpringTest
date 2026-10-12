@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.16'
+	id 'org.springframework.boot' version '4.1.1'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -24,12 +24,14 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-batch'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+	// Boot 4：starter-batch 不再包含 JDBC，需改用 starter-batch-jdbc（JobRepository 存進資料庫、建立 DataSourceTransactionManager）
+	// 實測：只用 starter-batch 時沒有 DataSourceTransactionManager bean，sampleStep 注入失敗，應用程式無法啟動
+	implementation 'org.springframework.boot:spring-boot-starter-batch-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.batch:spring-batch-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
