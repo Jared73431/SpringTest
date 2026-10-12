@@ -13,29 +13,26 @@ java {
 	}
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	// Boot 4：starter-batch 不再包含 JDBC，需改用 starter-batch-jdbc（JobRepository 存進資料庫、建立 DataSourceTransactionManager）
-	// 實測：只用 starter-batch 時沒有 DataSourceTransactionManager bean，sampleStep 注入失敗，應用程式無法啟動
+	// Boot 4：starter-batch 不再包含 JDBC，需改用 starter-batch-jdbc（JobRepository 存進資料庫、建立 TransactionManager）
+	// 實測：只用 starter-batch 時容器裡沒有任何 PlatformTransactionManager，Step 無法建立，應用程式無法啟動
 	implementation 'org.springframework.boot:spring-boot-starter-batch-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	compileOnly 'org.projectlombok:lombok'
+	// JobRepository 需要資料庫：H2 記憶體資料庫，Spring Batch 啟動時自動建立 BATCH_* 表
 	runtimeOnly 'com.h2database:h2'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.batch:spring-batch-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
 }
