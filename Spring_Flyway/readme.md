@@ -279,7 +279,7 @@ public class V1_0_5__ComplexMigration extends BaseJavaMigration {
 | 項目 | 修改前 | 修改後 |
 |---|---|---|
 | 應用程式 | 執行完遷移就結束（沒有 Web） | 持續執行，提供 `/actuator/flyway` |
-| Port | 設定 8015，因大小寫錯誤（`Server.port`）不生效；實際上也沒有 Web | `8093` |
+| Port | 8015（`Server.port` 不分大小寫，其實有作用），但沒有 Web，port 沒有意義 | `8093` |
 | `out-of-order` | `true` | `false`（預設） |
 | `baseline-on-migrate` | `true`（`baseline-version=1.0`） | `false`（預設） |
 | 遷移 | 7 個 | 8 個（新增 `R__javastack_summary_view.sql`） |

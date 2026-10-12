@@ -215,10 +215,12 @@ spring.cache.redis.key-prefix=app-cache::
 
 | 設定 | 問題 |
 |---|---|
-| `Server.port:8015` | `S` 大寫，Spring 不認得 → 實際 port 是 8080 |
+| `Server.port:8015` | 其實**有作用**：Spring Boot 比對屬性名稱時不分大小寫（relaxed binding），實際 port 是 8015。只是和其他模組的寫法不一致，統一改成 `server.port` |
 | `spring.redis.*` | Spring Boot 3 起改名為 `spring.data.redis.*` |
 | `spring.redis.jedis.pool.*` | 專案使用 Lettuce，不是 Jedis |
 
+> 更正：這張表最初把 `Server.port` 也列為沒有作用的設定，那是錯的。Spring Boot 的 relaxed binding 比對屬性名稱時不分大小寫，`Server.port` 會被當成 `server.port`（Spring_Batch 的 baseline 測試證實了這一點）。
+>
 > 檢查設定是否生效：Spring Boot Actuator 的 `/actuator/configprops`、`/actuator/env`，或在測試中直接驗證行為（例如本模組驗證 Redis key 的前綴）。
 
 ### 7. 快取與交易：`transactionAware()`
@@ -271,7 +273,7 @@ RedisCacheWriter cacheWriter = RedisCacheWriter.create(factory, writer -> writer
 
 | 項目 | 修改前 | 修改後 |
 |---|---|---|
-| Port | 設定 8015，因大小寫錯誤實際為 8080 | `8090` |
+| Port | 8015（`Server.port` 不分大小寫，其實有作用） | `8090` |
 | 查無使用者 | `500` | `404` |
 | 修改 / 刪除後依 email 查詢 | 舊資料 | 最新資料 |
 | 新增 / 修改 / 刪除後查詢全部 | 舊列表 | 最新列表 |
