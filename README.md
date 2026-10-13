@@ -65,7 +65,7 @@
 
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
-| [Spring_Security](Spring_Security) | Security 入門 | 預設登入頁、設定檔帳密 | — |
+| [Spring_Security](Spring_Security) 📘 | Security 自動設定 | 什麼都不寫時 Spring Security 做了什麼：登入頁 vs 401、表單登入與 HTTP Basic、CSRF（curl 收到 401 的陷阱）、明碼 vs BCrypt；附面試重點 ✅ 已現代化 | — |
 | [Spring_Security2](Spring_Security2) | Security 6 設定 | `WebSecurityCustomizer` 忽略特定路徑（舊版 Adapter 寫法保留為註解對照） | — |
 | [Spring_Security3](Spring_Security3) | 舊版設定（Boot 2.7） | `WebSecurityConfigurerAdapter`、Stateless Session | — |
 
@@ -97,9 +97,9 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅ |
 | 2.7.x | 11 / 17 | Security3 |
-| 3.0.x | 17 | Security、Security2 |
+| 3.0.x | 17 | Security2 |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
@@ -134,7 +134,7 @@ docker run -d --name redis -p 6379:6379 redis:7-alpine
 |---|---|---|
 | `DB_USERNAME` | `postgres` | 資料庫帳號 |
 | `DB_PASSWORD` | `postgres` | 資料庫密碼 |
-| `SECURITY_USER_PASSWORD` | `password` | Spring_Security 的登入密碼 |
+| `SECURITY_USER_PASSWORD` | `password` | Spring_Security 的登入密碼（帳號 `user`） |
 | `PGADMIN_PASSWORD` | `admin` | Spring_R2DBC、Spring_R2DBC2 docker compose 的 pgAdmin 密碼（`--profile tools`） |
 
 設定檔中的寫法：
