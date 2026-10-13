@@ -2640,6 +2640,2852 @@
         }
       ],
       "name" : "Spring_Thymeleaf"
+    },
+    {
+      "description" : "Redis 五種資料結構與三個實務情境（排行榜、限流、分散式鎖）。啟動：`docker compose up --build -d`（port 8089，Redis 在容器中，不會用到本機的 Redis）",
+      "item" : [
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "prerequest",
+                  "script" : {
+                    "exec" : [
+                      "pm.collectionVariables.set('redisSuffix', Date.now());"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                },
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "String：SET 帶 TTL",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"value\": \"123456\", \"ttlSeconds\": 300}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "PUT",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "strings",
+                    "otp-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/strings/otp-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('value 與 TTL', () => { const b = pm.response.json(); pm.expect(b.value).to.eql('123456'); pm.expect(b.ttlSeconds).to.be.within(1, 300); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "String：GET（含剩餘 TTL）",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "strings",
+                    "otp-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/strings/otp-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "物件：存成 JSON",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"Amy\", \"email\": \"amy@example.com\", \"age\": 20}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "PUT",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "users",
+                    "{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/users/{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('Amy', () => pm.expect(pm.response.json().name).to.eql('Amy'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "物件：讀回",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "users",
+                    "{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/users/{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Hash：HSET",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"value\": \"1200\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "PUT",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "hashes",
+                    "product-{{redisSuffix}}",
+                    "fields",
+                    "price"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/hashes/product-{{redisSuffix}}/fields/price"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('price', () => pm.expect(pm.response.json().price).to.eql('1200'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Hash：HGETALL",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "hashes",
+                    "product-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/hashes/product-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "List：RPUSH",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"value\": \"job-1\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "lists",
+                    "queue-{{redisSuffix}}",
+                    "right"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/lists/queue-{{redisSuffix}}/right"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('job-1', () => pm.expect(pm.response.json().value).to.eql('job-1'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "List：LPOP",
+              "request" : {
+                "header" : [],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "lists",
+                    "queue-{{redisSuffix}}",
+                    "left"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/lists/queue-{{redisSuffix}}/left"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('404', () => pm.response.to.have.status(404));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "List 已空（404）",
+              "request" : {
+                "header" : [],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "lists",
+                    "queue-{{redisSuffix}}",
+                    "left"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/lists/queue-{{redisSuffix}}/left"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Set：SADD",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"members\": [\"java\", \"spring\", \"java\"]}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "sets",
+                    "tags-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/sets/tags-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('isMember', () => pm.expect(pm.response.json().isMember).to.be.true);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Set：SISMEMBER",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "sets",
+                    "tags-{{redisSuffix}}",
+                    "members",
+                    "spring"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/sets/tags-{{redisSuffix}}/members/spring"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "ZSet：ZADD",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"member\": \"Amy\", \"score\": 95}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "zsets",
+                    "scores-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/zsets/scores-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('95', () => pm.expect(pm.response.json().score).to.eql(95));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "ZSet：ZSCORE",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "zsets",
+                    "scores-{{redisSuffix}}",
+                    "members",
+                    "Amy"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/zsets/scores-{{redisSuffix}}/members/Amy"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('409', () => pm.response.to.have.status(409));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "用錯資料結構（WRONGTYPE → 409）",
+              "request" : {
+                "description" : "otp-xxx 是 String，用 Hash 的指令讀取",
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "hashes",
+                    "otp-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/hashes/otp-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Key：刪除",
+              "request" : {
+                "header" : [],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "keys",
+                    "otp-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/keys/otp-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('404', () => pm.response.to.have.status(404));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Key 不存在（404）",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "strings",
+                    "otp-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/strings/otp-{{redisSuffix}}"
+                }
+              }
+            }
+          ],
+          "name" : "資料結構"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Amy 加 30 分",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"player\": \"Amy\", \"points\": 30}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "leaderboards",
+                    "game-{{redisSuffix}}",
+                    "scores"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/leaderboards/game-{{redisSuffix}}/scores"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "Bob 加 50 分",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"player\": \"Bob\", \"points\": 50}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "leaderboards",
+                    "game-{{redisSuffix}}",
+                    "scores"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/leaderboards/game-{{redisSuffix}}/scores"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('Bob 第 1 名', () => { const top = pm.response.json(); pm.expect(top[0].player).to.eql('Bob'); pm.expect(top[0].rank).to.eql(1); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "前 10 名",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "leaderboards",
+                    "game-{{redisSuffix}}"
+                  ],
+                  "query" : [
+                    {
+                      "key" : "top",
+                      "value" : "10"
+                    }
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/leaderboards/game-{{redisSuffix}}?top=10"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('第 2 名', () => pm.expect(pm.response.json().rank).to.eql(2));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "查 Amy 的名次",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "leaderboards",
+                    "game-{{redisSuffix}}",
+                    "players",
+                    "Amy"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/leaderboards/game-{{redisSuffix}}/players/Amy"
+                }
+              }
+            }
+          ],
+          "name" : "排行榜（ZSet）"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "prerequest",
+                  "script" : {
+                    "exec" : [
+                      "for (let i = 0; i < 5; i++) {",
+                      "  pm.sendRequest({ url: pm.variables.replaceIn('{{redisUrl}}/api/redis/rate-limited'), header: { 'X-Client-Id': 'postman-' + pm.collectionVariables.get('redisSuffix') } });",
+                      "}"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                },
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('429 + Retry-After', () => { pm.response.to.have.status(429); pm.response.to.have.header('Retry-After'); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "第 6 次請求被擋（429）",
+              "request" : {
+                "description" : "每個 client 60 秒內最多 5 次。Pre-request script 先送 5 次，這一次是第 6 次",
+                "header" : [
+                  {
+                    "key" : "X-Client-Id",
+                    "value" : "postman-{{redisSuffix}}"
+                  }
+                ],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "rate-limited"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/rate-limited"
+                }
+              }
+            }
+          ],
+          "name" : "限流（INCR + EXPIRE）"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('201 token', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().token).to.be.a('string'); });",
+                      "pm.collectionVariables.set('redisLockToken', pm.response.json().token);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "取得鎖",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"ttlSeconds\": 30}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "locks",
+                    "report-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/locks/report-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('409', () => pm.response.to.have.status(409));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "別人再取得（409）",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"ttlSeconds\": 30}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "locks",
+                    "report-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/locks/report-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('409', () => pm.response.to.have.status(409));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "token 不符無法釋放（409）",
+              "request" : {
+                "header" : [
+                  {
+                    "key" : "X-Lock-Token",
+                    "value" : "wrong-token"
+                  }
+                ],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "locks",
+                    "report-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/locks/report-{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "用自己的 token 釋放",
+              "request" : {
+                "header" : [
+                  {
+                    "key" : "X-Lock-Token",
+                    "value" : "{{redisLockToken}}"
+                  }
+                ],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "locks",
+                    "report-{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/locks/report-{{redisSuffix}}"
+                }
+              }
+            }
+          ],
+          "name" : "分散式鎖"
+        }
+      ],
+      "name" : "Spring_Redis"
+    },
+    {
+      "description" : "Spring Cache 抽象層 + Redis：@Cacheable / @CachePut / @CacheEvict。需要 PostgreSQL 與 Redis。啟動：`docker compose up --build -d`（port 8090）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('cacheUserId', pm.response.json().id);",
+                  "pm.collectionVariables.set('cacheUserEmail', pm.response.json().email);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"Amy\", \"email\": \"amy{{$timestamp}}@example.com\", \"age\": 20}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{cacheUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy', () => pm.expect(pm.response.json().name).to.eql('Amy'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢（第一次：從資料庫）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy', () => pm.expect(pm.response.json().name).to.eql('Amy'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢（第二次：快取命中，log 不會出現 SQL）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "依 email 查詢",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "email",
+                "{{cacheUserEmail}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/email/{{cacheUserEmail}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{cacheUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy Lin', () => pm.expect(pm.response.json().name).to.eql('Amy Lin'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改（@CachePut 更新快取）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"Amy Lin\", \"email\": \"{{cacheUserEmail}}\", \"age\": 21}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy Lin', () => pm.expect(pm.response.json().name).to.eql('Amy Lin'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "再查詢：拿到更新後的值",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"\", \"email\": \"not-an-email\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{cacheUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除（@CacheEvict）",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除後查詢（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{cacheUserId}}"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/{{cacheUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "清除所有使用者快取",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{cacheUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "cache"
+              ],
+              "raw" : "{{cacheUrl}}/api/users/cache"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Cache"
+    },
+    {
+      "description" : "和 Spring_Cache 相同的 API，快取改成本機記憶體的 Caffeine；附 Actuator 的快取指標。啟動：`docker compose up --build -d`（port 8091，另一個實例在 8092，用來觀察本機快取不同步）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('caffeineUserId', pm.response.json().id);",
+                  "pm.collectionVariables.set('caffeineUserEmail', pm.response.json().email);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"Amy\", \"email\": \"amy{{$timestamp}}@example.com\", \"age\": 20}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy', () => pm.expect(pm.response.json().name).to.eql('Amy'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢（第一次：從資料庫）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy', () => pm.expect(pm.response.json().name).to.eql('Amy'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢（第二次：快取命中，log 不會出現 SQL）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "依 email 查詢",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "email",
+                "{{caffeineUserEmail}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/email/{{caffeineUserEmail}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy Lin', () => pm.expect(pm.response.json().name).to.eql('Amy Lin'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改（@CachePut 更新快取）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"Amy Lin\", \"email\": \"{{caffeineUserEmail}}\", \"age\": 21}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Amy Lin', () => pm.expect(pm.response.json().name).to.eql('Amy Lin'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "再查詢：拿到更新後的值",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"\", \"email\": \"not-an-email\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('有 users 快取', () => pm.expect(JSON.stringify(pm.response.json())).to.include('users'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Actuator：快取清單",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "actuator",
+                "caches"
+              ],
+              "raw" : "{{caffeineUrl}}/actuator/caches"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('至少命中 1 次', () => pm.expect(pm.response.json().measurements[0].value).to.be.at.least(1));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Actuator：命中次數（cache.gets hit）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "actuator",
+                "metrics",
+                "cache.gets"
+              ],
+              "query" : [
+                {
+                  "key" : "tag",
+                  "value" : "name:users"
+                },
+                {
+                  "key" : "tag",
+                  "value" : "result:hit"
+                }
+              ],
+              "raw" : "{{caffeineUrl}}/actuator/metrics/cache.gets?tag=name:users&tag=result:hit"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除（@CacheEvict）",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除後查詢（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{caffeineUserId}}"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/{{caffeineUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "清除所有使用者快取",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{caffeineUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "cache"
+              ],
+              "raw" : "{{caffeineUrl}}/api/users/cache"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Caffeine"
+    },
+    {
+      "description" : "Flyway 管理資料表的版本，沒有業務 API。啟動：`docker compose up --build -d`（port 8093）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "const migrations = Object.values(pm.response.json().contexts)[0].flywayBeans.flyway.migrations;",
+                  "pm.test('每個遷移都成功', () => { pm.expect(migrations.length).to.be.above(0); migrations.forEach(m => pm.expect(m.state).to.eql('SUCCESS')); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "遷移紀錄（/actuator/flyway）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{flywayUrl}}"
+              ],
+              "path" : [
+                "actuator",
+                "flyway"
+              ],
+              "raw" : "{{flywayUrl}}/actuator/flyway"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Flyway"
+    },
+    {
+      "description" : "WebFlux（Netty）：Mono / Flux、Functional Endpoint、NDJSON、阻塞呼叫的位置、Sinks 廣播。啟動：`./gradlew bootRun`（port 8094）\n\n無限的 SSE 串流（`/api/ticks`、`Accept: text/event-stream` 的 `/api/messages`）不放在這裡，Runner 會一直等下去；請用瀏覽器或 `curl -N` 觀察。",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Hello, Amy!', () => pm.expect(pm.response.json().message).to.eql('Hello, Amy!'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Annotated Controller（Mono）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "greetings",
+                "Amy"
+              ],
+              "raw" : "{{webfluxUrl}}/api/greetings/Amy"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Hello, Amy!', () => pm.expect(pm.response.json().message).to.eql('Hello, Amy!'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Functional Endpoint",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "fn",
+                "greetings",
+                "Amy"
+              ],
+              "raw" : "{{webfluxUrl}}/api/fn/greetings/Amy"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('3 筆', () => pm.expect(pm.response.json()).to.have.lengthOf(3));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Flux → JSON 陣列",
+          "request" : {
+            "header" : [
+              {
+                "key" : "Accept",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "numbers"
+              ],
+              "query" : [
+                {
+                  "key" : "count",
+                  "value" : "3"
+                }
+              ],
+              "raw" : "{{webfluxUrl}}/api/numbers?count=3"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('3 行', () => pm.expect(pm.response.text().trim().split('\\n')).to.have.lengthOf(3));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Flux → NDJSON（一行一筆）",
+          "request" : {
+            "header" : [
+              {
+                "key" : "Accept",
+                "value" : "application/x-ndjson"
+              }
+            ],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "numbers"
+              ],
+              "query" : [
+                {
+                  "key" : "count",
+                  "value" : "3"
+                }
+              ],
+              "raw" : "{{webfluxUrl}}/api/numbers?count=3"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "count 超出範圍（400 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "numbers"
+              ],
+              "query" : [
+                {
+                  "key" : "count",
+                  "value" : "101"
+                }
+              ],
+              "raw" : "{{webfluxUrl}}/api/numbers?count=101"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('在 Netty 的執行緒上', () => pm.expect(pm.response.json().thread).to.include('reactor-http'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "❌ 阻塞呼叫跑在 event loop",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "blocking",
+                "on-event-loop"
+              ],
+              "raw" : "{{webfluxUrl}}/api/blocking/on-event-loop"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('在 boundedElastic 上', () => pm.expect(pm.response.json().thread).to.include('boundedElastic'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "✅ 阻塞呼叫交給 boundedElastic",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "blocking",
+                "on-bounded-elastic"
+              ],
+              "raw" : "{{webfluxUrl}}/api/blocking/on-bounded-elastic"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('webfluxMessageId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "發送訊息",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"text\": \"Hello WebFlux\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages"
+              ],
+              "raw" : "{{webfluxUrl}}/api/messages"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('包含剛送出的訊息', () => pm.expect(pm.response.json().map(m => m.text)).to.include('Hello WebFlux'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "歷史訊息（JSON）",
+          "request" : {
+            "header" : [
+              {
+                "key" : "Accept",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages"
+              ],
+              "raw" : "{{webfluxUrl}}/api/messages"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.expect(pm.response.json().text).to.eql('Hello WebFlux'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查一則訊息",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages",
+                "{{webfluxMessageId}}"
+              ],
+              "raw" : "{{webfluxUrl}}/api/messages/{{webfluxMessageId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "✅ 查不到：404 ProblemDetail",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages",
+                "999999"
+              ],
+              "raw" : "{{webfluxUrl}}/api/messages/999999"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 空內容', () => { pm.response.to.have.status(200); pm.expect(pm.response.text()).to.eql(''); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "❌ 教學用：查不到卻回 200、沒有內容",
+          "request" : {
+            "description" : "Mono.empty() 沒有處理時，WebFlux 回應 200 與空的 body",
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{webfluxUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages",
+                "999999",
+                "unchecked"
+              ],
+              "raw" : "{{webfluxUrl}}/api/messages/999999/unchecked"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Webflux"
+    },
+    {
+      "description" : "WebFlux + R2DBC（非阻塞的資料庫存取）商品 CRUD。需要 PostgreSQL。啟動：`docker compose up --build -d`（port 8095）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('r2dbcProductId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"description\": \"Keyboard\", \"price\": 1200.50}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Keyboard', () => pm.expect(pm.response.json().description).to.eql('Keyboard'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products",
+                "{{r2dbcProductId}}"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products/{{r2dbcProductId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.expect(pm.response.json().description).to.eql('Mechanical Keyboard'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"description\": \"Mechanical Keyboard\", \"price\": 1500}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products",
+                "{{r2dbcProductId}}"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products/{{r2dbcProductId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"description\": \"\", \"price\": -1}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products",
+                "{{r2dbcProductId}}"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products/{{r2dbcProductId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查不到（404 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbcUrl}}"
+              ],
+              "path" : [
+                "api",
+                "products",
+                "{{r2dbcProductId}}"
+              ],
+              "raw" : "{{r2dbcUrl}}/api/products/{{r2dbcProductId}}"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_R2DBC"
+    },
+    {
+      "description" : "R2DBC 汽車 CRUD 與多條件搜尋（條件選填、以 AND 組合）。需要 PostgreSQL。啟動：`docker compose up --build -d`（port 8096）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "prerequest",
+              "script" : {
+                "exec" : [
+                  "pm.collectionVariables.set('r2dbc2Make', 'Postman' + Date.now());"
+                ],
+                "type" : "text/javascript"
+              }
+            },
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('r2dbc2CarId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"make\": \"{{r2dbc2Make}}\", \"model\": \"Corolla\", \"year\": 2022, \"color\": \"White\", \"price\": 800000}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "再新增一台",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"make\": \"{{r2dbc2Make}}\", \"model\": \"Camry\", \"year\": 2019, \"color\": \"Black\", \"price\": 1200000}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Corolla', () => pm.expect(pm.response.json().model).to.eql('Corolla'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "{{r2dbc2CarId}}"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/{{r2dbc2CarId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('只有 Corolla', () => { const cars = pm.response.json(); pm.expect(cars).to.have.lengthOf(1); pm.expect(cars[0].model).to.eql('Corolla'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "多條件搜尋：品牌 + 年份 ≥ 2021",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "search"
+              ],
+              "query" : [
+                {
+                  "key" : "make",
+                  "value" : "{{r2dbc2Make}}"
+                },
+                {
+                  "key" : "yearFrom",
+                  "value" : "2021"
+                }
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/search?make={{r2dbc2Make}}&yearFrom=2021"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('只有 Camry', () => pm.expect(pm.response.json().map(c => c.model)).to.eql(['Camry']));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "多條件搜尋：價格區間",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "search"
+              ],
+              "query" : [
+                {
+                  "key" : "make",
+                  "value" : "{{r2dbc2Make}}"
+                },
+                {
+                  "key" : "minPrice",
+                  "value" : "1000000"
+                },
+                {
+                  "key" : "maxPrice",
+                  "value" : "2000000"
+                }
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/search?make={{r2dbc2Make}}&minPrice=1000000&maxPrice=2000000"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('2', () => pm.expect(Number(pm.response.text().match(/\\d+/)[0])).to.eql(2));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "計算品牌數量（不分大小寫）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "count"
+              ],
+              "query" : [
+                {
+                  "key" : "make",
+                  "value" : "{{r2dbc2Make}}"
+                }
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/count?make={{r2dbc2Make}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Corolla Cross', () => pm.expect(pm.response.json().model).to.eql('Corolla Cross'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"make\": \"{{r2dbc2Make}}\", \"model\": \"Corolla Cross\", \"year\": 2023, \"color\": \"Blue\", \"price\": 900000}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "{{r2dbc2CarId}}"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/{{r2dbc2CarId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400 errors', () => { pm.response.to.have.status(400); pm.expect(pm.response.json().errors).to.be.an('object'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400 + 每個欄位的錯誤）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"make\": \"\", \"model\": \"\", \"year\": 1800}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "{{r2dbc2CarId}}"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/{{r2dbc2CarId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查不到（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{r2dbc2Url}}"
+              ],
+              "path" : [
+                "api",
+                "cars",
+                "{{r2dbc2CarId}}"
+              ],
+              "raw" : "{{r2dbc2Url}}/api/cars/{{r2dbc2CarId}}"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_R2DBC2"
     }
   ]
 }
