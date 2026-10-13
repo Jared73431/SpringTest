@@ -202,6 +202,19 @@ docs/sql/images-oid-to-bytea.sql      # 既有資料庫的圖片欄位轉換 SQL
 - 圖片上傳頁：http://localhost:8015/
 - 資料庫帳密由環境變數 `DB_USERNAME` / `DB_PASSWORD` 提供（預設 `postgres` / `postgres`），連線設定的詳細說明可參考 [Spring_JPA 的「資料庫連線設定」](../Spring_JPA/readme.md#資料庫連線設定)
 
+### Docker Compose
+
+一次啟動 PostgreSQL 與應用程式（資料庫在容器中，不會用到本機的資料庫）：
+
+```bash
+docker compose up --build -d
+curl http://localhost:8015/api/products
+# 圖片上傳頁：http://localhost:8015/
+docker compose down -v      # 刪除資料庫
+```
+
+application.properties 的資料庫網址是 `localhost`，compose 用環境變數 `SPRING_DATASOURCE_URL` 改成容器中的 `postgres`。
+
 ### 既有資料庫升級（圖片欄位 oid → bytea）
 
 若資料庫是用舊版本建立的（`images.data` 為 `oid`），請在啟動新版**之前**執行：
