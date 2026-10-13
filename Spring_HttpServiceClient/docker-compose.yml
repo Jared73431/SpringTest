@@ -1,0 +1,52 @@
+# ============================================================
+# 一次啟動三個服務：PostgreSQL、Book Server（Spring_Feign_Server）、HTTP Service Client
+#
+#   啟動：docker compose up --build -d     （在 Spring_HttpServiceClient 資料夾執行）
+#   測試：curl http://localhost:8111/api/hello   → Client 透過 HTTP Service Client 呼叫 Server，回傳 Hello
+#         curl http://localhost:8111/api/books
+#   停止：docker compose down               （加上 -v 會一併刪除資料庫資料）
+#
+# Server 使用和 Spring_Feign_Client 相同的 Spring_Feign_Server（以相對路徑建置），兩個 Client 呼叫的是同一個 API
+# ============================================================
+services:
+
+  # PostgreSQL 資料庫（只有 Book Server 會連線）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機已有的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Book Server：不對主機開放 port，只讓 Client 在 Docker 網路中呼叫
+  book-server:
+    build: ../Spring_Feign_Server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/test
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+
+  book-client:
+    build: .
+    depends_on:
+      - book-server
+    ports:
+      # 主機的 port 可以用 APP_PORT 覆蓋（例如 Windows 保留了 8111 時：APP_PORT=8311 docker compose up）
+      - "${APP_PORT:-8111}:8111"
+    environment:
+      # 對應 application.properties 的 spring.http.serviceclient.book-server.base-url
+      - BOOK_SERVER_URL=http://book-server:8082
+
+volumes:
+  postgres-data:
