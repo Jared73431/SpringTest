@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>原生 WebSocket</title>
+    <style>
+        body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; }
+        #log { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: .5rem; white-space: pre-wrap; }
+        input, select, button { font-size: 1rem; }
+    </style>
+</head>
+<body>
+<h1>原生 WebSocket</h1>
+<p>
+    <select id="endpoint">
+        <option value="/ws/jakarta/echo">Jakarta Echo（@ServerEndpoint）</option>
+        <option value="/ws/spring/echo">Spring Echo（WebSocketHandler）</option>
+        <option value="/ws/spring/broadcast">Spring 廣播（開兩個分頁試試看）</option>
+    </select>
+    <button id="connect">連線</button>
+    <button id="disconnect">中斷</button>
+</p>
+<p>
+    <input id="message" placeholder="輸入訊息；輸入 bye 由伺服器關閉 Echo 連線">
+    <button id="send">送出</button>
+</p>
+<div id="log"></div>
+
+<script>
+    let socket;
+    const log = text => {
+        const line = document.createElement('div');
+        line.textContent = text; // 用 textContent，不用 innerHTML：訊息中的 HTML 不會被執行
+        document.getElementById('log').append(line);
+    };
+
+    document.getElementById('connect').onclick = () => {
+        const path = document.getElementById('endpoint').value;
+        const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        socket = new WebSocket(scheme + location.host + path);
+        socket.onopen = () => log('連線：' + path);
+        socket.onmessage = event => log('收到：' + event.data);
+        socket.onclose = event => log('關閉：' + event.code + ' ' + event.reason);
+    };
+    document.getElementById('disconnect').onclick = () => socket && socket.close();
+    document.getElementById('send').onclick = () => {
+        const input = document.getElementById('message');
+        socket.send(input.value);
+        log('送出：' + input.value);
+        input.value = '';
+    };
+</script>
+</body>
+</html>
