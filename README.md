@@ -3,7 +3,7 @@
 從 Spring Boot 2.7 / Java 11 開始，一路練習到 Spring Boot 3.5 / Java 17 的 Spring 生態系範例集合。
 
 每個資料夾都是**可以獨立執行的 Spring Boot 專案**，一個資料夾聚焦一個技術主題。
-部分主題（Batch、WebSocket、Security）保留了多個版本，可以看出同一個技術從入門到較完整實作的演進過程。
+部分主題（Batch、WebSocket、Security）分成幾個模組，由淺到深：從最小的範例到較完整的應用。
 
 這個 Repo 的用途：
 
@@ -58,8 +58,7 @@
 |---|---|---|---|
 | [Spring_Websocket](Spring_Websocket) 📘 | 原生 WebSocket | 3 課：Jakarta `@ServerEndpoint` vs Spring `WebSocketHandler`、廣播與多執行緒送訊息（`ConcurrentWebSocketSessionDecorator`）、Origin 檢查；附面試重點 ✅ 已現代化 | — |
 | [Spring_Websocket2](Spring_Websocket2) 📘 | STOMP 聊天室 | 4 課：SEND / SUBSCRIBE 與握手時決定 Principal、上下線、私訊（`convertAndSendToUser`）、錯誤送回發送者與訊息順序；附面試重點 ✅ 已現代化 | 🐘 |
-| [Spring_Websocket3](Spring_Websocket3) | 多聊天室 | 聊天室切換、私訊（`/queue`）、上下線事件 | 🐘 |
-| [Spring_Websocket4](Spring_Websocket4) | 原生 WebSocket 聊天室 | `WebSocketHandler`、聊天室 / 私訊、檔案與圖片上傳 | 🐘 |
+| [Spring_Websocket3](Spring_Websocket3) 📘 | 檔案分享 | 3 課：檔案走 HTTP、通知走 STOMP（`SimpMessagingTemplate`）、使用者上傳的檔名 / 類型 / 內容 / 大小都不可信（UUID 檔名、附件 + nosniff、413 與 Tomcat 的 max-swallow-size）；附面試重點 ✅ 已現代化 | 🐘 |
 
 ### 安全性
 
@@ -93,12 +92,11 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 ## 技術版本
 
-各模組建立的時間不同，目前版本並不一致。現代化的目標版本為 **Spring Boot 4.1 + Java 21**，已完成的模組標示 ✅：
+所有模組都已現代化到 **Spring Boot 4.1 + Java 21**（✅；🆕 為現代化時新增的模組）：
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅ |
-| 3.2 ~ 3.5 | 17 | 其餘模組 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅ |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
 - Database：PostgreSQL
@@ -110,8 +108,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 ### 1. 環境需求
 
-- JDK 21（已現代化的模組，標示 ✅）
-- JDK 17（其餘模組；Spring Boot 2.7 的模組也可以用 JDK 11）
+- JDK 21
 - PostgreSQL（標示 🐘 的模組）
 - Redis（標示 🟥 的模組）
 
