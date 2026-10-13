@@ -12,8 +12,6 @@
 
 這個模組是一個聊天室：多個聊天室、聊天紀錄、誰在線上、私訊、錯誤回報。
 
-> 本模組由原本的 `Spring_Websocket2`（公共聊天室、存 DB、Redis）與 `Spring_Websocket3`（多聊天室、私訊）**合併**重建。原本想做成完整的聊天室，前端與功能都太大；這次只保留 STOMP 的核心。合併前的程式碼與 baseline 測試保留在 Git 歷史中，詳見「[現代化紀錄](#現代化紀錄)」。
-
 ## 技術版本
 
 | 項目 | 版本 |
@@ -141,7 +139,7 @@ messagingTemplate.convertAndSendToUser("bob", "/queue/private", message);
 
 每個人都訂閱 `/user/queue/private`（不寫自己的名字），Spring 依**名稱**（Principal）找到 bob 的連線，只送給他。
 
-修正前的 Spring_Websocket3 沒有 Principal，Spring 找不到任何屬於 bob 的連線，**私訊永遠送不到**（baseline 確認）。
+修正前的版本沒有 Principal，Spring 找不到任何屬於 bob 的連線，**私訊永遠送不到**（baseline 確認）。
 
 ### 4. 錯誤、順序與 Origin（第 4 課）
 
@@ -189,27 +187,27 @@ public String handleError(IllegalArgumentException e) { ... }
 
 | 步驟 | 內容 |
 |---|---|
-| 1 | Spring_Websocket2、Spring_Websocket3 的 baseline 測試（Testcontainers） |
-| 2 | Spring_Websocket2：Java 17 → 21、Spring Boot 3.5.0 → 3.5.16 → 4.1.1、Gradle 8.14 → 9.8.0 |
-| 3 | 重建：合併 2 與 3 的功能，第 1 課 |
+| 1 | baseline 測試（Testcontainers）：鎖定修正前的聊天室、私訊、線上名單 |
+| 2 | Java 17 → 21、Spring Boot 3.5.0 → 3.5.16 → 4.1.1、Gradle 8.14 → 9.8.0 |
+| 3 | 重構：STOMP 聊天室，第 1 課 |
 | 4 | 第 2～4 課 |
 | 5 | Docker |
 
-### 合併前兩個模組的內容
+### 修正前的版本
 
-| 模組 | 內容 | 去向 |
-|---|---|---|
-| Spring_Websocket2 | 公共聊天室、訊息存 PostgreSQL（JPA）、Redis 記錄線上名單與快取、SockJS | 聊天紀錄改用 JdbcClient + Flyway；名單改放記憶體；移除快取與 SockJS |
-| Spring_Websocket3 | 多聊天室、私訊、上下線（沒有用到 DB 與 Redis，但依賴都在） | 多聊天室、上下線保留；私訊修正為可以送達 |
+| 修正前 | 修正後 |
+|---|---|
+| 訊息存 PostgreSQL（JPA）、Redis 記錄線上名單與快取、SockJS | 聊天紀錄改用 JdbcClient + Flyway；名單改放記憶體；移除快取與 SockJS |
+| 多聊天室、私訊、上下線 | 保留；私訊修正為可以送達 |
 
 ### 修正前發現的問題（baseline 確認）
 
 | 問題 | 說明 |
 |---|---|
-| **XSS** | 兩個頁面都用 `innerHTML` 顯示訊息（Websocket3 只有系統訊息沒有跳脫，而系統訊息的內容來自客戶端） |
+| **XSS** | 頁面用 `innerHTML` 顯示訊息（有的只有系統訊息沒有跳脫，而系統訊息的內容來自客戶端） |
 | 冒充他人 | 發送者由訊息的 `sender` 欄位決定 |
 | 任何網站都能連線 | `setAllowedOriginPatterns("*")` |
-| **私訊永遠送不到** | Websocket3 沒有 Principal |
+| **私訊永遠送不到** | 沒有 Principal |
 | 「最近訊息」API 一律 500 | Redis 快取用 Java 序列化，`ChatMessage` 沒有實作 `Serializable`；若先快取到空的 List，又因為清除快取的 key 對不上（`recent_messages:` vs `recentMessages::`）而一直是空的 |
 | 斷線後仍在線上名單 | 斷線時沒有從 Redis 移除 |
 | 其他 | `thymeleaf.*` 少了 `spring.` 前綴，沒有作用；log 套件名稱寫錯；static 的全域狀態；`System.out`；JPA、Redis、multipart 設定用不到；測試連到本機資料庫與 Redis |
@@ -218,7 +216,6 @@ public String handleError(IllegalArgumentException e) { ... }
 
 | 項目 | 修改前 | 修改後 |
 |---|---|---|
-| 模組 | 2 個（Websocket2、3） | 1 個 |
 | 連線 | `/ws`（SockJS），任何網站 | `/ws?name=...`（原生 WebSocket），只允許同源 |
 | 發送者 | 訊息的 `sender` 欄位 | 連線的 Principal |
 | 目的地 | `/app/chat.sendMessage`、`/app/chat/{roomId}`、`/topic/public`… | 見「目的地」 |
