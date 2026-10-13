@@ -60,6 +60,12 @@
 | [Spring_Websocket2](Spring_Websocket2) 📘 | STOMP 聊天室 | 4 課：SEND / SUBSCRIBE 與握手時決定 Principal、上下線、私訊（`convertAndSendToUser`）、錯誤送回發送者與訊息順序；附面試重點 ✅ 已現代化 | 🐘 |
 | [Spring_Websocket3](Spring_Websocket3) 📘 | 檔案分享 | 3 課：檔案走 HTTP、通知走 STOMP（`SimpMessagingTemplate`）、使用者上傳的檔名 / 類型 / 內容 / 大小都不可信（UUID 檔名、附件 + nosniff、413 與 Tomcat 的 max-swallow-size）；附面試重點 ✅ 已現代化 | 🐘 |
 
+### 事件與訊息
+
+| 模組 | 主題 | 重點 | 需要 |
+|---|---|---|---|
+| [Spring_Kafka](Spring_Kafka) 📘 | Kafka 訂單事件 | 5 課：producer / consumer、partition 與 key（順序）、consumer group（分工 vs 廣播）、offset 與冪等的 consumer、重試與 Dead Letter Topic（poison pill）；KRaft、兩個 listener 的 Docker 設定；附面試重點 🆕 | Kafka |
+
 ### 安全性
 
 | 模組 | 主題 | 重點 | 需要 |
@@ -97,7 +103,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅、HttpServiceClient 🆕 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅、HttpServiceClient 🆕、Kafka 🆕 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
 - Database：PostgreSQL
@@ -188,6 +194,8 @@ Spring_Xxx/
 - [x] 統一各模組 REST API 的 URL 設計規則（`/api` 開頭、複數名詞、kebab-case）
 - [x] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
 - [x] 每個模組都可以用 Docker 執行（Dockerfile；需要資料庫的模組附 Docker Compose）
+- [x] 新增 Kafka 練習模組（Spring_Kafka：基礎 5 課）
+- [ ] 新增 Kafka 情境模組（Spring_Kafka2：兩個服務透過 Kafka 溝通）
 - [ ] 提供 Postman Collection，可直接匯入測試各模組 API
 - [ ] 練習改為 Gradle 多模組專案（附 IntelliJ 設定與操作步驟）
 - [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）
