@@ -14,14 +14,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
@@ -33,9 +34,8 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Baseline：鎖定重構前的行為（STOMP 公共聊天室，訊息存 PostgreSQL，線上名單存 Redis）。
@@ -44,10 +44,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * 原本的 contextLoads 會連到本機的 PostgreSQL（test）與 Redis，改用 Testcontainers。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class ChatBaselineTest {
 
 	@ServiceConnection
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine");
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:15-alpine");
 
 	@ServiceConnection(name = "redis")
 	static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
@@ -84,9 +85,8 @@ class ChatBaselineTest {
 		redis.getConnectionFactory().getConnection().serverCommands().flushAll();
 		var client = new WebSocketStompClient(
 				new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient()))));
-		var converter = new MappingJackson2MessageConverter();
-		converter.setObjectMapper(new ObjectMapper().findAndRegisterModules());
-		client.setMessageConverter(converter);
+		// Jackson 3：內建支援 java.time，不必再註冊模組
+		client.setMessageConverter(new JacksonJsonMessageConverter());
 		session = client.connectAsync("http://localhost:" + port + "/ws", new StompSessionHandlerAdapter() {
 		}).get(10, TimeUnit.SECONDS);
 		session.subscribe("/topic/public", new StompFrameHandler() {

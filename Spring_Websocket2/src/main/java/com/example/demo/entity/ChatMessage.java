@@ -2,6 +2,8 @@ package com.example.demo.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -38,6 +40,9 @@ public class ChatMessage {
     }
 
     // 建構子
+    // Boot 4（Jackson 3）會改用下面有參數的建構子建立物件：客戶端沒送 roomId 時是 null，存檔失敗。
+    // @JsonCreator 指定用無參數建構子，roomId 才會保留預設值 "public"
+    @JsonCreator
     public ChatMessage() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
