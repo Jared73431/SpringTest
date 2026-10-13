@@ -1,0 +1,2645 @@
+{
+  "info" : {
+    "_postman_id" : "5b0f7a1e-3c2d-4e8a-9a51-2f6b8c4d7e10",
+    "description" : "SpringTest 各模組的 API。每個模組一個資料夾，資料夾說明寫著要先啟動什麼。\n\n1. 匯入 SpringTest.postman_environment.json 並選擇它（各模組的網址與 port）\n2. 啟動要測試的模組\n3. 對資料夾按 Run（或 `postman collection run ... --folder Spring_Xxx`）\n\n每個請求都附有測試腳本；需要串接的步驟會把 id、token 存在 collection variables。詳細說明見 postman/readme.md。",
+    "name" : "SpringTest",
+    "schema" : "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item" : [
+    {
+      "description" : "最小的 Spring Boot REST API。啟動：`./gradlew bootRun`（port 8080）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Hello World', () => { pm.response.to.have.status(200); pm.expect(pm.response.text()).to.eql('Hello World'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Hello",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{helloWorldUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{helloWorldUrl}}/api/hello"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_HelloWorld"
+    },
+    {
+      "description" : "JPA 書籍 CRUD。需要 PostgreSQL。啟動：`./gradlew bootRun`（port 8081）或 `docker compose up --build -d`（port 8015，請把 jpaUrl 改成 8015）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('jpaBookId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "建立書籍",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java\", \"author\": \"Tom\", \"year\": 2020, \"publisher\": \"OReilly\", \"cost\": 450.5}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{jpaUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{jpaUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{jpaBookId}}"
+              ],
+              "raw" : "{{jpaUrl}}/api/books/{{jpaBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java 2nd', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java 2nd'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java 2nd\", \"author\": \"Tom\", \"year\": 2021, \"publisher\": \"OReilly\", \"cost\": 500}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{jpaBookId}}"
+              ],
+              "raw" : "{{jpaUrl}}/api/books/{{jpaBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{jpaBookId}}"
+              ],
+              "raw" : "{{jpaUrl}}/api/books/{{jpaBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404 ProblemDetail', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().status).to.eql(404); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢不存在的書籍（404 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{jpaBookId}}"
+              ],
+              "raw" : "{{jpaUrl}}/api/books/{{jpaBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"title\": \"\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{jpaUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{jpaUrl}}/api/books"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_JPA"
+    },
+    {
+      "description" : "JPA 關係對應：商品、訂單（帶額外欄位的多對多）、使用者與待辦事項（一對多）。需要 PostgreSQL。啟動：`docker compose up --build -d`（port 8015）",
+      "item" : [
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('201', () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set('jpa2ProductId', pm.response.json().id);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "建立商品",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"Keyboard {{$timestamp}}\", \"price\": 1200, \"stock\": 10, \"description\": \"Mechanical keyboard\", \"category\": \"PERIPHERAL\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('200 陣列', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "查詢全部",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('包含剛建立的商品', () => pm.expect(pm.response.json().map(p => p.id)).to.include(pm.collectionVariables.get('jpa2ProductId')));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "依類別查詢",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products",
+                    "category",
+                    "PERIPHERAL"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products/category/PERIPHERAL"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('200', () => pm.response.to.have.status(200));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "依價格區間查詢",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products",
+                    "price-range"
+                  ],
+                  "query" : [
+                    {
+                      "key" : "minPrice",
+                      "value" : "1000"
+                    },
+                    {
+                      "key" : "maxPrice",
+                      "value" : "2000"
+                    }
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products/price-range?minPrice=1000&maxPrice=2000"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('400 errors', () => { pm.response.to.have.status(400); pm.expect(pm.response.json().errors).to.have.property('name'); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "驗證失敗（400 + errors）",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products"
+                }
+              }
+            }
+          ],
+          "name" : "商品"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('201', () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set('jpa2OrderId', pm.response.json().id);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "建立訂單（扣庫存）",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"customerId\": \"C1\", \"shippingAddress\": \"Taipei\", \"productQuantities\": {\"{{jpa2ProductId}}\": 2}}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "orders"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/orders"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('200 PENDING', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('PENDING'); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "查詢訂單",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "orders",
+                    "{{jpa2OrderId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/orders/{{jpa2OrderId}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('庫存 8', () => pm.expect(pm.response.json().stock).to.eql(8));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "庫存已扣除",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products",
+                    "{{jpa2ProductId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products/{{jpa2ProductId}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('409', () => pm.response.to.have.status(409));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "庫存不足（409）",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"customerId\": \"C1\", \"shippingAddress\": \"Taipei\", \"productQuantities\": {\"{{jpa2ProductId}}\": 999}}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "orders"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/orders"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('200 CANCELLED', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('CANCELLED'); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "取消訂單（補回庫存）",
+              "request" : {
+                "header" : [],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "orders",
+                    "{{jpa2OrderId}}",
+                    "cancel"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/orders/{{jpa2OrderId}}/cancel"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('庫存 10', () => pm.expect(pm.response.json().stock).to.eql(10));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "庫存已補回",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products",
+                    "{{jpa2ProductId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products/{{jpa2ProductId}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('404', () => pm.response.to.have.status(404));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "查詢不存在的訂單（404）",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "orders",
+                    "999999"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/orders/999999"
+                }
+              }
+            }
+          ],
+          "name" : "訂單"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('201', () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set('jpa2UserId', pm.response.json().id);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "建立使用者",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"Amy\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "users"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/users"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('201', () => pm.response.to.have.status(201));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "新增待辦事項",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"task\": \"Learn JPA\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "users",
+                    "{{jpa2UserId}}",
+                    "todos"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/users/{{jpa2UserId}}/todos"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('1 筆', () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "查詢使用者的待辦事項",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "users",
+                    "{{jpa2UserId}}",
+                    "todos"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/users/{{jpa2UserId}}/todos"
+                }
+              }
+            }
+          ],
+          "name" : "使用者與待辦事項"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.collectionVariables.set('jpa2DeletableId', pm.response.json().id);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "建立沒有訂單的商品",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"Mouse {{$timestamp}}\", \"price\": 300, \"stock\": 5, \"category\": \"PERIPHERAL\"}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('204', () => pm.response.to.have.status(204));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "刪除（204）",
+              "request" : {
+                "description" : "注意：刪除已有訂單項的商品，目前會因為外鍵限制回應 500",
+                "header" : [],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "products",
+                    "{{jpa2DeletableId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/products/{{jpa2DeletableId}}"
+                }
+              }
+            }
+          ],
+          "name" : "刪除商品"
+        }
+      ],
+      "name" : "Spring_JPA2"
+    },
+    {
+      "description" : "Feign 的被呼叫端，與 Spring_JPA 相同的書籍 CRUD。需要 PostgreSQL（port 8082）。Docker：用 Spring_Feign_Client 的 docker-compose.yml 一起啟動",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('feignServerBookId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "建立書籍",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java\", \"author\": \"Tom\", \"year\": 2020, \"publisher\": \"OReilly\", \"cost\": 450.5}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignServerBookId}}"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books/{{feignServerBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java 2nd', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java 2nd'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java 2nd\", \"author\": \"Tom\", \"year\": 2021, \"publisher\": \"OReilly\", \"cost\": 500}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignServerBookId}}"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books/{{feignServerBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignServerBookId}}"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books/{{feignServerBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404 ProblemDetail', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().status).to.eql(404); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢不存在的書籍（404 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignServerBookId}}"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books/{{feignServerBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"title\": \"\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignServerUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Hello', () => pm.expect(pm.response.text()).to.eql('Hello'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "連線測試",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignServerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{feignServerUrl}}/api/hello"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Feign_Server"
+    },
+    {
+      "description" : "透過 OpenFeign 呼叫 Spring_Feign_Server，API 與它相同（port 8083）。要先啟動 Spring_Feign_Server；Docker：`docker compose up --build -d` 一次啟動三個服務",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('feignClientBookId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "建立書籍",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java\", \"author\": \"Tom\", \"year\": 2020, \"publisher\": \"OReilly\", \"cost\": 450.5}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignClientBookId}}"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books/{{feignClientBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java 2nd', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java 2nd'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java 2nd\", \"author\": \"Tom\", \"year\": 2021, \"publisher\": \"OReilly\", \"cost\": 500}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignClientBookId}}"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books/{{feignClientBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignClientBookId}}"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books/{{feignClientBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404 ProblemDetail', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().status).to.eql(404); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢不存在的書籍（404 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{feignClientBookId}}"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books/{{feignClientBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"title\": \"\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{feignClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Hello', () => pm.expect(pm.response.text()).to.eql('Hello'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "連線測試",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{feignClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{feignClientUrl}}/api/hello"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Feign_Client"
+    },
+    {
+      "description" : "和 Spring_Feign_Client 相同的 API，改用 HTTP Service Client（@HttpExchange）呼叫 Spring_Feign_Server（port 8111）。Docker：`docker compose up --build -d`",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('hscBookId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "建立書籍",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java\", \"author\": \"Tom\", \"year\": 2020, \"publisher\": \"OReilly\", \"cost\": 450.5}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{hscBookId}}"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books/{{hscBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Java 2nd', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('Java 2nd'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"isbn\": {{$randomInt}}, \"title\": \"Java 2nd\", \"author\": \"Tom\", \"year\": 2021, \"publisher\": \"OReilly\", \"cost\": 500}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{hscBookId}}"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books/{{hscBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{hscBookId}}"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books/{{hscBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404 ProblemDetail', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().status).to.eql(404); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢不存在的書籍（404 ProblemDetail）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books",
+                "{{hscBookId}}"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books/{{hscBookId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"title\": \"\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "books"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/books"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 Hello', () => pm.expect(pm.response.text()).to.eql('Hello'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "連線測試",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpServiceClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{httpServiceClientUrl}}/api/hello"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_HttpServiceClient"
+    },
+    {
+      "description" : "RestClient（/api/posts）與 WebClient（/api/reactive/posts）呼叫外部的 JSONPlaceholder（需要網路）。JSONPlaceholder 是假資料：新增、修改、刪除都會成功，但不會真的儲存。啟動：`./gradlew bootRun`（port 8087）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 id 1', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(1); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "RestClient：查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{httpClientUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 id 101', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().id).to.eql(101); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "RestClient：新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"userId\": 1, \"title\": \"我的標題\", \"body\": \"我的內容\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts"
+              ],
+              "raw" : "{{httpClientUrl}}/api/posts"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "RestClient：修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"userId\": 1, \"title\": \"新標題\", \"body\": \"新內容\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{httpClientUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "RestClient：刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{httpClientUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "外部 API 回 404：原樣轉回",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "99999"
+              ],
+              "raw" : "{{httpClientUrl}}/api/posts/99999"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 id 1', () => pm.expect(pm.response.json().id).to.eql(1));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "WebClient：查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reactive",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{httpClientUrl}}/api/reactive/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "WebClient：新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"userId\": 1, \"title\": \"我的標題\", \"body\": \"我的內容\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{httpClientUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reactive",
+                "posts"
+              ],
+              "raw" : "{{httpClientUrl}}/api/reactive/posts"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_HttpClient"
+    },
+    {
+      "description" : "OkHttp 同步（execute）與非同步（enqueue）呼叫外部的 JSONPlaceholder（需要網路）。啟動：`./gradlew bootRun`（port 8088）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 id 1', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(1); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "同步：查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{okhttpUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 id 2', () => pm.expect(pm.response.json().id).to.eql(2));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "非同步：查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "async",
+                "posts",
+                "2"
+              ],
+              "raw" : "{{okhttpUrl}}/api/async/posts/2"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"userId\": 1, \"title\": \"我的標題\", \"body\": \"我的內容\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts"
+              ],
+              "raw" : "{{okhttpUrl}}/api/posts"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"userId\": 1, \"title\": \"新標題\", \"body\": \"新內容\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{okhttpUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "1"
+              ],
+              "raw" : "{{okhttpUrl}}/api/posts/1"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "外部 API 回 404：原樣轉回",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{okhttpUrl}}"
+              ],
+              "path" : [
+                "api",
+                "posts",
+                "99999"
+              ],
+              "raw" : "{{okhttpUrl}}/api/posts/99999"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Okhttp"
+    },
+    {
+      "description" : "springdoc-openapi：使用者 CRUD 與 API 文件。需要 PostgreSQL。啟動：`docker compose up --build -d`（port 8097）。Swagger UI：{{swaggerUrl}}/swagger-ui.html\n\n小技巧：Postman 可以直接匯入 {{swaggerUrl}}/v3/api-docs 產生 collection（Import → Link）。",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('OpenAPI 3', () => pm.expect(pm.response.json().openapi).to.match(/^3\\./));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "OpenAPI 文件（JSON）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "v3",
+                "api-docs"
+              ],
+              "raw" : "{{swaggerUrl}}/v3/api-docs"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('swaggerUserId', pm.response.json().id);",
+                  "pm.collectionVariables.set('swaggerUsername', pm.response.json().username);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "建立使用者",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"username\": \"user{{$timestamp}}\", \"name\": \"John Doe\", \"email\": \"john{{$timestamp}}@example.com\", \"age\": 25}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢全部",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.expect(pm.response.json().name).to.eql('John Doe'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢一筆",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{swaggerUserId}}"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users/{{swaggerUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('409', () => pm.response.to.have.status(409));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "帳號重複（409）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"username\": \"{{swaggerUsername}}\", \"name\": \"Another\", \"email\": \"another{{$timestamp}}@example.com\", \"age\": 30}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.expect(pm.response.json().name).to.eql('John Smith'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"username\": \"{{swaggerUsername}}\", \"name\": \"John Smith\", \"email\": \"smith{{$timestamp}}@example.com\", \"age\": 26}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{swaggerUserId}}"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users/{{swaggerUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"username\": \"\", \"name\": \"\", \"email\": \"not-an-email\", \"age\": 200}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{swaggerUserId}}"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users/{{swaggerUserId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢不存在的使用者（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{swaggerUrl}}"
+              ],
+              "path" : [
+                "api",
+                "users",
+                "{{swaggerUserId}}"
+              ],
+              "raw" : "{{swaggerUrl}}/api/users/{{swaggerUserId}}"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Swagger"
+    },
+    {
+      "description" : "伺服器端渲染的留言板（HTML 頁面），建議直接用瀏覽器開 {{thymeleafUrl}}/messages。這裡示範表單送出與 Post/Redirect/Get。啟動：`./gradlew bootRun`（port 8098）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 HTML', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "留言頁（HTML）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{thymeleafUrl}}"
+              ],
+              "path" : [
+                "messages"
+              ],
+              "raw" : "{{thymeleafUrl}}/messages"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('重新導向後回到留言頁', () => { pm.response.to.have.status(200); pm.expect(pm.response.text()).to.include('Hello from Postman'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "送出留言：成功後重新導向（302）",
+          "request" : {
+            "body" : {
+              "mode" : "urlencoded",
+              "urlencoded" : [
+                {
+                  "key" : "author",
+                  "value" : "Postman"
+                },
+                {
+                  "key" : "content",
+                  "value" : "Hello from Postman {{$timestamp}}"
+                }
+              ]
+            },
+            "description" : "Postman 預設會跟著重新導向；Settings → Automatically follow redirects 關掉才看得到 302",
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{thymeleafUrl}}"
+              ],
+              "path" : [
+                "messages"
+              ],
+              "raw" : "{{thymeleafUrl}}/messages"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('顯示錯誤訊息', () => pm.expect(pm.response.text()).to.include('請輸入名稱'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "驗證失敗：回到同一頁顯示錯誤",
+          "request" : {
+            "body" : {
+              "mode" : "urlencoded",
+              "urlencoded" : [
+                {
+                  "key" : "author",
+                  "value" : ""
+                },
+                {
+                  "key" : "content",
+                  "value" : ""
+                }
+              ]
+            },
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{thymeleafUrl}}"
+              ],
+              "path" : [
+                "messages"
+              ],
+              "raw" : "{{thymeleafUrl}}/messages"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Thymeleaf"
+    }
+  ]
+}
