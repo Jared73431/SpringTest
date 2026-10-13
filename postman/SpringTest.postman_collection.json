@@ -5486,6 +5486,2011 @@
         }
       ],
       "name" : "Spring_R2DBC2"
+    },
+    {
+      "description" : "@Scheduled 排程與 ShedLock（多個實例只有一台執行），沒有業務 API；執行結果看 log。啟動：`docker compose up --build -d`（port 8099）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('有 cron 或 fixedRate 排程', () => { const b = pm.response.json(); pm.expect(b.cron.length + b.fixedRate.length + b.fixedDelay.length).to.be.above(0); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "目前的排程（/actuator/scheduledtasks）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{schedulingUrl}}"
+              ],
+              "path" : [
+                "actuator",
+                "scheduledtasks"
+              ],
+              "raw" : "{{schedulingUrl}}/actuator/scheduledtasks"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Scheduling"
+    },
+    {
+      "description" : "Quartz 叢集：用 API 動態新增、修改、暫停提醒。觸發的結果看 log（`docker compose logs -f app app-b`）。啟動：`docker compose up --build -d`（port 8100）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "prerequest",
+              "script" : {
+                "exec" : [
+                  "pm.collectionVariables.set('quartzName', 'postman-' + Date.now());"
+                ],
+                "type" : "text/javascript"
+              }
+            },
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "新增提醒（每 5 秒）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"{{quartzName}}\", \"cron\": \"0/5 * * * * ?\", \"timeZone\": \"Asia/Taipei\", \"recipient\": \"store-101\", \"message\": \"打烊後盤點\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('409', () => pm.response.to.have.status(409));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "名稱重複（409）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"{{quartzName}}\", \"cron\": \"0/5 * * * * ?\", \"recipient\": \"store-101\", \"message\": \"重複\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "cron 不正確（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"name\": \"bad-{{quartzName}}\", \"cron\": \"every five seconds\", \"recipient\": \"store-101\", \"message\": \"x\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('NORMAL', () => pm.expect(pm.response.json().state).to.eql('NORMAL'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢提醒（下次觸發時間）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "暫停",
+          "request" : {
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}",
+                "pause"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}/pause"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('PAUSED', () => pm.expect(pm.response.json().state).to.eql('PAUSED'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "確認已暫停",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "恢復",
+          "request" : {
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}",
+                "resume"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}/resume"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('2xx', () => pm.response.to.be.success);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "修改時間（每天 22:00）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"cron\": \"0 0 22 * * ?\", \"timeZone\": \"Asia/Taipei\"}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "PUT",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}",
+                "schedule"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}/schedule"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('202', () => pm.response.to.have.status(202));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "立刻執行一次",
+          "request" : {
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}",
+                "run"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}/run"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('包含剛新增的提醒', () => pm.expect(JSON.stringify(pm.response.json())).to.include(pm.collectionVariables.get('quartzName')));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "全部提醒",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Actuator：所有 Job",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "actuator",
+                "quartz",
+                "jobs"
+              ],
+              "raw" : "{{quartzUrl}}/actuator/quartz/jobs"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('204', () => pm.response.to.have.status(204));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除",
+          "request" : {
+            "header" : [],
+            "method" : "DELETE",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "刪除後查詢（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{quartzUrl}}"
+              ],
+              "path" : [
+                "api",
+                "reminders",
+                "{{quartzName}}"
+              ],
+              "raw" : "{{quartzUrl}}/api/reminders/{{quartzName}}"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Quartz"
+    },
+    {
+      "description" : "用 API 啟動 Spring Batch 的 Job（背景執行），再查詢執行狀態。啟動：`docker compose up --build -d`（port 8104）\n\nSpring_Batch、Spring_Batch-2、Spring_Batch-3 是命令列執行的一次性程式，沒有 API，使用方式見各自的 README。",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('三個 Job', () => pm.expect(pm.response.json()).to.include.members(['bookReportJob', 'priceUpdateJob', 'orderShippingJob']));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "所有 Job",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('202 + Location', () => { pm.response.to.have.status(202); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('batch4ExecutionId', pm.response.json().id ?? pm.response.headers.get('Location').split('/').pop());"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "啟動 orderShippingJob（自動加上 timestamp）",
+          "request" : {
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "orderShippingJob",
+                "executions"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/orderShippingJob/executions"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "prerequest",
+              "script" : {
+                "exec" : [
+                  "setTimeout(() => {}, 3000);"
+                ],
+                "type" : "text/javascript"
+              }
+            },
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('COMPLETED', () => pm.expect(pm.response.json().status).to.eql('COMPLETED'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "查詢執行狀態",
+          "request" : {
+            "description" : "Job 在背景執行，等幾秒再查",
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "executions",
+                "{{batch4ExecutionId}}"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/executions/{{batch4ExecutionId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "prerequest",
+              "script" : {
+                "exec" : [
+                  "pm.collectionVariables.set('batch4RunId', Date.now());"
+                ],
+                "type" : "text/javascript"
+              }
+            },
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('202', () => pm.response.to.have.status(202));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "priceUpdateJob：用時間戳區分每次執行",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"input.file\": \"classpath:price-updates/price-update-2026-10-12.csv\", \"run.id\": \"{{batch4RunId}}\"}"
+            },
+            "description" : "JobParameters 加上不同的 run.id，每次都是新的 JobInstance",
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "priceUpdateJob",
+                "executions"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/priceUpdateJob/executions"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "prerequest",
+              "script" : {
+                "exec" : [
+                  "setTimeout(() => {}, 2000);"
+                ],
+                "type" : "text/javascript"
+              }
+            },
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('409', () => pm.response.to.have.status(409));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "相同參數再執行一次（409）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{\"input.file\": \"classpath:price-updates/price-update-2026-10-12.csv\", \"run.id\": \"{{batch4RunId}}\"}"
+            },
+            "description" : "同一組參數已經完成（或正在執行）：Spring Batch 6 拒絕重複執行",
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "priceUpdateJob",
+                "executions"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/priceUpdateJob/executions"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "缺少必要的參數（400）",
+          "request" : {
+            "body" : {
+              "mode" : "raw",
+              "options" : {
+                "raw" : {
+                  "language" : "json"
+                }
+              },
+              "raw" : "{}"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "priceUpdateJob",
+                "executions"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/priceUpdateJob/executions"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "沒有這個 Job（404）",
+          "request" : {
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "noSuchJob",
+                "executions"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/noSuchJob/executions"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "沒有這個執行（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{batch4Url}}"
+              ],
+              "path" : [
+                "api",
+                "jobs",
+                "executions",
+                "999999"
+              ],
+              "raw" : "{{batch4Url}}/api/jobs/executions/999999"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Batch-4"
+    },
+    {
+      "description" : "什麼都不寫時 Spring Security 做了什麼。帳號 `user`，密碼是環境變數 SECURITY_USER_PASSWORD（預設 password）。啟動：`./gradlew bootRun`（port 8105）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "沒有登入（401）",
+          "request" : {
+            "auth" : {
+              "type" : "noauth"
+            },
+            "description" : "瀏覽器會被導到登入頁；API 用戶端（Accept: application/json）收到 401",
+            "header" : [
+              {
+                "key" : "Accept",
+                "value" : "application/json"
+              }
+            ],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{securityUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{securityUrl}}/api/hello"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Hello, user!', () => pm.expect(pm.response.text()).to.eql('Hello, user!'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "HTTP Basic 登入",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{securityUser}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{securityPassword}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{securityUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{securityUrl}}/api/hello"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "密碼錯誤（401）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{securityUser}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "wrong"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{securityUrl}}"
+              ],
+              "path" : [
+                "api",
+                "hello"
+              ],
+              "raw" : "{{securityUrl}}/api/hello"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "POST 沒有 CSRF token：被拒絕",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{securityUser}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{securityPassword}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "body" : {
+              "mode" : "raw",
+              "raw" : "hi"
+            },
+            "description" : "CSRF 預設開啟。實際的 server 上看到的是 401 而不是 403：錯誤轉到 /error，而 /error 這次請求沒有登入資訊（MockMvc 測試看到的是 403）",
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "text/plain"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{securityUrl}}"
+              ],
+              "path" : [
+                "api",
+                "messages"
+              ],
+              "raw" : "{{securityUrl}}/api/messages"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Security"
+    },
+    {
+      "description" : "自訂 SecurityFilterChain、使用者存在資料庫（BCrypt）、@PreAuthorize。帳號 alice（USER）、admin（ADMIN）、bob（停用），密碼都是 password。啟動：`docker compose up --build -d`（port 8106）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('Hello, guest!', () => pm.expect(pm.response.text()).to.eql('Hello, guest!'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "不需要登入",
+          "request" : {
+            "auth" : {
+              "type" : "noauth"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "public",
+                "hello"
+              ],
+              "raw" : "{{security2Url}}/api/public/hello"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('alice', () => pm.expect(pm.response.json().username).to.eql('alice'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "alice：自己的資料",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security2Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "alice：密碼錯誤（401）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "wrong"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security2Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "alice：管理者 API（403）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "description" : "401 = 不知道你是誰；403 = 知道你是誰，但沒有權限",
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "admin",
+                "stats"
+              ],
+              "raw" : "{{security2Url}}/api/admin/stats"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "admin：管理者 API",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2Admin}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "admin",
+                "stats"
+              ],
+              "raw" : "{{security2Url}}/api/admin/stats"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "admin：@PreAuthorize 的報表",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2Admin}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "reports",
+                "sales"
+              ],
+              "raw" : "{{security2Url}}/api/reports/sales"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "alice：@PreAuthorize 的報表（403）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security2User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "reports",
+                "sales"
+              ],
+              "raw" : "{{security2Url}}/api/reports/sales"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "bob：停用的帳號（401）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "bob"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security2Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security2Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security2Url}}/api/me"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Security2"
+    },
+    {
+      "description" : "JWT：用帳密換 Token，之後的請求帶 Bearer Token。帳號 alice（USER）、admin（ADMIN），密碼都是 password。啟動：`./gradlew bootRun`（port 8107）\n\n取得 Token 的請求用 Post-response script 把 Token 存進 collection 變數，之後的請求直接使用。",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 accessToken', () => pm.expect(pm.response.json().accessToken).to.be.a('string'));",
+                  "pm.collectionVariables.set('security3Token', pm.response.json().accessToken);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "alice 取得 Token",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security3User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security3Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "auth",
+                "token"
+              ],
+              "raw" : "{{security3Url}}/api/auth/token"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('alice', () => pm.expect(pm.response.json().username).to.eql('alice'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "帶 Token：自己的資料",
+          "request" : {
+            "auth" : {
+              "bearer" : [
+                {
+                  "key" : "token",
+                  "type" : "string",
+                  "value" : "{{security3Token}}"
+                }
+              ],
+              "type" : "bearer"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security3Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "帶 Token：管理者 API（403，scope 只有 USER）",
+          "request" : {
+            "auth" : {
+              "bearer" : [
+                {
+                  "key" : "token",
+                  "type" : "string",
+                  "value" : "{{security3Token}}"
+                }
+              ],
+              "type" : "bearer"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "admin",
+                "stats"
+              ],
+              "raw" : "{{security3Url}}/api/admin/stats"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('alice says: hi', () => pm.expect(pm.response.text()).to.eql('alice says: hi'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "帶 Token：POST 不需要 CSRF token",
+          "request" : {
+            "auth" : {
+              "bearer" : [
+                {
+                  "key" : "token",
+                  "type" : "string",
+                  "value" : "{{security3Token}}"
+                }
+              ],
+              "type" : "bearer"
+            },
+            "body" : {
+              "mode" : "raw",
+              "raw" : "hi"
+            },
+            "header" : [
+              {
+                "key" : "Content-Type",
+                "value" : "text/plain"
+              }
+            ],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "messages"
+              ],
+              "raw" : "{{security3Url}}/api/messages"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "沒有 Token（401）",
+          "request" : {
+            "auth" : {
+              "type" : "noauth"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security3Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "API 只接受 Token，不接受帳密（401）",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security3User}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security3Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security3Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('401 invalid_token', () => { pm.response.to.have.status(401); pm.expect(pm.response.headers.get('WWW-Authenticate')).to.include('invalid_token'); });"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "Token 被竄改（401 invalid_token）",
+          "request" : {
+            "auth" : {
+              "bearer" : [
+                {
+                  "key" : "token",
+                  "type" : "string",
+                  "value" : "{{security3Token}}x"
+                }
+              ],
+              "type" : "bearer"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "me"
+              ],
+              "raw" : "{{security3Url}}/api/me"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.collectionVariables.set('security3AdminToken', pm.response.json().accessToken);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "admin 取得 Token",
+          "request" : {
+            "auth" : {
+              "basic" : [
+                {
+                  "key" : "username",
+                  "type" : "string",
+                  "value" : "{{security3Admin}}"
+                },
+                {
+                  "key" : "password",
+                  "type" : "string",
+                  "value" : "{{security3Password}}"
+                }
+              ],
+              "type" : "basic"
+            },
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "auth",
+                "token"
+              ],
+              "raw" : "{{security3Url}}/api/auth/token"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "admin Token：管理者 API",
+          "request" : {
+            "auth" : {
+              "bearer" : [
+                {
+                  "key" : "token",
+                  "type" : "string",
+                  "value" : "{{security3AdminToken}}"
+                }
+              ],
+              "type" : "bearer"
+            },
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{security3Url}}"
+              ],
+              "path" : [
+                "api",
+                "admin",
+                "stats"
+              ],
+              "raw" : "{{security3Url}}/api/admin/stats"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Security3"
+    },
+    {
+      "description" : "原生 WebSocket，沒有 REST API。Postman CLI 不支援 WebSocket，請在 Postman 桌面版用 New → WebSocket 連線：\n\n- `ws://localhost:8108/ws/jakarta/echo`（Jakarta @ServerEndpoint）\n- `ws://localhost:8108/ws/spring/echo`（Spring WebSocketHandler）\n- `ws://localhost:8108/ws/spring/broadcast`（廣播：開兩個連線觀察）\n\n也可以用瀏覽器開 {{websocketUrl}}/ 的測試頁。啟動：`./gradlew bootRun`（port 8108）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 HTML', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "測試頁（HTML）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocketUrl}}"
+              ],
+              "path" : [],
+              "raw" : "{{websocketUrl}}/"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Websocket"
+    },
+    {
+      "description" : "STOMP 聊天室。聊天本身走 STOMP（`ws://localhost:8109/ws?name=alice`），Postman 不方便送 STOMP 的訊框，請用瀏覽器開 {{websocket2Url}}/ 的聊天頁（開兩個分頁、用不同名稱）。這裡只有查詢聊天紀錄的 REST API。啟動：`docker compose up --build -d`（port 8109）",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 HTML', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "聊天頁（HTML）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket2Url}}"
+              ],
+              "path" : [],
+              "raw" : "{{websocket2Url}}/"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('200 陣列', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "聊天紀錄（最近 50 筆，舊的在前）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket2Url}}"
+              ],
+              "path" : [
+                "api",
+                "rooms",
+                "java",
+                "messages"
+              ],
+              "query" : [
+                {
+                  "key" : "limit",
+                  "value" : "50"
+                }
+              ],
+              "raw" : "{{websocket2Url}}/api/rooms/java/messages?limit=50"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Websocket2"
+    },
+    {
+      "description" : "檔案分享：檔案走 HTTP 上傳、下載，上傳成功後用 STOMP（/topic/files）通知所有人。啟動：`docker compose up --build -d`（port 8110）\n\n上傳的檔案在 postman/files/：Postman 桌面版要把 Settings → General → Working directory 設成 Repo 的 postman 資料夾；CLI 加上 `--working-dir postman`。",
+      "item" : [
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('201 + Location', () => { pm.response.to.have.status(201); pm.response.to.have.header('Location'); });",
+                  "pm.collectionVariables.set('websocket3FileId', pm.response.json().id);"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "上傳",
+          "request" : {
+            "body" : {
+              "formdata" : [
+                {
+                  "key" : "file",
+                  "src" : "files/hello.txt",
+                  "type" : "file"
+                },
+                {
+                  "key" : "uploadedBy",
+                  "type" : "text",
+                  "value" : "alice"
+                }
+              ],
+              "mode" : "formdata"
+            },
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files"
+              ],
+              "raw" : "{{websocket3Url}}/api/files"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('第一筆是剛上傳的檔案', () => pm.expect(pm.response.json()[0].id).to.eql(pm.collectionVariables.get('websocket3FileId')));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "檔案清單（新的在前）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files"
+              ],
+              "raw" : "{{websocket3Url}}/api/files"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('hello.txt', () => pm.expect(pm.response.json().name).to.eql('hello.txt'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "檔案資訊",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files",
+                "{{websocket3FileId}}"
+              ],
+              "raw" : "{{websocket3Url}}/api/files/{{websocket3FileId}}"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('內容', () => pm.expect(pm.response.text()).to.include('Hello from the SpringTest'));",
+                  "pm.test('Content-Disposition: attachment', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment'));",
+                  "pm.test('nosniff', () => pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff'));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "下載：附件 + nosniff",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files",
+                "{{websocket3FileId}}",
+                "content"
+              ],
+              "raw" : "{{websocket3Url}}/api/files/{{websocket3FileId}}/content"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "空檔案（400）",
+          "request" : {
+            "body" : {
+              "formdata" : [
+                {
+                  "key" : "file",
+                  "src" : "files/empty.txt",
+                  "type" : "file"
+                },
+                {
+                  "key" : "uploadedBy",
+                  "type" : "text",
+                  "value" : "alice"
+                }
+              ],
+              "mode" : "formdata"
+            },
+            "header" : [],
+            "method" : "POST",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files"
+              ],
+              "raw" : "{{websocket3Url}}/api/files"
+            }
+          }
+        },
+        {
+          "event" : [
+            {
+              "listen" : "test",
+              "script" : {
+                "exec" : [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ],
+                "type" : "text/javascript"
+              }
+            }
+          ],
+          "name" : "不存在的檔案（404）",
+          "request" : {
+            "header" : [],
+            "method" : "GET",
+            "url" : {
+              "host" : [
+                "{{websocket3Url}}"
+              ],
+              "path" : [
+                "api",
+                "files",
+                "00000000-0000-0000-0000-000000000000",
+                "content"
+              ],
+              "raw" : "{{websocket3Url}}/api/files/00000000-0000-0000-0000-000000000000/content"
+            }
+          }
+        }
+      ],
+      "name" : "Spring_Websocket3"
     }
   ]
 }
