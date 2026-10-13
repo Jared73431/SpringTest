@@ -24,15 +24,10 @@ spring:
     cache: false
 
   jackson:
-    # 禁用將日期寫為時間戳
-    serialization:
-      write-dates-as-timestamps: false
+    # Boot 4（Jackson 3）：日期預設就是 ISO 格式、內建 java.time，write-dates-as-timestamps 與 JavaTimeModule 已不需要
     # 反序列化時忽略未知屬性
     deserialization:
       fail-on-unknown-properties: false
-    # 啟用 Java 8 時間支持
-    modules:
-      - com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
     
 # 文件上傳配置
 file:
