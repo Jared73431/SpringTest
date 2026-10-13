@@ -89,6 +89,29 @@ docker compose down -v
 | `GET /api/admin/stats` | ADMIN | `SecurityConfig`：`hasRole("ADMIN")` |
 | `GET /api/reports/sales` | 需要登入，而且 ADMIN | `ReportService`：`@PreAuthorize` |
 
+## 用 Postman 測試
+
+以下步驟已用 Postman CLI 對 Docker 中的服務實際執行過。
+
+**1. 建立 Environment**：變數 `baseUrl` = `http://localhost:8106`。
+
+**2. 不需要登入的路徑**：`GET {{baseUrl}}/api/public/hello`，**Authorization** 分頁選 **No Auth** → `Hello, guest!`
+
+**3. 用 Basic Auth 登入**：**Authorization** 分頁選 **Basic Auth**，Username `alice`、Password `password`。
+
+| 請求 | 帳號 | 結果 |
+|---|---|---|
+| `GET {{baseUrl}}/api/me` | alice | 200，`username`、`authorities` |
+| `GET {{baseUrl}}/api/me` | alice，密碼打錯 | 401 |
+| `GET {{baseUrl}}/api/admin/stats` | alice | **403**（沒有 ADMIN） |
+| `GET {{baseUrl}}/api/admin/stats` | admin | 200 |
+| `GET {{baseUrl}}/api/reports/sales` | admin | 200（`@PreAuthorize`） |
+| `GET {{baseUrl}}/api/me` | bob | 401（停用的帳號） |
+
+**小技巧**：在 **Collection** 的 Authorization 設定 Basic Auth，每個請求選 **Inherit auth from parent**。要換帳號時只改一個地方。
+
+**會不會因為 cookie 而「一直保持登入」？** 不會。Spring Security 6 起，HTTP Basic 預設不建立 Session，回應沒有 `Set-Cookie`，所以把密碼改錯就會立刻得到 401（實測）。表單登入（瀏覽器的登入頁）才會建立 Session。
+
 ## Security 教學
 
 ### 1. 路徑規則（第 1 課）

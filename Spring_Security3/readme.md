@@ -90,6 +90,51 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/plain" \
 | GET | `/api/admin/stats` | Bearer Token，scope 有 `ADMIN` |
 | POST | `/api/messages` | Bearer Token |
 
+## 用 Postman 測試
+
+以下步驟已用 Postman CLI 對 Docker 中的服務實際執行過。重點是**讓 Postman 自動保存 Token**，不必每次手動複製。
+
+**1. 建立 Environment**：變數 `baseUrl` = `http://localhost:8107`。
+
+**2. Collection 統一使用 Bearer Token**：點 Collection → **Authorization** 分頁 → Type 選 **Bearer Token**，Token 填 `{{token}}`。之後新增的請求保持 **Inherit auth from parent**。
+
+**3. 取得 Token 的請求**：`POST {{baseUrl}}/api/auth/token`
+
+- **Authorization** 分頁：選 **Basic Auth**，Username `alice`、Password `password`（只有這個請求用帳密，不繼承 Collection 的 Bearer）
+- **Scripts** 分頁 → **Post-response**，把回應中的 Token 存進 collection 變數：
+
+  ```javascript
+  pm.collectionVariables.set("token", pm.response.json().accessToken);
+  ```
+
+送出後，Collection 的 **Variables** 分頁就會看到 `token` 有值。
+
+**4. 其他請求**（都繼承 Collection 的 Bearer Token）：
+
+| 請求 | 結果 |
+|---|---|
+| `GET {{baseUrl}}/api/me` | 200，`username`、`scope`、`expiresAt` |
+| `GET {{baseUrl}}/api/admin/stats` | **403**（alice 的 scope 只有 USER） |
+| `POST {{baseUrl}}/api/messages`，Body 選 **raw** / **Text**，內容 `hi` | 200，`alice says: hi`（不需要 CSRF token） |
+| `GET {{baseUrl}}/api/me`，Authorization 改成 **No Auth** | 401 |
+| `GET {{baseUrl}}/api/me`，Authorization 改成 **Basic Auth**（alice） | 401：API 只接受 Token |
+
+**5. 換成 admin**：複製取得 Token 的請求，帳號改成 `admin`，script 改存到另一個變數：
+
+```javascript
+pm.collectionVariables.set("adminToken", pm.response.json().accessToken);
+```
+
+`GET {{baseUrl}}/api/admin/stats` 的 Authorization 改成 **Bearer Token** `{{adminToken}}` → 200。
+
+**6. 觀察 Token 被拒絕**：
+
+- 在 Token 後面多加一個字元（例如 `{{token}}x`）→ 401，回應標頭 `WWW-Authenticate` 有 `invalid_token`
+- 15 分鐘後再呼叫 → 401（過期）；重新送一次取得 Token 的請求即可
+- 重新啟動應用程式後 → 401：金鑰在啟動時產生，舊的 Token 全部失效
+
+把 `token` 變數的值貼到 https://jwt.io 可以看到 Token 的內容（第 1 課）。
+
 ## Security 教學
 
 ### 1. JWT 是什麼（第 1 課）
