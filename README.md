@@ -65,6 +65,8 @@
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
 | [Spring_Kafka](Spring_Kafka) 📘 | Kafka 訂單事件 | 5 課：producer / consumer、partition 與 key（順序）、consumer group（分工 vs 廣播）、offset 與冪等的 consumer、重試與 Dead Letter Topic（poison pill）；KRaft、兩個 listener 的 Docker 設定；附面試重點 🆕 | Kafka |
+| [Spring_Kafka2_Order](Spring_Kafka2_Order) 📘 | 兩個服務透過 Kafka 溝通：Order | 3 課：約定是 JSON 不是 Java 類別（關掉 `__TypeId__`）、回覆也是事件與最終一致性（PENDING → SHIPPED / REJECTED）、冪等的 consumer 與「寫入資料庫 + 送出事件」的一致性（Outbox pattern 說明）；Docker Compose 一次啟動整套系統；附面試重點 🆕 | Kafka、🐘 |
+| [Spring_Kafka2_Shipping](Spring_Kafka2_Shipping) 📘 | 兩個服務透過 Kafka 溝通：Shipping | 3 課：收到事件 → 出貨 → 回覆、業務上的拒絕 vs 技術上的失敗（DLT）、一個交易包住「處理過的紀錄 + 出貨 + 回覆」與重試 🆕 | Kafka、🐘 |
 
 ### 安全性
 
@@ -103,7 +105,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅、HttpServiceClient 🆕、Kafka 🆕 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅、HttpServiceClient 🆕、Kafka 🆕、Kafka2_Order 🆕、Kafka2_Shipping 🆕 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
 - Database：PostgreSQL
@@ -195,7 +197,7 @@ Spring_Xxx/
 - [x] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
 - [x] 每個模組都可以用 Docker 執行（Dockerfile；需要資料庫的模組附 Docker Compose）
 - [x] 新增 Kafka 練習模組（Spring_Kafka：基礎 5 課）
-- [ ] 新增 Kafka 情境模組（Spring_Kafka2：兩個服務透過 Kafka 溝通）
+- [x] 新增 Kafka 情境模組（Spring_Kafka2_Order / Shipping：兩個服務透過 Kafka 溝通）
 - [ ] 提供 Postman Collection，可直接匯入測試各模組 API
 - [ ] 練習改為 Gradle 多模組專案（附 IntelliJ 設定與操作步驟）
 - [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）

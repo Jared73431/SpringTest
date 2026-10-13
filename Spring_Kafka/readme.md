@@ -16,7 +16,7 @@ Kafka 系列：
 | 模組 | 主題 |
 |---|---|
 | **Spring_Kafka**（本模組） | Kafka 的基礎：producer / consumer、partition 與 key、consumer group、offset 與冪等、重試與 Dead Letter Topic |
-| Spring_Kafka2（規劃中） | 情境：兩個服務透過 Kafka 溝通 |
+| [Spring_Kafka2_Order](../Spring_Kafka2_Order) + [Spring_Kafka2_Shipping](../Spring_Kafka2_Shipping) | 情境：兩個服務透過 Kafka 溝通，各自有自己的資料庫 |
 
 ## 技術版本
 
