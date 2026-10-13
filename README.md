@@ -57,7 +57,7 @@
 | 模組 | 主題 | 重點 | 需要 |
 |---|---|---|---|
 | [Spring_Websocket](Spring_Websocket) 📘 | 原生 WebSocket | 3 課：Jakarta `@ServerEndpoint` vs Spring `WebSocketHandler`、廣播與多執行緒送訊息（`ConcurrentWebSocketSessionDecorator`）、Origin 檢查；附面試重點 ✅ 已現代化 | — |
-| [Spring_Websocket2](Spring_Websocket2) | STOMP 聊天室 | STOMP + SockJS、訊息存 DB、Redis 快取 | 🐘 🟥 |
+| [Spring_Websocket2](Spring_Websocket2) 📘 | STOMP 聊天室 | 由 Websocket2、3 合併：4 課，SEND / SUBSCRIBE 與握手時決定 Principal、上下線、私訊（`convertAndSendToUser`）、錯誤送回發送者與訊息順序；附面試重點 ✅ 已現代化 | 🐘 |
 | [Spring_Websocket3](Spring_Websocket3) | 多聊天室 | 聊天室切換、私訊（`/queue`）、上下線事件 | 🐘 |
 | [Spring_Websocket4](Spring_Websocket4) | 原生 WebSocket 聊天室 | `WebSocketHandler`、聊天室 / 私訊、檔案與圖片上傳 | 🐘 |
 
@@ -97,7 +97,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅ |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
