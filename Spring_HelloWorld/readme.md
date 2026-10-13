@@ -42,6 +42,14 @@ src/
 java -jar build/libs/Spring_HelloWorld-0.0.1-SNAPSHOT.jar
 ```
 
+### Docker
+
+```bash
+docker build -t spring-helloworld .
+docker run --rm -p 8080:8080 spring-helloworld
+curl http://localhost:8080/api/hello
+```
+
 ## API
 
 ### `GET /api/hello`
