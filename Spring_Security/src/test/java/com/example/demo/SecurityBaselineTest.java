@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
@@ -40,12 +40,13 @@ class SecurityBaselineTest {
 		assertThat(environment.getProperty("server.port")).isEqualTo("8080");
 	}
 
-	// 瀏覽器（Accept: text/html）沒有登入：導向自動產生的登入頁
+	// 瀏覽器（Accept: text/html）沒有登入：導向自動產生的登入頁。
+	// Spring Security 7（Boot 4）起 Location 是相對路徑 /login（Boot 3 是 http://localhost/login）
 	@Test
 	void browser_shouldBeRedirectedToLoginPage_whenNotLoggedIn() throws Exception {
 		mvc.perform(get("/").accept(MediaType.TEXT_HTML))
 				.andExpect(status().isFound())
-				.andExpect(redirectedUrl("http://localhost/login"));
+				.andExpect(redirectedUrl("/login"));
 	}
 
 	@Test
