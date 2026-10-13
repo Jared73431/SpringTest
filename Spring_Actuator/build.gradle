@@ -1,0 +1,50 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// Actuator：health、info、metrics、loggers 等端點
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	// 把 metrics 輸出成 Prometheus 的格式（/actuator/prometheus）
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+	// 書籍資料：JdbcClient + Flyway（Boot 4 必須使用 starter-flyway）
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	runtimeOnly 'org.postgresql:postgresql'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 產生 META-INF/build-info.properties：/actuator/info 會顯示版本、build 時間（第 3 課）
+springBoot {
+	buildInfo()
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
+}
