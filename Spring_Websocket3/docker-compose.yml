@@ -1,0 +1,60 @@
+# ============================================================
+# Websocket3 練習環境：PostgreSQL + 檔案分享
+#
+#   啟動：docker compose up --build -d
+#   頁面：http://localhost:8110 （開兩個分頁，一邊上傳，另一邊立刻出現）
+#   上傳：curl -F file=@readme.md -F uploadedBy=alice http://localhost:8110/api/files
+#   列表：curl http://localhost:8110/api/files
+#   資料庫：docker compose exec postgres psql -U postgres -d Websocket3 -c "select * from shared_file"
+#   pgAdmin：docker compose --profile tools up -d pgadmin   （http://localhost:5050）
+#   停止：docker compose down                     （加上 -v 會刪除資料庫與上傳的檔案）
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=Websocket3
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d Websocket3"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # 對應 application.properties 的 ${DB_HOST:localhost}
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+    ports:
+      # 主機的 port 可以用 APP_PORT 覆蓋（例如 Windows 保留了 8110 時：APP_PORT=8310 docker compose up）
+      - "${APP_PORT:-8110}:8110"
+    volumes:
+      - uploads:/app/uploads
+
+  # 選用：只有加上 --profile tools 才會啟動
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    profiles: ["tools"]
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
+  uploads:
