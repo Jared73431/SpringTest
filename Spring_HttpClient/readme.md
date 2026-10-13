@@ -62,6 +62,16 @@ src/main/java/com/example/demo/
 - 啟動後 log 會輸出示範結果；沒有網路時只會出現警告，應用程式仍正常啟動
 - 關閉啟動示範：`./gradlew bootRun --args='--demo.runner.enabled=false'`
 
+### Docker
+
+容器要能連到 jsonplaceholder.typicode.com。
+
+```bash
+docker build -t spring-httpclient .
+docker run --rm -p 8087:8087 spring-httpclient     # Windows 保留了 8087 時：-p 8387:8087
+curl http://localhost:8087/api/posts/1
+```
+
 ## API
 
 | Method | RestClient 版本 | WebClient 版本 | 說明 | 成功 |
