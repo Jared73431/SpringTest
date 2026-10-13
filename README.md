@@ -67,7 +67,7 @@
 |---|---|---|---|
 | [Spring_Security](Spring_Security) 📘 | Security 自動設定 | 什麼都不寫時 Spring Security 做了什麼：登入頁 vs 401、表單登入與 HTTP Basic、CSRF（curl 收到 401 的陷阱）、明碼 vs BCrypt；附面試重點 ✅ 已現代化 | — |
 | [Spring_Security2](Spring_Security2) 📘 | Security 自訂設定 | 4 課：路徑規則與 401 vs 403、`permitAll` vs `web.ignoring`、`@PreAuthorize`、使用者存在資料庫（`JdbcUserDetailsManager`、BCrypt、`ROLE_` 前綴）；附面試重點 ✅ 已現代化 | 🐘 |
-| [Spring_Security3](Spring_Security3) | 舊版設定（Boot 2.7） | `WebSecurityConfigurerAdapter`、Stateless Session | — |
+| [Spring_Security3](Spring_Security3) 📘 | 無狀態的 API：JWT | 由 Boot 2.7 升級（`WebSecurityConfigurerAdapter` → `SecurityFilterChain`）；3 課：用帳密換 JWT、RSA 簽章與驗證（竄改 / 過期 / 別的金鑰都會被拒絕）、無狀態與 scope；OAuth2 Resource Server，之後可接 Keycloak；附面試重點 ✅ 已現代化 | — |
 
 ### 微服務（Spring Cloud）
 
@@ -97,8 +97,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅ |
-| 2.7.x | 11 / 17 | Security3 |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅ |
 | 3.2 ~ 3.5 | 17 | 其餘模組 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
