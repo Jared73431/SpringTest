@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>檔案分享</title>
+    <style>
+        body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; }
+        li { margin: .25rem 0; } .new { background: #ffc; } .error { color: #c00; }
+    </style>
+</head>
+<body>
+<h1>檔案分享</h1>
+<p>開兩個分頁：一邊上傳，另一邊會立刻出現（WebSocket 通知）。</p>
+<form id="upload">
+    名稱 <input name="uploadedBy" value="alice" size="10">
+    <input type="file" name="file">
+    <button>上傳</button>
+    <span id="status"></span>
+</form>
+<ul id="files"></ul>
+
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+<script>
+    const $ = id => document.getElementById(id);
+
+    // 用 createElement + textContent：檔名、名稱中的 HTML 不會被執行
+    const show = (file, highlight) => {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = file.downloadUrl;
+        link.textContent = file.name;
+        item.append(link, ` ${(file.size / 1024).toFixed(1)} KB，${file.uploadedBy}，${new Date(file.uploadedAt).toLocaleString()}`);
+        if (highlight) item.className = 'new';
+        $('files').prepend(item);
+    };
+
+    // 1. 用 HTTP 取得目前的檔案
+    fetch('/api/files').then(r => r.json()).then(files => files.reverse().forEach(f => show(f)));
+
+    // 2. 用 WebSocket 收「有新檔案」的通知
+    const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const client = new StompJs.Client({ brokerURL: `${scheme}${location.host}/ws` });
+    client.onConnect = () => client.subscribe('/topic/files', frame => show(JSON.parse(frame.body), true));
+    client.activate();
+
+    // 3. 上傳也是 HTTP（multipart/form-data）
+    $('upload').onsubmit = async event => {
+        event.preventDefault();
+        const response = await fetch('/api/files', { method: 'POST', body: new FormData(event.target) });
+        $('status').className = response.ok ? '' : 'error';
+        $('status').textContent = response.ok ? '已上傳' : (await response.json()).detail;
+    };
+</script>
+</body>
+</html>
