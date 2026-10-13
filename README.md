@@ -77,6 +77,7 @@
 | [Spring_Eureka_Client](Spring_Eureka_Client) 📘 | 服務消費者 | 以服務名稱呼叫（Eureka + OpenFeign + LoadBalancer）、Round Robin 負載平衡測試、Docker Compose 啟動兩個 Provider ✅ 已現代化 | — |
 | [Spring_Feign_Server](Spring_Feign_Server) 📘 | Feign 被呼叫端 | 一般 REST CRUD 服務（`/api/books`），與 Spring_JPA 共用 book 資料表 ✅ 已現代化 | 🐘 |
 | [Spring_Feign_Client](Spring_Feign_Client) 📘 | Feign 呼叫端 | OpenFeign、自訂 ErrorDecoder（錯誤原樣轉回）、逾時 / log 設定、WireMock 測試、Docker Compose 一次啟動三個服務、Feign vs HTTP Service Client ✅ 已現代化 | — |
+| [Spring_HttpServiceClient](Spring_HttpServiceClient) 📘 | HTTP Service Client | 和 Spring_Feign_Client 相同的 API 改用 `@HttpExchange` + `@ImportHttpServices`：群組設定（位址 / 逾時 / 預設標頭）、不需要 ErrorDecoder、WireMock 測試、OpenFeign vs HTTP Service Client 對照；附面試重點 🆕 | — |
 | [Spring_Gateway_Server](Spring_Gateway_Server) 📘 | API Gateway | 固定網址與 `lb://`（Eureka）兩種路由、StripPrefix vs RewritePath、自訂 GlobalFilter、改寫 Location header、Docker Compose 以 Gateway 為唯一入口 ✅ 已現代化 | — |
 | [Spring_Gateway_Client](Spring_Gateway_Client) 📘 | Gateway 後端服務 | 被 Gateway 轉送的 first-service（`/api/hello`） ✅ 已現代化 | — |
 
@@ -96,7 +97,7 @@ Gateway：  Spring_Gateway_Client → Spring_Gateway_Server
 
 | Spring Boot | Java | 模組 |
 |---|---|---|
-| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅ |
+| **4.1.x** | **21** | HelloWorld ✅、JPA ✅、JPA2 ✅、Feign_Server ✅、Feign_Client ✅、Eureka ✅、Eureka_Provider ✅、Eureka_Client ✅、Gateway_Server ✅、Gateway_Client ✅、HttpClient ✅、Okhttp ✅、Redis ✅、Cache ✅、Caffeine 🆕、Flyway ✅、Webflux ✅、R2DBC ✅、R2DBC2 ✅、Swagger ✅、Thymeleaf ✅、Scheduling ✅、Quartz ✅、Batch ✅、Batch2 ✅、Batch3 ✅、Batch4 ✅、Security ✅、Security2 ✅、Security3 ✅、Websocket ✅、Websocket2 ✅、Websocket3 ✅、HttpServiceClient 🆕 |
 
 - Build Tool：Gradle（每個模組各自附 Gradle Wrapper）
 - Database：PostgreSQL
@@ -175,16 +176,18 @@ Spring_Xxx/
 
 ## Roadmap
 
-這個 Repo 正在進行現代化，會以小步驟持續改善：
+這個 Repo 以小步驟持續現代化。每個模組都先建立測試、確認原本的行為，再升級與重構：
 
 - [x] 移除設定檔中的帳密，改用環境變數
 - [x] 新增根目錄 `.gitignore`，移除 IDE 設定與 log 檔
 - [x] 新增根目錄 README 與技術索引
-- [ ] 補齊各模組 README
-- [ ] 補上核心邏輯的單元測試 / 整合測試
-- [ ] 統一升級至 Java 21 / Spring Boot 3.x
-- [ ] 舊寫法現代化（Constructor Injection、統一例外處理、Logging 等）
-- [ ] 統一各模組 REST API 的 URL 設計規則
+- [x] 補齊各模組 README（含教學說明與現代化紀錄）
+- [x] 補上測試：baseline 測試鎖定原本的行為，學習測試說明各主題；資料庫、Redis 使用 Testcontainers
+- [x] 統一升級至 Java 21 / Spring Boot 4.1 / Gradle 9
+- [x] 舊寫法現代化（Constructor Injection、統一例外處理與 ProblemDetail、Flyway 管理資料表等）
+- [x] 統一各模組 REST API 的 URL 設計規則（`/api` 開頭、複數名詞、kebab-case）
+- [x] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
+- [ ] 補齊 Docker：Spring_HelloWorld、Spring_HttpClient、Spring_JPA2、Spring_Okhttp 尚未提供 Dockerfile
 - [ ] 提供 Postman Collection，可直接匯入測試各模組 API
-- [ ] 練習改為 Gradle 多模組專案（附 IDE 操作步驟）
-- [ ] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
+- [ ] 練習改為 Gradle 多模組專案（附 IntelliJ 設定與操作步驟）
+- [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）

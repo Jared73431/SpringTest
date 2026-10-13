@@ -258,7 +258,7 @@ public interface BookClient {
 | 搭配服務註冊、負載平衡 | 內建整合 | 搭配 Spring Cloud LoadBalancer |
 | 現況 | 許多既有專案仍在使用 | 新專案的建議選擇 |
 
-**為什麼本模組仍使用 Feign**：很多公司的既有系統都在用，也是面試常見的題目。HTTP Service Client 之後會另外建立一個練習模組。
+**為什麼本模組仍使用 Feign**：很多公司的既有系統都在用，也是面試常見的題目。同一個 API 改用 HTTP Service Client 的版本見 [Spring_HttpServiceClient](../Spring_HttpServiceClient)，兩個模組可以逐項對照。
 
 ### 7. 需要 Eureka 嗎？
 
