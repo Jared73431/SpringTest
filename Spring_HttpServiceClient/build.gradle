@@ -1,0 +1,38 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// HTTP Service Client（@HttpExchange）：Spring Framework 內建，底層是 RestClient，不需要 Spring Cloud
+	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// 模擬 Spring_Feign_Server（與 Spring_Feign_Client 的測試相同）
+	testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// 只產生可執行的 bootJar，不另外產生 -plain.jar
+tasks.named('jar') {
+	enabled = false
+}
