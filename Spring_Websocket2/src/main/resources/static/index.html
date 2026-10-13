@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>STOMP 聊天室</title>
+    <style>
+        body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; }
+        #log { height: 320px; overflow-y: auto; border: 1px solid #ccc; padding: .5rem; }
+        .system { color: #888; } .private { color: #a0a; } .error { color: #c00; }
+        input, button { font-size: 1rem; }
+    </style>
+</head>
+<body>
+<h1>STOMP 聊天室</h1>
+<p>
+    名稱 <input id="name" size="10" value="alice">
+    聊天室 <input id="room" size="10" value="java">
+    <button id="connect">加入</button>
+    <button id="disconnect">離開</button>
+</p>
+<p>線上：<span id="users"></span></p>
+<div id="log"></div>
+<p>
+    <input id="message" size="40" placeholder="訊息">
+    <button id="send">送出</button>
+</p>
+<p>
+    私訊給 <input id="to" size="10">
+    <input id="privateMessage" size="25">
+    <button id="sendPrivate">私訊</button>
+</p>
+
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+<script>
+    let client;
+    const $ = id => document.getElementById(id);
+    // 用 textContent 顯示：訊息中的 HTML 不會被執行（修正前用 innerHTML，有 XSS）
+    const log = (text, cssClass) => {
+        const line = document.createElement('div');
+        line.textContent = text;
+        if (cssClass) line.className = cssClass;
+        $('log').append(line);
+        $('log').scrollTop = $('log').scrollHeight;
+    };
+    const time = iso => new Date(iso).toLocaleTimeString();
+
+    $('connect').onclick = async () => {
+        const name = $('name').value, room = $('room').value;
+        $('log').replaceChildren();
+
+        // 1. 用 HTTP 取得最近的訊息
+        const history = await fetch(`/api/rooms/${encodeURIComponent(room)}/messages`).then(r => r.json());
+        history.forEach(m => log(`[${time(m.sentAt)}] ${m.sender}: ${m.content}`));
+
+        // 2. 用 WebSocket 收新的訊息（名稱在連線時決定，之後的訊息不再帶發送者）
+        const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        client = new StompJs.Client({ brokerURL: `${scheme}${location.host}/ws?name=${encodeURIComponent(name)}` });
+        client.onConnect = () => {
+            client.subscribe(`/topic/rooms/${room}`, frame => {
+                const m = JSON.parse(frame.body);
+                if (m.type === 'CHAT') log(`[${time(m.sentAt)}] ${m.sender}: ${m.content}`);
+                else log(`${m.content}`, 'system');
+            });
+            client.subscribe(`/topic/rooms/${room}/users`, frame => $('users').textContent = JSON.parse(frame.body).join(', '));
+            client.subscribe('/user/queue/private', frame => {
+                const m = JSON.parse(frame.body);
+                log(`[私訊] ${m.from} → ${m.to}: ${m.content}`, 'private');
+            });
+            client.subscribe('/user/queue/errors', frame => log(`錯誤：${frame.body}`, 'error'));
+            client.publish({ destination: `/app/rooms/${room}/join` });
+        };
+        client.onWebSocketClose = () => log('連線已中斷', 'system');
+        client.activate();
+    };
+
+    $('disconnect').onclick = () => client && client.deactivate();
+
+    $('send').onclick = () => {
+        client.publish({ destination: `/app/rooms/${$('room').value}/messages`,
+                         body: JSON.stringify({ content: $('message').value }) });
+        $('message').value = '';
+    };
+
+    $('sendPrivate').onclick = () => {
+        client.publish({ destination: '/app/private',
+                         body: JSON.stringify({ to: $('to').value, content: $('privateMessage').value }) });
+        $('privateMessage').value = '';
+    };
+</script>
+</body>
+</html>
