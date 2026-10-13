@@ -1,0 +1,77 @@
+# ============================================================
+# Actuator 練習環境：PostgreSQL + 應用程式 + Prometheus + Grafana
+#
+#   應用程式 ──/actuator/prometheus──→ Prometheus（每 5 秒抓一次）──→ Grafana（畫圖）
+#
+#   啟動：docker compose up --build -d
+#   API：        http://localhost:8115/api/books
+#   Actuator：   http://localhost:9115/actuator/health   （只綁在 127.0.0.1）
+#   Prometheus： http://localhost:9090
+#   Grafana：    http://localhost:3000   （dashboard「Spring / Spring Actuator」，不需要登入即可檢視）
+#   停止：docker compose down                     （加上 -v 會刪除資料庫與 Prometheus 的資料）
+#
+# Windows 保留了 8115 時：APP_PORT=8315 docker compose up --build -d
+# ============================================================
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=Actuator
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    # 刻意不對主機開放 5432，避免與本機的 PostgreSQL 衝突
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d Actuator"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - TZ=Asia/Taipei
+    ports:
+      # API：對外開放
+      - "${APP_PORT:-8115}:8115"
+      # Actuator：只綁在主機的 127.0.0.1，讓本機練習時可以用 curl / Postman 查看；
+      # 正式環境不對外開放，只有 Prometheus、K8S 等內部的程式連得到
+      - "127.0.0.1:${MANAGEMENT_PORT:-9115}:9115"
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    depends_on:
+      - app
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:13.0.10
+    depends_on:
+      - prometheus
+    environment:
+      # 練習用：不登入也能檢視 dashboard；管理者帳號 admin / GRAFANA_PASSWORD（預設 admin）
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      # 啟動時自動建立 Prometheus 資料來源與 dashboard
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data:
+  prometheus-data:

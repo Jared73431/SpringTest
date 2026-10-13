@@ -1,0 +1,9 @@
+# Grafana 啟動時自動建立 Prometheus 資料來源，不必手動設定
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true

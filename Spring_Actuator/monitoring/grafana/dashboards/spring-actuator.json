@@ -1,0 +1,63 @@
+{
+  "uid": "spring-actuator",
+  "title": "Spring Actuator",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "應用程式是否存活（Prometheus 抓得到）",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "up{job=\"spring-actuator\"}" } ],
+      "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } } ] } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "建立的書籍（bookstore.books.added）",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "sum(bookstore_books_added_total)" } ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "使用中的資料庫連線（HikariCP）",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "sum(hikaricp_connections_active)" } ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "JVM heap 使用量",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "sum(jvm_memory_used_bytes{area=\"heap\"})" } ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "每秒請求數（依 API、狀態碼）",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "sum by (method, uri, status) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m]))", "legendFormat": "{{method}} {{uri}} {{status}}" } ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "回應時間 p95（依 API）",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, method, uri) (rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\"}[1m])))", "legendFormat": "{{method}} {{uri}}" } ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "搜尋書籍的平均時間（bookstore.books.search）",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "rate(bookstore_books_search_seconds_sum[1m]) / rate(bookstore_books_search_seconds_count[1m])", "legendFormat": "平均" } ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "每秒 log 數（依 level）",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "refId": "A", "expr": "sum by (level) (rate(logback_events_total[1m]))", "legendFormat": "{{level}}" } ]
+    }
+  ]
+}

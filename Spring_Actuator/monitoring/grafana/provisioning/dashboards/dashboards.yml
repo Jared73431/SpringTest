@@ -1,0 +1,8 @@
+# Grafana 啟動時自動載入 /var/lib/grafana/dashboards 裡的 dashboard（JSON）
+apiVersion: 1
+providers:
+  - name: spring-actuator
+    folder: Spring
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
