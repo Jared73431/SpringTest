@@ -166,6 +166,15 @@ cd Spring_JPA2
 
 > 多數模組預設使用 8015 / 8080 等 port，同時啟動多個模組時請注意 port 衝突。
 
+### 4. 用 Postman 測試
+
+[postman/](postman) 有一份涵蓋各模組 API 的 Collection：每個模組一個資料夾，每個請求都附有測試腳本，匯入後對資料夾按 **Run** 就能驗證整個模組。說明見 [postman/readme.md](postman/readme.md)。
+
+```bash
+postman collection run postman/SpringTest.postman_collection.json \
+    -e postman/SpringTest.postman_environment.json --working-dir postman -i Spring_JPA2
+```
+
 ---
 
 ## 專案結構
@@ -205,6 +214,6 @@ Spring_Xxx/
 - [x] 新增 Kafka 練習模組（Spring_Kafka：基礎 5 課）
 - [x] 新增 Kafka 情境模組（Spring_Kafka2_Order / Shipping：兩個服務透過 Kafka 溝通）
 - [x] 新增 Actuator 練習模組（health、metrics，搭配 Prometheus + Grafana）
-- [ ] 提供 Postman Collection，可直接匯入測試各模組 API
+- [x] 提供 [Postman Collection](postman)，可直接匯入測試各模組 API（每個請求都有測試腳本）
 - [ ] 練習改為 Gradle 多模組專案（附 IntelliJ 設定與操作步驟）
 - [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）
