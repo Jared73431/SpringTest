@@ -84,7 +84,7 @@
 <!-- 上傳檔案必須使用 multipart/form-data，Controller 才能以 MultipartFile 接收 -->
 <form method="POST" action="/upload" enctype="multipart/form-data">
   <h2>上傳新圖片</h2>
-  <input type="file" name="file" accept="image/*" required />
+  <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required />
   <button type="submit">上傳</button>
 </form>
 

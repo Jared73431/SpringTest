@@ -309,14 +309,42 @@ curl -X POST http://localhost:8015/api/orders \
 
 | Method | Path | 說明 |
 |---|---|---|
-| `POST` | `/api/images` | 上傳（`multipart/form-data`，欄位 `file`），`201` 並回傳摘要 |
+| `POST` | `/api/images` | 上傳（`multipart/form-data`，欄位 `file`），`201` 並回傳摘要；只接受 PNG、JPEG、GIF、WebP，其他 `400` |
 | `GET` | `/api/images` | 圖片清單（只有摘要，不含圖片內容） |
-| `GET` | `/api/images/{id}` | 取得圖片本身 |
+| `GET` | `/api/images/{id}` | 取得圖片本身（瀏覽器直接顯示，`<img>` 用這個網址） |
+| `GET` | `/api/images/{id}/download` | 下載（`Content-Disposition: attachment`，瀏覽器存成檔案） |
 | `DELETE` | `/api/images/{id}` | 刪除，`204` |
 
 ```bash
 curl -F "file=@photo.png" http://localhost:8015/api/images
+curl -OJ http://localhost:8015/api/images/1/download     # -J：使用回應標頭中的檔名
 ```
+
+#### 顯示 vs 下載
+
+兩者回傳同樣的內容，差別只在 `Content-Disposition` 標頭：
+
+| 標頭 | 瀏覽器 |
+|---|---|
+| 沒有（或 `inline`） | 直接顯示 |
+| `attachment; filename="cat.png"; filename*=UTF-8''...` | 存成檔案 |
+
+檔名用 Spring 的 `ContentDisposition` 產生，不要自己串字串：中文檔名會編碼成 `filename*=UTF-8''%E8%B2%93.png`（RFC 5987），否則會變成亂碼；檔名中的 `"` 等特殊字元也會被正確處理。
+
+只需要讓頁面上的連結下載時，也可以只用 HTML 的 `<a href="..." download>`，但這只對同網域的瀏覽器有效，API 的使用者拿不到「這是下載」的資訊。
+
+#### 使用者上傳的檔案不可信
+
+副檔名、Content-Type 都由上傳的人決定。修正前直接存下上傳者給的 Content-Type，之後用它 inline 顯示：把 HTML（或含有 script 的 SVG）偽裝成圖片上傳，別人打開 `/api/images/{id}` 時，script 會在本網站的網域下執行（Stored XSS）。
+
+| 防護 | 做法 |
+|---|---|
+| 只接受允許的格式 | `ImageFormat` 依檔案開頭的位元組（magic number）判斷 PNG、JPEG、GIF、WebP；不接受 SVG（XML，可以包含 script） |
+| Content-Type 由伺服器決定 | 存的是判斷出來的類型，不是上傳者宣告的 |
+| `X-Content-Type-Options: nosniff` | 瀏覽器不會自己猜測內容的類型 |
+| 舊資料 | 資料庫中修正前存入的非圖片檔案，改成 `application/octet-stream` 下載，不在瀏覽器中顯示 |
+
+同樣的觀念也用在 [Spring_Websocket3](../Spring_Websocket3) 的檔案分享。
 
 ### 圖片上傳頁（Thymeleaf）
 
@@ -385,6 +413,8 @@ curl -F "file=@photo.png" http://localhost:8015/api/images
 | Todo / User API | `/todo/{id}`、`/saveTodo`、`/api/saveUser` | `/api/todos/{id}`、`/api/users`、`/api/users/{id}/todos` |
 | 圖片 API | `POST /api/images/upload`，清單含完整 base64 內容，刪除回 `200` 文字 | `POST /api/images`（`201`），清單只有摘要，刪除 `204` |
 | 頁面刪除圖片 | `GET /delete/{id}` | `POST /images/{id}/delete` |
+| 上傳的檔案類型 | 任何檔案都能上傳，Content-Type 使用上傳者宣告的值並 inline 顯示（Stored XSS） | 只接受 PNG / JPEG / GIF / WebP（依檔案內容判斷），其他 `400`；回應加上 `nosniff` |
+| 下載圖片 | 沒有 | `GET /api/images/{id}/download`、頁面的「下載」連結 |
 | 圖片欄位 | `oid`（Large Object） | `bytea` |
 | JSON 日期格式（Jackson 3） | `...+00:00` | `...Z`（語意相同） |
 

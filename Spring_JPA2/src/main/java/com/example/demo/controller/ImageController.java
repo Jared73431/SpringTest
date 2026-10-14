@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.demo.exception.InvalidRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.service.ImageService;
 
@@ -53,6 +54,9 @@ public class ImageController {
         try {
             imageService.storeImage(file);
             redirectAttributes.addFlashAttribute("message", "圖片上傳成功!");
+        } catch (InvalidRequestException e) {
+            // 不是允許的圖片格式：顯示原因，不是錯誤頁
+            redirectAttributes.addFlashAttribute("message", "圖片上傳失敗: " + e.getMessage());
         } catch (IOException e) {
             log.warn("圖片上傳失敗: {}", file.getOriginalFilename(), e);
             redirectAttributes.addFlashAttribute("message", "圖片上傳失敗: " + e.getMessage());

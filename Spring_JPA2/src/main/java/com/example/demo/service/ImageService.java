@@ -26,18 +26,19 @@ public class ImageService {
     }
 
     /**
-     * 儲存上傳的圖片。未選擇檔案（空檔案）→ InvalidRequestException（400）。
-     * 檔名與 Content-Type 直接取自用戶端，未另外驗證檔案類型。
+     * 儲存上傳的圖片。未選擇檔案（空檔案）、不是 PNG / JPEG / GIF / WebP → InvalidRequestException（400）。
+     * Content-Type 由檔案內容判斷（ImageFormat），不使用用戶端宣告的值（修正前直接使用，可以偽裝成圖片上傳 HTML）。
      */
     public Image storeImage(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new InvalidRequestException("請選擇要上傳的檔案");
         }
         String fileName = file.getOriginalFilename();
-        String contentType = file.getContentType();
         byte[] data = file.getBytes();
+        ImageFormat format = ImageFormat.detect(data)
+                .orElseThrow(() -> new InvalidRequestException("只接受 PNG、JPEG、GIF、WebP 圖片"));
 
-        Image image = new Image(fileName, contentType, data);
+        Image image = new Image(fileName, format.contentType(), data);
         return imageRepository.save(image);
     }
 

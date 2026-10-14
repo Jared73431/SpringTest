@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.dto.ImageResponse;
 import com.example.demo.entity.Image;
+import com.example.demo.service.ImageFormat;
 import com.example.demo.service.ImageService;
 
 /**
@@ -29,6 +30,9 @@ import com.example.demo.service.ImageService;
 @RestController
 @RequestMapping("/api/images")
 public class ImageRestController {
+
+    // 瀏覽器不要自己「猜」內容的類型（例如把內容看起來像 HTML 的檔案當成網頁執行）
+    private static final String NOSNIFF = "X-Content-Type-Options";
 
     private final ImageService imageService;
 
@@ -60,9 +64,18 @@ public class ImageRestController {
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
         Image image = imageService.getImage(id);
+        if (!ImageFormat.isAllowed(image.getContentType())) {
+            // 修正前上傳的檔案可能不是圖片（例如 text/html）：不在瀏覽器中顯示，一律當成檔案下載
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(NOSNIFF, "nosniff")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, attachment(image))
+                    .body(image.getData());
+        }
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
                 .contentLength(image.getData().length)
+                .header(NOSNIFF, "nosniff")
                 .body(image.getData());
     }
 
@@ -74,12 +87,19 @@ public class ImageRestController {
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> downloadImage(@PathVariable Long id) {
         Image image = imageService.getImage(id);
+        MediaType contentType = ImageFormat.isAllowed(image.getContentType())
+                ? MediaType.parseMediaType(image.getContentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(image.getContentType()))
+                .contentType(contentType)
                 .contentLength(image.getData().length)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(image.getName(), StandardCharsets.UTF_8).build().toString())
+                .header(NOSNIFF, "nosniff")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(image))
                 .body(image.getData());
+    }
+
+    private static String attachment(Image image) {
+        return ContentDisposition.attachment().filename(image.getName(), StandardCharsets.UTF_8).build().toString();
     }
 
     /** DELETE /api/images/{id}：刪除圖片。204；圖片不存在 → 404。 */

@@ -163,6 +163,86 @@ class ImageApiTest {
 		assertThat(response.getBody()).contains("/api/images/" + imageId + "/download");
 	}
 
+	// ===== 上傳的檔案類型（修正前：任何檔案都能上傳，並用上傳者給的 Content-Type 直接顯示 → Stored XSS） =====
+
+	private static final byte[] HTML_BYTES = "<html><script>alert(document.cookie)</script></html>"
+			.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+	private static final byte[] SVG_BYTES = "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"
+			.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+	@Test
+	void uploadImage_shouldReturnBadRequest_whenFileIsHtml() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/images",
+				multipartFile(HTML_BYTES, "evil.html", MediaType.TEXT_HTML), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(imageRepository.count()).isZero();
+	}
+
+	// 副檔名與 Content-Type 都由上傳的人決定，可以偽裝：要看檔案內容
+	@Test
+	void uploadImage_shouldReturnBadRequest_whenHtmlIsDisguisedAsPng() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/images",
+				multipartFile(HTML_BYTES, "cat.png", MediaType.IMAGE_PNG), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(imageRepository.count()).isZero();
+	}
+
+	// SVG 是 XML，可以包含 script：不接受
+	@Test
+	void uploadImage_shouldReturnBadRequest_whenFileIsSvg() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/images",
+				multipartFile(SVG_BYTES, "logo.svg", MediaType.parseMediaType("image/svg+xml")), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(imageRepository.count()).isZero();
+	}
+
+	// 存的 Content-Type 由檔案內容判斷，不使用上傳者給的值
+	@Test
+	void uploadImage_shouldStoreTheDetectedContentType_whenDeclaredTypeIsWrong() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/images",
+				multipartFile(PNG_BYTES, "photo.jpg", MediaType.IMAGE_JPEG), String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(response.getBody()).contains("\"contentType\":\"image/png\"");
+	}
+
+	// nosniff：瀏覽器不會自己「猜」內容是 HTML 而執行
+	@Test
+	void getAndDownloadImage_shouldSendNosniff() {
+		Long imageId = uploadImage();
+
+		assertThat(restTemplate.getForEntity("/api/images/{id}", byte[].class, imageId).getHeaders()
+				.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+		assertThat(restTemplate.getForEntity("/api/images/{id}/download", byte[].class, imageId).getHeaders()
+				.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+	}
+
+	// 修正前已經存進資料庫的非圖片檔案：不再 inline 顯示，改成下載
+	@Test
+	void getImage_shouldNotDisplayInline_whenStoredTypeIsNotAnAllowedImage() {
+		Long imageId = imageRepository.save(new com.example.demo.entity.Image("old.html", "text/html", HTML_BYTES))
+				.getId();
+
+		ResponseEntity<byte[]> response = restTemplate.getForEntity("/api/images/{id}", byte[].class, imageId);
+
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM);
+		assertThat(response.getHeaders().getContentDisposition().isAttachment()).isTrue();
+	}
+
+	// 上傳頁面：不是圖片時顯示訊息，不會出現錯誤頁
+	@Test
+	void uploadPage_shouldNotStoreTheFile_whenFileIsNotAnImage() {
+		ResponseEntity<String> response = restTemplate.postForEntity("/upload",
+				multipartFile(HTML_BYTES, "evil.html", MediaType.TEXT_HTML), String.class);
+
+		assertThat(response.getStatusCode().is5xxServerError()).isFalse();
+		assertThat(imageRepository.count()).isZero();
+	}
+
 	// 修正前：清單會回傳每張圖片的完整內容（base64）
 	@Test
 	void getAllImages_shouldReturnMetadataWithoutData_whenImagesExist() {
