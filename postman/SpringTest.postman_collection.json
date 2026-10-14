@@ -845,6 +845,180 @@
                   "listen" : "test",
                   "script" : {
                     "exec" : [
+                      "pm.test('201 image/png', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().contentType).to.eql('image/png'); });",
+                      "pm.collectionVariables.set('jpa2ImageId', pm.response.json().id);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "上傳圖片",
+              "request" : {
+                "body" : {
+                  "formdata" : [
+                    {
+                      "key" : "file",
+                      "src" : "files/sample.png",
+                      "type" : "file"
+                    }
+                  ],
+                  "mode" : "formdata"
+                },
+                "header" : [],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "images"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/images"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('image/png', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));",
+                      "pm.test('不是附件', () => pm.expect(pm.response.headers.get('Content-Disposition') || '').to.not.include('attachment'));",
+                      "pm.test('nosniff', () => pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "顯示（inline）",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "images",
+                    "{{jpa2ImageId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/images/{{jpa2ImageId}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('attachment + 檔名', () => { const d = pm.response.headers.get('Content-Disposition'); pm.expect(d).to.include('attachment'); pm.expect(d).to.include('sample.png'); });"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "下載（attachment）",
+              "request" : {
+                "description" : "Postman 中按 Send and Download 可以存成檔案",
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "images",
+                    "{{jpa2ImageId}}",
+                    "download"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/images/{{jpa2ImageId}}/download"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('400', () => pm.response.to.have.status(400));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "不是圖片（400）",
+              "request" : {
+                "body" : {
+                  "formdata" : [
+                    {
+                      "key" : "file",
+                      "src" : "files/hello.txt",
+                      "type" : "file"
+                    }
+                  ],
+                  "mode" : "formdata"
+                },
+                "description" : "依檔案內容判斷格式：只接受 PNG、JPEG、GIF、WebP",
+                "header" : [],
+                "method" : "POST",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "images"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/images"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('204', () => pm.response.to.have.status(204));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "刪除圖片",
+              "request" : {
+                "header" : [],
+                "method" : "DELETE",
+                "url" : {
+                  "host" : [
+                    "{{jpa2Url}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "images",
+                    "{{jpa2ImageId}}"
+                  ],
+                  "raw" : "{{jpa2Url}}/api/images/{{jpa2ImageId}}"
+                }
+              }
+            }
+          ],
+          "name" : "圖片"
+        },
+        {
+          "item" : [
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
                       "pm.collectionVariables.set('jpa2DeletableId', pm.response.json().id);"
                     ],
                     "type" : "text/javascript"
