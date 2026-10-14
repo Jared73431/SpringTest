@@ -219,4 +219,3 @@ Spring_Xxx/
 - [x] 新增 Kafka 情境模組（Spring_Kafka2_Order / Shipping：兩個服務透過 Kafka 溝通）
 - [x] 新增 Actuator 練習模組（health、metrics，搭配 Prometheus + Grafana）
 - [x] 提供 [Postman Collection](postman)，可直接匯入測試各模組 API（每個請求都有測試腳本）
-- [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）
