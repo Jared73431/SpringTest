@@ -213,6 +213,5 @@ Spring_Xxx/
 - [x] 統一升級至 Java 21 / Spring Boot 4.1 / Gradle 9
 - [x] 舊寫法現代化（Constructor Injection、統一例外處理與 ProblemDetail、Flyway 管理資料表等）
 - [x] 統一各模組 REST API 的 URL 設計規則（`/api` 開頭、複數名詞、kebab-case）
-- [x] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
 - [x] 每個模組都可以用 Docker 執行（Dockerfile；需要資料庫的模組附 Docker Compose）
 - [x] 提供 [Postman Collection](postman)，可直接匯入測試各模組 API（每個請求都有測試腳本）
