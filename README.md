@@ -166,6 +166,10 @@ cd Spring_JPA2
 
 > 多數模組預設使用 8015 / 8080 等 port，同時啟動多個模組時請注意 port 衝突。
 
+> **IntelliJ IDEA**：每個模組是獨立的 Gradle 專案，用 File → Open 開啟**模組的資料夾**（不是 Repo 根目錄）。
+> Project Structure → Project SDK 選 **21**；Settings → Build Tools → Gradle → Gradle JVM 選 Project SDK。
+> 用 SDK 17 執行會出現 `UnsupportedClassVersionError`（所有模組都是 Java 21）。
+
 ### 4. 用 Postman 測試
 
 [postman/](postman) 有一份涵蓋各模組 API 的 Collection：每個模組一個資料夾，每個請求都附有測試腳本，匯入後對資料夾按 **Run** 就能驗證整個模組。說明見 [postman/readme.md](postman/readme.md)。
@@ -215,5 +219,4 @@ Spring_Xxx/
 - [x] 新增 Kafka 情境模組（Spring_Kafka2_Order / Shipping：兩個服務透過 Kafka 溝通）
 - [x] 新增 Actuator 練習模組（health、metrics，搭配 Prometheus + Grafana）
 - [x] 提供 [Postman Collection](postman)，可直接匯入測試各模組 API（每個請求都有測試腳本）
-- [ ] 練習改為 Gradle 多模組專案（附 IntelliJ 設定與操作步驟）
 - [ ] 新增 OAuth2 / Keycloak 練習（銜接 Spring_Security3 的 JWT）
