@@ -45,6 +45,22 @@
     }
     .actions {
         margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+    .actions form {
+        margin: 0;
+    }
+    a.download {
+        padding: 5px 10px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 3px;
+        text-decoration: none;
+    }
+    a.download:hover {
+        background-color: #0b5ed7;
     }
     button {
         padding: 5px 10px;
@@ -79,6 +95,8 @@
     <img th:src="@{'/api/images/' + ${image.id}}" th:alt="${image.name}" />
     <div th:text="${image.name}"></div>
     <div class="actions">
+      <!-- 下載只讀取資料，用一般的連結（GET）；後端回應 Content-Disposition: attachment -->
+      <a class="download" th:href="@{'/api/images/' + ${image.id} + '/download'}">下載</a>
       <!-- 刪除會修改資料，使用 POST 表單而不是連結（GET） -->
       <form method="POST" th:action="@{'/images/' + ${image.id} + '/delete'}">
         <button type="submit">刪除</button>

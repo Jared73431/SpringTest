@@ -50,13 +50,22 @@ class ImageApiTest {
 	}
 
 	private HttpEntity<MultiValueMap<String, Object>> multipartFile(byte[] content) {
+		return multipartFile(content, "test.png");
+	}
+
+	private HttpEntity<MultiValueMap<String, Object>> multipartFile(byte[] content, String fileName) {
+		return multipartFile(content, fileName, MediaType.IMAGE_PNG);
+	}
+
+	private HttpEntity<MultiValueMap<String, Object>> multipartFile(byte[] content, String fileName,
+			MediaType contentType) {
 		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 		HttpHeaders fileHeaders = new HttpHeaders();
-		fileHeaders.setContentType(MediaType.IMAGE_PNG);
+		fileHeaders.setContentType(contentType);
 		body.add("file", new HttpEntity<>(new ByteArrayResource(content) {
 			@Override
 			public String getFilename() {
-				return "test.png";
+				return fileName;
 			}
 		}, fileHeaders));
 		HttpHeaders headers = new HttpHeaders();
@@ -99,6 +108,59 @@ class ImageApiTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_PNG);
 		assertThat(response.getBody()).isEqualTo(PNG_BYTES);
+	}
+
+	// 顯示（/api/images/{id}）是 inline；下載（/download）是 attachment，瀏覽器會存成檔案
+	@Test
+	void downloadImage_shouldReturnAttachmentWithFileName_whenImageUploaded() {
+		Long imageId = uploadImage();
+
+		ResponseEntity<byte[]> response = restTemplate.getForEntity("/api/images/{id}/download", byte[].class, imageId);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getHeaders().getContentDisposition().isAttachment()).isTrue();
+		assertThat(response.getHeaders().getContentDisposition().getFilename()).isEqualTo("test.png");
+		assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_PNG);
+		assertThat(response.getBody()).isEqualTo(PNG_BYTES);
+	}
+
+	// 中文檔名：用 RFC 5987 的 filename*=UTF-8''... 編碼，瀏覽器才不會顯示亂碼
+	@Test
+	void downloadImage_shouldEncodeNonAsciiFileName() {
+		ResponseEntity<Map> uploaded = restTemplate.postForEntity("/api/images", multipartFile(PNG_BYTES, "貓.png"),
+				Map.class);
+		Long imageId = ((Number) uploaded.getBody().get("id")).longValue();
+
+		ResponseEntity<byte[]> response = restTemplate.getForEntity("/api/images/{id}/download", byte[].class, imageId);
+
+		assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
+				.contains("filename*=UTF-8''%E8%B2%93.png");
+		assertThat(response.getHeaders().getContentDisposition().getFilename()).isEqualTo("貓.png");
+	}
+
+	@Test
+	void displayImage_shouldNotBeAnAttachment() {
+		Long imageId = uploadImage();
+
+		ResponseEntity<byte[]> response = restTemplate.getForEntity("/api/images/{id}", byte[].class, imageId);
+
+		assertThat(response.getHeaders().getContentDisposition().isAttachment()).isFalse();
+	}
+
+	@Test
+	void downloadImage_shouldReturnNotFound_whenImageNotExists() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/api/images/999999/download", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void homePage_shouldLinkToDownload() {
+		Long imageId = uploadImage();
+
+		ResponseEntity<String> response = restTemplate.getForEntity("/", String.class);
+
+		assertThat(response.getBody()).contains("/api/images/" + imageId + "/download");
 	}
 
 	// 修正前：清單會回傳每張圖片的完整內容（base64）

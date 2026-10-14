@@ -2,8 +2,11 @@ package com.example.demo.controller;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -60,6 +63,22 @@ public class ImageRestController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
                 .contentLength(image.getData().length)
+                .body(image.getData());
+    }
+
+    /**
+     * GET /api/images/{id}/download：下載圖片。200；圖片不存在 → 404。
+     * 與 GET /api/images/{id} 的差別只在 Content-Disposition：attachment 讓瀏覽器存成檔案，而不是直接顯示。
+     * 檔名交給 ContentDisposition 產生：中文檔名會編碼成 filename*=UTF-8''...，檔名中的引號等特殊字元也會被正確處理。
+     */
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> downloadImage(@PathVariable Long id) {
+        Image image = imageService.getImage(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.getContentType()))
+                .contentLength(image.getData().length)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(image.getName(), StandardCharsets.UTF_8).build().toString())
                 .body(image.getData());
     }
 
