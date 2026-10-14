@@ -215,7 +215,4 @@ Spring_Xxx/
 - [x] 統一各模組 REST API 的 URL 設計規則（`/api` 開頭、複數名詞、kebab-case）
 - [x] 新增 HTTP Service Client（`@HttpExchange`）練習模組，與 Spring_Feign_Client 對照
 - [x] 每個模組都可以用 Docker 執行（Dockerfile；需要資料庫的模組附 Docker Compose）
-- [x] 新增 Kafka 練習模組（Spring_Kafka：基礎 5 課）
-- [x] 新增 Kafka 情境模組（Spring_Kafka2_Order / Shipping：兩個服務透過 Kafka 溝通）
-- [x] 新增 Actuator 練習模組（health、metrics，搭配 Prometheus + Grafana）
 - [x] 提供 [Postman Collection](postman)，可直接匯入測試各模組 API（每個請求都有測試腳本）
