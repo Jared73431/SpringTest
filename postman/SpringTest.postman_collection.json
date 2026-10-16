@@ -2989,6 +2989,80 @@
                   }
                 }
               ],
+              "name" : "物件（RedisJsonStore）：存成 JSON",
+              "request" : {
+                "body" : {
+                  "mode" : "raw",
+                  "options" : {
+                    "raw" : {
+                      "language" : "json"
+                    }
+                  },
+                  "raw" : "{\"name\": \"Keyboard\", \"price\": 2490}"
+                },
+                "header" : [
+                  {
+                    "key" : "Content-Type",
+                    "value" : "application/json"
+                  }
+                ],
+                "method" : "PUT",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "products",
+                    "{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/products/{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('Keyboard', () => pm.expect(pm.response.json().name).to.eql('Keyboard'));"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
+              "name" : "物件（RedisJsonStore）：讀回",
+              "request" : {
+                "header" : [],
+                "method" : "GET",
+                "url" : {
+                  "host" : [
+                    "{{redisUrl}}"
+                  ],
+                  "path" : [
+                    "api",
+                    "redis",
+                    "products",
+                    "{{redisSuffix}}"
+                  ],
+                  "raw" : "{{redisUrl}}/api/redis/products/{{redisSuffix}}"
+                }
+              }
+            },
+            {
+              "event" : [
+                {
+                  "listen" : "test",
+                  "script" : {
+                    "exec" : [
+                      "pm.test('2xx', () => pm.response.to.be.success);"
+                    ],
+                    "type" : "text/javascript"
+                  }
+                }
+              ],
               "name" : "Hash：HSET",
               "request" : {
                 "body" : {

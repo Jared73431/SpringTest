@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class SampleDataController {
 		redisService.setString("sample:greeting", "Hello Redis!", null);
 		redisService.setString("sample:otp", "123456", Duration.ofMinutes(5));
 		redisService.saveUser(1L, "張三", "zhangsan@example.com", 25);
+		redisService.saveProduct(1L, "機械鍵盤", new BigDecimal("2490"));
 		redisService.setHashField("user:profile:1", "name", "張三");
 		redisService.setHashField("user:profile:1", "city", "台北");
 		redisService.pushRight("todo:list", "學習 Redis");
@@ -33,6 +35,7 @@ public class SampleDataController {
 		redisService.addToSet("tags", List.of("Java", "Spring", "Redis"));
 		redisService.addToZSet("scores", "Alice", 100);
 		redisService.addToZSet("scores", "Bob", 85);
-		return List.of("sample:greeting", "sample:otp", "user:1", "user:profile:1", "todo:list", "tags", "scores");
+		return List.of("sample:greeting", "sample:otp", "user:1", "product:1", "user:profile:1", "todo:list", "tags",
+				"scores");
 	}
 }

@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.constraints.Email;
@@ -35,5 +36,8 @@ public final class Requests {
 	}
 
 	public record UserRequest(@NotBlank String name, @Email String email, @PositiveOrZero Integer age) {
+	}
+
+	public record ProductRequest(@NotBlank String name, @NotNull @PositiveOrZero BigDecimal price) {
 	}
 }

@@ -27,7 +27,8 @@ src/main/java/com/example/demo/
 ├── config/RedisConfig.java            # RedisTemplate<String, User>（明確型別的 JSON）
 ├── controller/                        # 每種資料結構一個 Controller
 │   ├── StringController.java          #   /api/redis/strings/{key}
-│   ├── UserController.java            #   /api/redis/users/{id}（物件存成 JSON）
+│   ├── UserController.java            #   /api/redis/users/{id}（物件存成 JSON，專用 RedisTemplate）
+│   ├── ProductController.java         #   /api/redis/products/{id}（物件存成 JSON，RedisJsonStore）
 │   ├── HashController.java            #   /api/redis/hashes/{key}
 │   ├── ListController.java            #   /api/redis/lists/{key}
 │   ├── SetController.java             #   /api/redis/sets/{key}
@@ -41,8 +42,10 @@ src/main/java/com/example/demo/
 │   └── ScenarioController.java
 ├── dto/Requests.java, Responses.java
 ├── exception/GlobalExceptionHandler.java
-├── model/User.java                    # record
-└── service/RedisService.java
+├── model/User.java, Product.java      # record
+└── service/
+    ├── RedisService.java
+    └── RedisJsonStore.java            # 以 JSON 存取任意型別（StringRedisTemplate + JsonMapper）
 ```
 
 ## 執行方式
@@ -82,6 +85,7 @@ curl -X POST http://localhost:8089/api/redis/sample-data     # 建立範例資�
 | **String** | `PUT` | `/api/redis/strings/{key}` | `SET`（帶 `ttlSeconds` 時為 `SET ... EX`） |
 | | `GET` | `/api/redis/strings/{key}` | `GET` |
 | **物件** | `PUT` / `GET` | `/api/redis/users/{id}` | `SET` / `GET`（JSON） |
+| | `PUT` / `GET` | `/api/redis/products/{id}` | `SET` / `GET`（JSON） |
 | **Hash** | `GET` | `/api/redis/hashes/{key}` | `HGETALL` |
 | | `PUT` / `GET` | `/api/redis/hashes/{key}/fields/{field}` | `HSET` / `HGET` |
 | **List** | `GET` | `/api/redis/lists/{key}` | `LRANGE 0 -1` |
@@ -136,7 +140,7 @@ curl http://localhost:8089/api/redis/strings/otp
 
 | 測試 | 內容 |
 |---|---|
-| `RedisDataApiTest` | 五種資料結構、TTL、404 / 400 / 409、JSON 中沒有 `@class` |
+| `RedisDataApiTest` | 五種資料結構、TTL、404 / 400 / 409、User 與 Product 的 JSON 中都沒有 `@class` |
 | `ScenarioApiTest` | 排行榜排序、限流 429 與 `Retry-After`、鎖的 token 驗證與自動過期、**10 個執行緒同時搶鎖只有 1 個成功** |
 
 ---
@@ -193,6 +197,26 @@ template.setValueSerializer(new JacksonJsonRedisSerializer<>(jsonMapper, User.cl
 | default typing + `LaissezFaire`（修正前） | 是 | ✘ | **不要使用** |
 
 > 純文字資料（String、Hash、List、Set、ZSet）使用 Spring Boot 自動建立的 `StringRedisTemplate`，在 redis-cli 或 RedisInsight 中直接就看得懂。修正前用 JSON serializer 存字串，會多一層引號（`"\"a\""`）。
+
+#### 物件變多時：一種型別一個 RedisTemplate vs 共用的 RedisJsonStore
+
+明確型別的寫法，每多一種物件就要多一個 `RedisTemplate` bean。本模組用兩種物件對照兩種寫法：
+
+| | User（`RedisConfig`） | Product（`RedisJsonStore`） |
+|---|---|---|
+| 寫法 | `RedisTemplate<String, User>` + `JacksonJsonRedisSerializer<>(jsonMapper, User.class)` | `StringRedisTemplate` + `JsonMapper`，讀取時指定 `Product.class` |
+| 新增一種物件 | 新增一個 bean | 不用改設定 |
+| 型別在哪裡決定 | 建立 bean 時 | 呼叫 `get(key, type)` 時 |
+| Redis 中的資料 | 一般 JSON，沒有 `@class` | 一般 JSON，沒有 `@class` |
+
+```java
+redisJsonStore.set("product:1", product, null);                        // null：不過期
+Optional<Product> product = redisJsonStore.get("product:1", Product.class);
+```
+
+兩種寫法一樣安全：型別都由**程式**決定，不是由 Redis 中的資料決定。物件只有兩三種時，用哪一種都可以；種類多了，`RedisJsonStore` 不必一直新增 bean。
+
+不建議為了「一個 template 存所有型別」改回 default typing：那就是上面修正前的寫法。
 
 ### 4. 情境一：排行榜（ZSet）
 

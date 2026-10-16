@@ -100,6 +100,33 @@ class RedisDataApiTest {
 				.isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+	// ===== Product 物件（RedisJsonStore） =====
+
+	@Test
+	void product_shouldStoreTypedJsonWithoutClassName() {
+		put("/api/redis/products/1", Map.of("name", "Keyboard", "price", 2490.5));
+
+		Map<?, ?> body = restTemplate.getForObject("/api/redis/products/1", Map.class);
+		assertThat(body.get("name")).isEqualTo("Keyboard");
+		assertThat(((Number) body.get("price")).doubleValue()).isEqualTo(2490.5);
+		// 和 User 一樣只存放一般的 JSON：型別由呼叫端指定，不需要 @class
+		assertThat(stringRedisTemplate.opsForValue().get("product:1"))
+				.isEqualTo("{\"id\":1,\"name\":\"Keyboard\",\"price\":2490.5}");
+	}
+
+	@Test
+	void product_shouldReturnNotFound_whenMissing() {
+		assertThat(restTemplate.getForEntity("/api/redis/products/999", String.class).getStatusCode())
+				.isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void product_shouldReturnBadRequest_whenPriceMissing() {
+		ResponseEntity<Map> response = put("/api/redis/products/1", Map.of("name", "Keyboard"));
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
 	// ===== Hash =====
 
 	@Test
@@ -202,7 +229,7 @@ class RedisDataApiTest {
 	void sampleData_shouldCreateKeys() {
 		ResponseEntity<List> response = restTemplate.postForEntity("/api/redis/sample-data", null, List.class);
 
-		assertThat(response.getBody()).contains("todo:list", "scores");
+		assertThat(response.getBody()).contains("todo:list", "scores", "product:1");
 		assertThat(stringRedisTemplate.hasKey("scores")).isTrue();
 	}
 

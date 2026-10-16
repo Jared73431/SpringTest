@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,11 +13,13 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.Responses.ScoredMember;
 import com.example.demo.exception.KeyNotFoundException;
+import com.example.demo.model.Product;
 import com.example.demo.model.User;
 
 /**
  * Redis 五種資料結構的基本操作。
- * 純文字資料使用 StringRedisTemplate；User 物件使用專用的 RedisTemplate&lt;String, User&gt;（見 RedisConfig）。
+ * 純文字資料使用 StringRedisTemplate；物件以 JSON 存放，示範兩種寫法：
+ * User 使用專用的 RedisTemplate&lt;String, User&gt;（見 RedisConfig），Product 使用共用的 RedisJsonStore。
  * 查不到資料時拋出 KeyNotFoundException（404）。
  */
 @Service
@@ -26,9 +29,13 @@ public class RedisService {
 
 	private final RedisTemplate<String, User> userRedisTemplate;
 
-	public RedisService(StringRedisTemplate stringRedisTemplate, RedisTemplate<String, User> userRedisTemplate) {
+	private final RedisJsonStore redisJsonStore;
+
+	public RedisService(StringRedisTemplate stringRedisTemplate, RedisTemplate<String, User> userRedisTemplate,
+			RedisJsonStore redisJsonStore) {
 		this.stringRedisTemplate = stringRedisTemplate;
 		this.userRedisTemplate = userRedisTemplate;
+		this.redisJsonStore = redisJsonStore;
 	}
 
 	// ========== String ==========
@@ -73,6 +80,23 @@ public class RedisService {
 	// key 命名慣例：「類型:id」，用冒號分層，RedisInsight 等工具會以資料夾方式顯示
 	private static String userKey(Long id) {
 		return "user:" + id;
+	}
+
+	// ========== Product 物件（JSON，透過 RedisJsonStore） ==========
+
+	public Product saveProduct(Long id, String name, BigDecimal price) {
+		Product product = new Product(id, name, price);
+		redisJsonStore.set(productKey(id), product, null);
+		return product;
+	}
+
+	public Product getProduct(Long id) {
+		return redisJsonStore.get(productKey(id), Product.class)
+				.orElseThrow(() -> new KeyNotFoundException("Product " + id));
+	}
+
+	private static String productKey(Long id) {
+		return "product:" + id;
 	}
 
 	// ========== Hash ==========
